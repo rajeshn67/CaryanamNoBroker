@@ -1,17 +1,132 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { adminApi, STATIC_BASE_URL } from "../services/api";
+import { jwtDecode } from "jwt-decode";
+import { ownerApi } from "../services/api";
 import imageCompression from "browser-image-compression";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import OwnerPremiumQrImage from "../assets/QR.jpeg";
 
 const IMAGE_FALLBACK =
   "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='400' height='300' viewBox='0 0 400 300'><rect width='100%25' height='100%25' fill='%23D1D5DB'/><text x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' fill='%236B7280' font-family='Arial, sans-serif' font-size='24'>No Image</text></svg>";
+const OWNER_PREMIUM_QR_IMAGE =
+  OwnerPremiumQrImage || IMAGE_FALLBACK;
+const OWNER_PENDING_APPROVAL_KEY = "ownerPendingApprovalProperties";
+const PENDING_PROPERTY_IDS_KEY = "pendingApprovalPropertyIds";
+const PROPERTY_APPROVAL_STATES_KEY = "propertyApprovalStates";
+const OWNER_LOCAL_PROPERTIES_KEY = "ownerLocalProperties";
+const OWNER_ID_BY_EMAIL_KEY = "ownerIdByEmail";
+
+const readPropertyApprovalStateMap = () => {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(PROPERTY_APPROVAL_STATES_KEY) || "{}");
+    return parsed && typeof parsed === "object" ? parsed : {};
+  } catch {
+    return {};
+  }
+};
+
+const readOwnerLocalPropertiesMap = () => {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(OWNER_LOCAL_PROPERTIES_KEY) || "{}");
+    return parsed && typeof parsed === "object" ? parsed : {};
+  } catch {
+    return {};
+  }
+};
+
+const readOwnerLocalProperties = (ownerId) => {
+  const map = readOwnerLocalPropertiesMap();
+  const ownerKey = String(Number(ownerId));
+  return Array.isArray(map[ownerKey]) ? map[ownerKey] : [];
+};
+
+const writeOwnerLocalProperties = (ownerId, properties) => {
+  const map = readOwnerLocalPropertiesMap();
+  const ownerKey = String(Number(ownerId));
+  map[ownerKey] = Array.isArray(properties) ? properties : [];
+  localStorage.setItem(OWNER_LOCAL_PROPERTIES_KEY, JSON.stringify(map));
+};
+
+const getSingleKnownOwnerId = () => {
+  const candidates = new Set();
+
+  const addCandidate = (value) => {
+    const numeric = Number(value);
+    if (Number.isFinite(numeric) && numeric > 0) {
+      candidates.add(numeric);
+    }
+  };
+
+  addCandidate(localStorage.getItem("ownerId"));
+
+  try {
+    const ownerMap = JSON.parse(localStorage.getItem(OWNER_LOCAL_PROPERTIES_KEY) || "{}");
+    Object.keys(ownerMap || {}).forEach(addCandidate);
+  } catch {
+    // ignore malformed cache
+  }
+
+  try {
+    const pendingMap = JSON.parse(localStorage.getItem(OWNER_PENDING_APPROVAL_KEY) || "{}");
+    Object.keys(pendingMap || {}).forEach(addCandidate);
+  } catch {
+    // ignore malformed cache
+  }
+
+  if (candidates.size === 1) {
+    return [...candidates][0];
+  }
+  return null;
+};
+
+const registerPendingApprovalProperty = (ownerId, propertyId) => {
+  const ownerNumericId = Number(ownerId);
+  const propertyNumericId = Number(propertyId);
+  if (!Number.isFinite(ownerNumericId) || ownerNumericId <= 0) return;
+  if (!Number.isFinite(propertyNumericId) || propertyNumericId <= 0) return;
+
+  let ownerMap = {};
+  let pendingIds = [];
+  try {
+    ownerMap = JSON.parse(localStorage.getItem(OWNER_PENDING_APPROVAL_KEY) || "{}");
+  } catch {
+    ownerMap = {};
+  }
+  try {
+    pendingIds = JSON.parse(localStorage.getItem(PENDING_PROPERTY_IDS_KEY) || "[]");
+  } catch {
+    pendingIds = [];
+  }
+
+  const key = String(ownerNumericId);
+  const ownerIds = Array.isArray(ownerMap[key]) ? ownerMap[key] : [];
+  if (!ownerIds.includes(propertyNumericId)) {
+    ownerMap[key] = [...ownerIds, propertyNumericId];
+    localStorage.setItem(OWNER_PENDING_APPROVAL_KEY, JSON.stringify(ownerMap));
+  }
+
+  if (!pendingIds.includes(propertyNumericId)) {
+    localStorage.setItem(
+      PENDING_PROPERTY_IDS_KEY,
+      JSON.stringify([...pendingIds, propertyNumericId])
+    );
+  }
+
+  const statusMap = readPropertyApprovalStateMap();
+  statusMap[String(propertyNumericId)] = "PENDING";
+  localStorage.setItem(PROPERTY_APPROVAL_STATES_KEY, JSON.stringify(statusMap));
+};
 
 const buildImageCandidates = (imageName) => {
   if (!imageName) return [IMAGE_FALLBACK];
 
-  const cleanedName = String(imageName).replace(/^\/+/, "");
+  const rawValue = String(imageName).trim();
+  if (/^(blob:|data:|https?:)/i.test(rawValue)) {
+    return [rawValue, IMAGE_FALLBACK];
+  }
+
+  const cleanedName = rawValue.replace(/^\/+/, "");
   return [
     `http://localhost:8080/uploads/${cleanedName}`,
     `http://localhost:8080/${cleanedName}`,
@@ -44,16 +159,21 @@ const PropertyThumbnail = ({ imageName, title }) => {
   );
 };
 
-const AdminDashboard = () => {
+const PropertyOwnerDashboard = () => {
   const [formData, setFormData] = useState({
     propertyTitle: "",
     price: "",
     propertyType: "",
     location: "",
+    city: "",
+    address: "",
+    state: "",
+    pincode: "",
     mobileNumber: "",
     description: "",
     bhkType: "",
     furnishing: "",
+    carpetArea: "",
   });
 
   const [images, setImages] = useState([]);
@@ -64,16 +184,53 @@ const AdminDashboard = () => {
   const [editingProperty, setEditingProperty] = useState(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showPreviewModal, setShowPreviewModal] = useState(false);
+  const [showPremiumModal, setShowPremiumModal] = useState(false);
+  const [premiumLoading, setPremiumLoading] = useState(false);
+  const [ownerPremiumStatus, setOwnerPremiumStatus] = useState("NONE");
+  const [pendingApprovalPropertyId, setPendingApprovalPropertyId] = useState(null);
+  const [propertyApprovalStates, setPropertyApprovalStates] = useState(() =>
+    readPropertyApprovalStateMap()
+  );
   const latestPreviewsRef = useRef([]);
-  const adminId = 1; // Admin ID for rajeshnarwade67@gmail.com
+  const [ownerId, setOwnerId] = useState(null);
+  const [ownerIdInput, setOwnerIdInput] = useState("");
+  const [showOwnerIdPrompt, setShowOwnerIdPrompt] = useState(false);
   
 
   const navigate = useNavigate();
 
+  const resolveOwnerIdFromToken = (decoded) => {
+    if (!decoded || typeof decoded !== "object") return null;
+
+    const directCandidates = [
+      decoded.ownerId,
+      decoded.ownerID,
+      decoded.owner_id,
+      decoded.id,
+      decoded.userId,
+      decoded.userID,
+      decoded.subId,
+      decoded.sub,
+    ];
+
+    for (const candidate of directCandidates) {
+      const numeric = Number(candidate);
+      if (Number.isFinite(numeric) && numeric > 0) return numeric;
+    }
+
+    for (const [key, value] of Object.entries(decoded)) {
+      if (!/id/i.test(key)) continue;
+      const numeric = Number(value);
+      if (Number.isFinite(numeric) && numeric > 0) return numeric;
+    }
+
+    return null;
+  };
+
 const handleLogout = () => {
-  localStorage.removeItem("adminToken");
-  localStorage.setItem("adminLogout", Date.now());
-  const channel = new BroadcastChannel("admin-auth");
+  localStorage.removeItem("ownerToken");
+  localStorage.setItem("ownerLogout", Date.now());
+  const channel = new BroadcastChannel("owner-auth");
   channel.postMessage("logout");
   navigate("/login");
 };
@@ -91,10 +248,108 @@ const handleLogout = () => {
     "Society Image 2",
   ];
 
-  // Fetch properties on component mount
   useEffect(() => {
+    const token = localStorage.getItem("ownerToken");
+    if (!token) return;
+    try {
+      const decoded = jwtDecode(token);
+      const ownerEmail = String(decoded?.sub || "").toLowerCase().trim();
+      if (ownerEmail) {
+        localStorage.setItem("ownerEmail", ownerEmail);
+      }
+      const tokenOwnerId = resolveOwnerIdFromToken(decoded);
+      if (tokenOwnerId) {
+        setOwnerId(Number(tokenOwnerId));
+        localStorage.setItem("ownerId", String(Number(tokenOwnerId)));
+        setShowOwnerIdPrompt(false);
+        return;
+      }
+
+      if (ownerEmail) {
+        let ownerIdMap = {};
+        try {
+          ownerIdMap = JSON.parse(localStorage.getItem(OWNER_ID_BY_EMAIL_KEY) || "{}");
+        } catch {
+          ownerIdMap = {};
+        }
+        const mappedOwnerId = Number(ownerIdMap?.[ownerEmail]);
+        if (Number.isFinite(mappedOwnerId) && mappedOwnerId > 0) {
+          setOwnerId(mappedOwnerId);
+          localStorage.setItem("ownerId", String(mappedOwnerId));
+          setShowOwnerIdPrompt(false);
+          return;
+        }
+      }
+
+      const inferredOwnerId = getSingleKnownOwnerId();
+      if (Number.isFinite(inferredOwnerId) && inferredOwnerId > 0) {
+        setOwnerId(inferredOwnerId);
+        localStorage.setItem("ownerId", String(inferredOwnerId));
+        if (ownerEmail) {
+          let ownerIdMap = {};
+          try {
+            ownerIdMap = JSON.parse(localStorage.getItem(OWNER_ID_BY_EMAIL_KEY) || "{}");
+          } catch {
+            ownerIdMap = {};
+          }
+          ownerIdMap[ownerEmail] = inferredOwnerId;
+          localStorage.setItem(OWNER_ID_BY_EMAIL_KEY, JSON.stringify(ownerIdMap));
+        }
+        setShowOwnerIdPrompt(false);
+        return;
+      }
+
+      const savedOwnerId = Number(localStorage.getItem("ownerId"));
+      if (Number.isFinite(savedOwnerId) && savedOwnerId > 0) {
+        setOwnerId(savedOwnerId);
+        setShowOwnerIdPrompt(false);
+        return;
+      }
+
+      setShowOwnerIdPrompt(true);
+      toast.error("Owner ID not found in token. Please enter your Owner ID once.");
+      return;
+    } catch {
+      const savedOwnerId = Number(localStorage.getItem("ownerId"));
+      if (Number.isFinite(savedOwnerId) && savedOwnerId > 0) {
+        setOwnerId(savedOwnerId);
+        setShowOwnerIdPrompt(false);
+        return;
+      }
+      setShowOwnerIdPrompt(true);
+      toast.error("Invalid owner session. Please login again.");
+    }
+  }, [navigate]);
+
+  const handleOwnerIdSave = () => {
+    const numericOwnerId = Number(ownerIdInput);
+    if (!Number.isFinite(numericOwnerId) || numericOwnerId <= 0) {
+      toast.error("Please enter a valid Owner ID.");
+      return;
+    }
+    setOwnerId(numericOwnerId);
+    localStorage.setItem("ownerId", String(numericOwnerId));
+    const ownerEmail = localStorage.getItem("ownerEmail");
+    if (ownerEmail) {
+      let ownerIdMap = {};
+      try {
+        ownerIdMap = JSON.parse(localStorage.getItem(OWNER_ID_BY_EMAIL_KEY) || "{}");
+      } catch {
+        ownerIdMap = {};
+      }
+      ownerIdMap[String(ownerEmail).toLowerCase().trim()] = numericOwnerId;
+      localStorage.setItem(OWNER_ID_BY_EMAIL_KEY, JSON.stringify(ownerIdMap));
+    }
+    setShowOwnerIdPrompt(false);
+    toast.success("Owner ID saved.");
+  };
+
+  useEffect(() => {
+    if (!ownerId) return;
+    setPropertyApprovalStates(readPropertyApprovalStateMap());
+    setProperties(readOwnerLocalProperties(ownerId));
     fetchProperties();
-  }, []);
+  }, [ownerId]);
 
   useEffect(() => {
     latestPreviewsRef.current = imagePreviews;
@@ -116,21 +371,53 @@ const handleLogout = () => {
     setImagePreviews([]);
   };
 
+  const parseDoctypeImages = (value) => {
+    if (!value) return [];
+    if (Array.isArray(value)) return value;
+    if (typeof value !== "string") return [];
+    const trimmed = value.trim();
+    if (!trimmed) return [];
+    if (trimmed.startsWith("[") && trimmed.endsWith("]")) {
+      return trimmed
+        .slice(1, -1)
+        .split(",")
+        .map((item) => item.trim())
+        .filter(Boolean);
+    }
+    return trimmed
+      .split(",")
+      .map((item) => item.trim())
+      .filter(Boolean);
+  };
+
   const fetchProperties = async () => {
+    if (!ownerId) return;
+    const adminToken = localStorage.getItem("adminToken");
+    if (!adminToken) {
+      setLoading(false);
+      return;
+    }
     try {
       setLoading(true);
-      const response = await adminApi.getAllProperties();
-      if (response.data && response.data.data) {
-        const baseProperties = response.data.data;
+      const response = await ownerApi.getOwnerProperties(ownerId);
+      if (response?.data) {
+        const payload = response?.data?.data || response?.data || {};
+        const baseProperties = Array.isArray(payload.properties)
+          ? payload.properties
+          : [];
 
         const propertiesWithImages = await Promise.all(
           baseProperties.map(async (property) => {
             try {
-              const detailsResponse = await adminApi.getPropertyById(property.id);
+              const detailsResponse = await ownerApi.getPropertyById(property.id);
               const detailData = detailsResponse?.data?.data;
+              const images = [
+                detailData?.coverImage,
+                ...parseDoctypeImages(detailData?.doctypeImages),
+              ].filter(Boolean);
               return {
                 ...property,
-                images: Array.isArray(detailData?.images) ? detailData.images : [],
+                images,
               };
             } catch (error) {
               console.error(`Error fetching images for property ${property.id}:`, error);
@@ -143,20 +430,45 @@ const handleLogout = () => {
         );
 
         setProperties(propertiesWithImages);
+        writeOwnerLocalProperties(ownerId, propertiesWithImages);
       }
     } catch (err) {
-      console.error("Error fetching properties:", err);
-      toast.error("Failed to fetch properties");
+      console.error("Error fetching properties:", err?.message || err);
+      if (err?.response?.status !== 403) {
+        toast.error("Failed to fetch properties");
+      }
     } finally {
       setLoading(false);
     }
   };
 
-  // Compress image to max 2MB
+  const resolvePropertyApprovalStatus = (property) => {
+    const propertyId = String(property?.id ?? "");
+    const localStatus = propertyApprovalStates[propertyId];
+    if (localStatus) return localStatus;
+
+    const backendStatus = String(property?.status || "").toUpperCase();
+    if (backendStatus === "ACTIVE") return "APPROVED";
+    if (backendStatus === "PENDING") return "PENDING";
+    if (backendStatus === "INACTIVE") return "REJECTED";
+    return "PENDING";
+  };
+
+  const getApprovalBadgeClasses = (status) => {
+    if (status === "APPROVED") {
+      return "bg-green-100 text-green-700 border border-green-200";
+    }
+    if (status === "REJECTED") {
+      return "bg-red-100 text-red-700 border border-red-200";
+    }
+    return "bg-amber-100 text-amber-700 border border-amber-200";
+  };
+
+  // Compress image before upload
   const compressImage = async (file) => {
     const options = {
       maxSizeMB: 2,
-      maxWidthOrHeight: 1920,
+      maxWidthOrHeight: 1280,
       useWebWorker: true,
     };
 
@@ -175,8 +487,8 @@ const handleLogout = () => {
     if (!validTypes.includes(file.type)) {
       throw new Error("Only JPG, JPEG, and PNG images are allowed");
     }
-    if (file.size > 2 * 1024 * 1024) {
-      throw new Error("Image size must be less than 2MB");
+    if (file.size > 20 * 1024 * 1024) {
+      throw new Error("Image size must be less than 20MB");
     }
     return true;
   };
@@ -245,8 +557,9 @@ const handleLogout = () => {
   const validateBeforeUpload = () => {
     // Validate form
     if (!formData.propertyTitle || !formData.price || !formData.propertyType ||
-        !formData.location || !formData.mobileNumber || !formData.description ||
-        !formData.bhkType || !formData.furnishing) {
+        !formData.location || !formData.city || !formData.address ||
+        !formData.state || !formData.pincode || !formData.mobileNumber ||
+        !formData.description || !formData.bhkType || !formData.furnishing) {
       toast.error("All fields are required");
       return false;
     }
@@ -254,6 +567,10 @@ const handleLogout = () => {
     // Validate mobile number
     if (formData.mobileNumber.length !== 10 || !/^[6-9]/.test(formData.mobileNumber)) {
       toast.error("Invalid mobile number");
+      return false;
+    }
+    if (!/^[1-9][0-9]{5}$/.test(formData.pincode)) {
+      toast.error("Invalid pincode");
       return false;
     }
 
@@ -289,50 +606,136 @@ const handleLogout = () => {
         price: parseFloat(formData.price),
         propertyType: formData.propertyType,
         location: formData.location,
+        city: formData.city,
+        address: formData.address,
+        state: formData.state,
+        pincode: formData.pincode,
         mobileNumber: formData.mobileNumber,
         description: formData.description,
         bhkType: formData.bhkType,
         furnishing: formData.furnishing,
+        carpetArea: formData.carpetArea,
       };
 
       // Add property
-      const propertyResponse = await adminApi.addProperty(adminId, propertyData);
+      const propertyResponse = await ownerApi.addProperty(ownerId, propertyData);
       
       if (propertyResponse.data && propertyResponse.data.data) {
         const propertyId = propertyResponse.data.data.id;
         createdPropertyId = propertyId;
 
-        // Upload images
-        const formDataImages = new FormData();
-        uploadedImages.forEach((image) => {
-          if (image) {
+        const buildImageFormData = (imagesToUpload) => {
+          const formDataImages = new FormData();
+          imagesToUpload.forEach((image) => {
+            if (!image) return;
             console.log("Appending image:", image.name, image.type, image.size);
-            formDataImages.append("files", image);
-          }
-        });
+            formDataImages.append("files", image, image.name);
+          });
+          return formDataImages;
+        };
+
+        const recompressAggressively = async (imagesToUpload) => {
+          const retryOptions = {
+            maxSizeMB: 0.8,
+            maxWidthOrHeight: 960,
+            useWebWorker: true,
+          };
+          const compressedRetryFiles = await Promise.all(
+            imagesToUpload.map(async (image, index) => {
+              const compressed = await imageCompression(image, retryOptions);
+              const baseName = image.name
+                .replace(/\.[^/.]+$/, "")
+                .replace(/[^a-z0-9-_]/gi, "-")
+                .toLowerCase();
+              const extension = image.name.toLowerCase().endsWith(".png") ? "png" : "jpg";
+              const mimeType = extension === "png" ? "image/png" : "image/jpeg";
+              return new File(
+                [compressed],
+                `${baseName || "property-image"}-retry-${Date.now()}-${index}.${extension}`,
+                { type: mimeType, lastModified: Date.now() }
+              );
+            })
+          );
+          return compressedRetryFiles;
+        };
 
         try {
-          await adminApi.uploadPropertyImages(propertyId, formDataImages);
-          toast.success("Property added successfully!");
-        } catch (uploadErr) {
-          console.error("Error uploading images:", uploadErr);
-          toast.error(
-            uploadErr?.response?.data?.message ||
-              uploadErr?.message ||
-              "Property added, but image upload failed"
+          await ownerApi.uploadPropertyImages(
+            propertyId,
+            buildImageFormData(uploadedImages)
           );
+          const responseMessage =
+            propertyResponse?.data?.message || "Property added successfully!";
+          toast.success(responseMessage);
+        } catch (uploadErr) {
+          console.error("Error uploading images (first attempt):", uploadErr);
+          try {
+            const retryFiles = await recompressAggressively(uploadedImages);
+            await ownerApi.uploadPropertyImages(
+              propertyId,
+              buildImageFormData(retryFiles)
+            );
+            toast.success("Images uploaded after retry with optimized size.");
+          } catch (retryErr) {
+            console.error("Error uploading images (retry attempt):", retryErr);
+            toast.error(
+              retryErr?.response?.data?.message ||
+                retryErr?.message ||
+                "Property added, but image upload failed"
+            );
+          }
         }
         
+        registerPendingApprovalProperty(ownerId, propertyId);
+        setPropertyApprovalStates((prev) => ({
+          ...prev,
+          [String(propertyId)]: "PENDING",
+        }));
+        const localPreviewImages = uploadedImages
+          .filter(Boolean)
+          .map((img) => URL.createObjectURL(img));
+        const createdProperty = {
+          id: propertyId,
+          title: formData.propertyTitle,
+          price: parseFloat(formData.price),
+          propertyType: formData.propertyType,
+          location: formData.location,
+          city: formData.city,
+          address: formData.address,
+          state: formData.state,
+          pincode: formData.pincode,
+          mobileNumber: formData.mobileNumber,
+          description: formData.description,
+          bhkType: formData.bhkType,
+          furnishing: formData.furnishing,
+          carpetArea: formData.carpetArea,
+          status: "PENDING",
+          images: localPreviewImages,
+        };
+        setProperties((prev) => {
+          const next = [createdProperty, ...prev.filter((item) => item.id !== propertyId)];
+          writeOwnerLocalProperties(ownerId, next);
+          return next;
+        });
+        setPendingApprovalPropertyId(propertyId);
+        setOwnerPremiumStatus("PENDING");
+        setShowPremiumModal(true);
+
         // Reset form
         setFormData({
           propertyTitle: "",
           price: "",
           propertyType: "",
           location: "",
+          city: "",
+          address: "",
+          state: "",
+          pincode: "",
           mobileNumber: "",
           description: "",
           bhkType: "",
           furnishing: "",
+          carpetArea: "",
         });
         clearSelectedImages();
 
@@ -362,9 +765,13 @@ const handleLogout = () => {
     }
 
     try {
-      const response = await adminApi.deleteProperty(propertyId);
+      const response = await ownerApi.deleteProperty(propertyId);
       toast.success(response?.data?.message || "Property deactivated successfully");
-      await fetchProperties();
+      setProperties((prev) => {
+        const next = prev.filter((item) => item.id !== propertyId);
+        if (ownerId) writeOwnerLocalProperties(ownerId, next);
+        return next;
+      });
     } catch (err) {
       console.error("Error deleting property:", err);
       toast.error(err.response?.data?.message || err.message || "Failed to delete property");
@@ -379,10 +786,15 @@ const handleLogout = () => {
       price: property.price || "",
       propertyType: property.propertyType || "",
       location: property.location || "",
+      city: property.city || "",
+      address: property.address || "",
+      state: property.state || "",
+      pincode: property.pincode || "",
       mobileNumber: property.mobileNumber || "",
       description: property.description || "",
       bhkType: property.bhkType || "",
       furnishing: property.furnishing || "",
+      carpetArea: property.carpetArea || "",
     });
     setShowEditModal(true);
   };
@@ -395,8 +807,9 @@ const handleLogout = () => {
 
     // Validate form
     if (!formData.propertyTitle || !formData.price || !formData.propertyType ||
-        !formData.location || !formData.mobileNumber || !formData.description ||
-        !formData.bhkType || !formData.furnishing) {
+        !formData.location || !formData.city || !formData.address ||
+        !formData.state || !formData.pincode || !formData.mobileNumber ||
+        !formData.description || !formData.bhkType || !formData.furnishing) {
       toast.error("All fields are required");
       return;
     }
@@ -404,6 +817,10 @@ const handleLogout = () => {
     // Validate mobile number
     if (formData.mobileNumber.length !== 10 || !/^[6-9]/.test(formData.mobileNumber)) {
       toast.error("Invalid mobile number");
+      return;
+    }
+    if (!/^[1-9][0-9]{5}$/.test(formData.pincode)) {
+      toast.error("Invalid pincode");
       return;
     }
 
@@ -415,18 +832,47 @@ const handleLogout = () => {
         price: parseFloat(formData.price),
         propertyType: formData.propertyType,
         location: formData.location,
+        city: formData.city,
+        address: formData.address,
+        state: formData.state,
+        pincode: formData.pincode,
         mobileNumber: formData.mobileNumber,
         description: formData.description,
         bhkType: formData.bhkType,
         furnishing: formData.furnishing,
+        carpetArea: formData.carpetArea,
       };
 
-      const response = await adminApi.updateProperty(editingProperty.id, propertyData);
+      const response = await ownerApi.updateProperty(editingProperty.id, propertyData);
       toast.success(response?.data?.message || "Property updated successfully");
+
+      setProperties((prev) => {
+        const next = prev.map((item) =>
+          item.id === editingProperty.id
+            ? {
+                ...item,
+                title: propertyData.title,
+                price: propertyData.price,
+                propertyType: propertyData.propertyType,
+                location: propertyData.location,
+                city: propertyData.city,
+                address: propertyData.address,
+                state: propertyData.state,
+                pincode: propertyData.pincode,
+                mobileNumber: propertyData.mobileNumber,
+                description: propertyData.description,
+                bhkType: propertyData.bhkType,
+                furnishing: propertyData.furnishing,
+                carpetArea: propertyData.carpetArea,
+              }
+            : item
+        );
+        if (ownerId) writeOwnerLocalProperties(ownerId, next);
+        return next;
+      });
 
       setShowEditModal(false);
       setEditingProperty(null);
-      await fetchProperties();
     } catch (err) {
       console.error("Error updating property:", err);
       toast.error(err.response?.data?.message || "Failed to update property");
@@ -444,11 +890,44 @@ const handleLogout = () => {
       price: "",
       propertyType: "",
       location: "",
+      city: "",
+      address: "",
+      state: "",
+      pincode: "",
       mobileNumber: "",
       description: "",
       bhkType: "",
       furnishing: "",
+      carpetArea: "",
     });
+  };
+
+  const handlePremiumDone = async () => {
+    if (!ownerId) {
+      toast.error("Owner session missing. Please login again.");
+      return;
+    }
+
+    try {
+      setPremiumLoading(true);
+      const response = await ownerApi.buyPremium(ownerId);
+      const status =
+        response?.data?.data?.status ||
+        response?.data?.status ||
+        "PENDING";
+      setOwnerPremiumStatus(status);
+      toast.success(
+        "Payment request submitted. Admin can now approve or reject your premium request."
+      );
+      setShowPremiumModal(false);
+      setPendingApprovalPropertyId(null);
+      setPropertyApprovalStates(readPropertyApprovalStateMap());
+      await fetchProperties();
+    } catch (err) {
+      toast.error(err?.response?.data?.message || "Failed to submit premium request");
+    } finally {
+      setPremiumLoading(false);
+    }
   };
 
   return (
@@ -476,10 +955,10 @@ const handleLogout = () => {
 
         <div className="flex items-center gap-4 text-sm">
           <span className="text-gray-700 font-medium">
-            Admin User <span className="text-blue-600">(Admin)</span>
+            Property Owner <span className="text-blue-600">(Property Owner)</span>
           </span>
           <button
-            onClick={() => navigate("/admin/interested-users")}
+            onClick={() => navigate("/interested-users")}
             className="relative text-gray-700 hover:text-blue-500"
             title="Interested Users"
           >
@@ -511,12 +990,37 @@ const handleLogout = () => {
       <div className="max-w-7xl mx-auto px-6 py-8">
         <div>
           <h1 className="text-3xl font-bold text-gray-800">
-            Admin Dashboard
+            Property Owner Dashboard
           </h1>
           <p className="text-gray-500 mt-1">
             Manage property listings
           </p>
         </div>
+
+        {showOwnerIdPrompt && (
+          <div className="mt-4 bg-amber-50 border border-amber-200 rounded-lg p-4">
+            <p className="text-sm text-amber-800 mb-3">
+              Owner ID is not present in your token. Enter it once to continue.
+            </p>
+            <div className="flex gap-3">
+              <input
+                type="number"
+                min="1"
+                value={ownerIdInput}
+                onChange={(e) => setOwnerIdInput(e.target.value)}
+                placeholder="Enter Owner ID"
+                className="flex-1 px-3 py-2 border border-amber-300 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-400"
+              />
+              <button
+                type="button"
+                onClick={handleOwnerIdSave}
+                className="px-4 py-2 bg-amber-600 text-white rounded-md hover:bg-amber-700"
+              >
+                Save
+              </button>
+            </div>
+          </div>
+        )}
 
         <div className="mt-8 bg-white rounded-xl shadow-sm p-8">
           <div className="flex items-center gap-3 mb-6">
@@ -584,13 +1088,13 @@ const handleLogout = () => {
                 >
                   <option value="">Select property type</option>
                   <option value="APARTMENT">Apartment</option>
-                  <option value="VILLA">Villa</option>
-                  <option value="HOME">House</option>
+                  <option value="INDEPENDENT_HOUSE">Villa</option>
+                  <option value="STANDALONE_BUILDING">House</option>
                 </select>
               </div>
             </div>
 
-            {/* Second Row: Location, Mobile Number */}
+            {/* Second Row: Location, City */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -603,6 +1107,72 @@ const handleLogout = () => {
                   value={formData.location}
                   onChange={(e) =>
                     setFormData({ ...formData, location: e.target.value })
+                  }
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  City <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="Enter city"
+                  value={formData.city}
+                  onChange={(e) =>
+                    setFormData({ ...formData, city: e.target.value })
+                  }
+                />
+              </div>
+            </div>
+
+            {/* Third Row: Address, State */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Address <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="Enter address"
+                  value={formData.address}
+                  onChange={(e) =>
+                    setFormData({ ...formData, address: e.target.value })
+                  }
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  State <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="Enter state"
+                  value={formData.state}
+                  onChange={(e) =>
+                    setFormData({ ...formData, state: e.target.value })
+                  }
+                />
+              </div>
+            </div>
+
+            {/* Fourth Row: Pincode, Mobile Number */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Pincode <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="Enter pincode"
+                  value={formData.pincode}
+                  onChange={(e) =>
+                    setFormData({ ...formData, pincode: e.target.value })
                   }
                 />
               </div>
@@ -623,7 +1193,7 @@ const handleLogout = () => {
               </div>
             </div>
 
-            {/* Third Row: Description */}
+            {/* Fifth Row: Description */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Description <span className="text-red-500">*</span>
@@ -639,8 +1209,8 @@ const handleLogout = () => {
               />
             </div>
 
-            {/* Fourth Row: BHK Type and Furnishing */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Sixth Row: BHK Type, Furnishing and Carpet Area */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   BHK Type <span className="text-red-500">*</span>
@@ -677,6 +1247,21 @@ const handleLogout = () => {
                   <option value="SEMI_FURNISHED">Semi Furnished</option>
                   <option value="UNFURNISHED">Unfurnished</option>
                 </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Carpet Area
+                </label>
+                <input
+                  type="text"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="Enter carpet area"
+                  value={formData.carpetArea}
+                  onChange={(e) =>
+                    setFormData({ ...formData, carpetArea: e.target.value })
+                  }
+                />
               </div>
             </div>
 
@@ -766,10 +1351,14 @@ const handleLogout = () => {
               <button
                 type="submit"
                 onClick={handleOpenPreview}
-                disabled={loading}
+                disabled={loading || !ownerId}
                 className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors shadow-sm disabled:bg-gray-400 disabled:cursor-not-allowed"
               >
-                {loading ? "Uploading..." : "Preview Property"}
+                {!ownerId
+                  ? "Owner session not found"
+                  : loading
+                    ? "Uploading..."
+                    : "Preview Property"}
               </button>
             </div>
           </div>
@@ -818,13 +1407,9 @@ const handleLogout = () => {
                 >
                   <div className="h-48 bg-gray-200">
                     {property.images && property.images.length > 0 ? (
-                      <img
-                        src={`${STATIC_BASE_URL}/${String(property.images[0]).replace(/^\/+/, "")}`}
-                        alt={property.title}
-                        className="w-full h-full object-cover"
-                        onError={(e) => {
-                          e.currentTarget.style.display = "none";
-                        }}
+                      <PropertyThumbnail
+                        imageName={property.images[0]}
+                        title={property.title}
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center bg-gray-300">
@@ -833,9 +1418,18 @@ const handleLogout = () => {
                     )}
                   </div>
                   <div className="p-4">
-                    <h3 className="font-semibold text-gray-800 mb-2">
-                      {property.title}
-                    </h3>
+                    <div className="flex items-start justify-between gap-2 mb-2">
+                      <h3 className="font-semibold text-gray-800">
+                        {property.title}
+                      </h3>
+                      <span
+                        className={`px-2 py-1 rounded-full text-xs font-semibold whitespace-nowrap ${getApprovalBadgeClasses(
+                          resolvePropertyApprovalStatus(property)
+                        )}`}
+                      >
+                        {resolvePropertyApprovalStatus(property)}
+                      </span>
+                    </div>
                     <p className="text-sm text-gray-500 mb-1">
                       {property.location}
                     </p>
@@ -1029,6 +1623,53 @@ const handleLogout = () => {
         </div>
       </div>
 
+      {showPremiumModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full mx-4 p-6">
+            <h2 className="text-xl font-bold text-gray-800 text-center">
+              Buy Premium to Publish Property
+            </h2>
+            <p className="text-sm text-gray-600 text-center mt-2">
+              Scan this QR code, complete payment, then click Done.
+            </p>
+
+            <div className="mt-5">
+              <img
+                src={OWNER_PREMIUM_QR_IMAGE}
+                alt="Owner premium payment QR"
+                className="w-full rounded-lg border border-gray-200"
+              />
+            </div>
+
+            <div className="mt-5 bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-sm text-yellow-800">
+              After clicking Done, your request appears in admin dashboard for approval or rejection.
+            </div>
+
+            <div className="mt-5 flex gap-3">
+              <button
+                type="button"
+                onClick={() => setShowPremiumModal(false)}
+                className="flex-1 px-4 py-3 border border-gray-300 rounded-lg font-semibold hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handlePremiumDone}
+                disabled={premiumLoading}
+                className="flex-1 bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 disabled:bg-gray-400"
+              >
+                {premiumLoading ? "Submitting..." : "Done"}
+              </button>
+            </div>
+
+            <p className="text-xs text-gray-500 text-center mt-3">
+              Current premium status: {ownerPremiumStatus}
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Property Preview Modal */}
       {showPreviewModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -1178,8 +1819,8 @@ const handleLogout = () => {
                 >
                   <option value="">Select property type</option>
                   <option value="APARTMENT">Apartment</option>
-                  <option value="VILLA">Villa</option>
-                  <option value="HOME">House</option>
+                  <option value="INDEPENDENT_HOUSE">Villa</option>
+                  <option value="STANDALONE_BUILDING">House</option>
                 </select>
               </div>
 
@@ -1193,6 +1834,62 @@ const handleLogout = () => {
                   value={formData.location}
                   onChange={(e) =>
                     setFormData({ ...formData, location: e.target.value })
+                  }
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  City <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  value={formData.city}
+                  onChange={(e) =>
+                    setFormData({ ...formData, city: e.target.value })
+                  }
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Address <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  value={formData.address}
+                  onChange={(e) =>
+                    setFormData({ ...formData, address: e.target.value })
+                  }
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  State <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  value={formData.state}
+                  onChange={(e) =>
+                    setFormData({ ...formData, state: e.target.value })
+                  }
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Pincode <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  value={formData.pincode}
+                  onChange={(e) =>
+                    setFormData({ ...formData, pincode: e.target.value })
                   }
                 />
               </div>
@@ -1225,7 +1922,7 @@ const handleLogout = () => {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-3 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     BHK Type <span className="text-red-500">*</span>
@@ -1263,6 +1960,20 @@ const handleLogout = () => {
                     <option value="UNFURNISHED">Unfurnished</option>
                   </select>
                 </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Carpet Area
+                  </label>
+                  <input
+                    type="text"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    value={formData.carpetArea}
+                    onChange={(e) =>
+                      setFormData({ ...formData, carpetArea: e.target.value })
+                    }
+                  />
+                </div>
               </div>
 
               <div className="flex gap-3 pt-4">
@@ -1291,4 +2002,4 @@ const handleLogout = () => {
   );
 };
 
-export default AdminDashboard;
+export default PropertyOwnerDashboard;

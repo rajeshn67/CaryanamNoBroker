@@ -5,6 +5,18 @@ import Filter from "../components/Filter";
 import PropertyList from "../components/PropertyList";
 import { propertyApi, STATIC_BASE_URL } from "../services/api";
 
+const PENDING_PROPERTY_IDS_KEY = "pendingApprovalPropertyIds";
+
+const getPendingApprovalPropertyIdSet = () => {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(PENDING_PROPERTY_IDS_KEY) || "[]");
+    if (!Array.isArray(parsed)) return new Set();
+    return new Set(parsed.map((id) => Number(id)).filter((id) => Number.isFinite(id)));
+  } catch {
+    return new Set();
+  }
+};
+
 const BrowseProperties = () => {
 
   const [appliedFilters, setAppliedFilters] = useState({
@@ -22,8 +34,8 @@ const BrowseProperties = () => {
   const mapUiTypeToBackend = (uiType) => {
     if (!uiType || uiType === "All") return null;
     if (uiType === "Apartment") return "APARTMENT";
-    if (uiType === "Villa") return "VILLA";
-    if (uiType === "House") return "HOME";
+    if (uiType === "Villa") return "INDEPENDENT_HOUSE";
+    if (uiType === "House") return "STANDALONE_BUILDING";
     return null;
   };
 
@@ -40,11 +52,11 @@ const BrowseProperties = () => {
     const details = [bhk, area].filter(Boolean).join(" · ");
 
     const type =
-      dto?.propertyType === "HOME"
+      dto?.propertyType === "STANDALONE_BUILDING"
         ? "House"
         : dto?.propertyType === "APARTMENT"
           ? "Apartment"
-          : dto?.propertyType === "VILLA"
+          : dto?.propertyType === "INDEPENDENT_HOUSE"
             ? "Villa"
             : "All";
 
@@ -67,7 +79,9 @@ const BrowseProperties = () => {
     try {
       const res = await propertyApi.getAll();
       const list = Array.isArray(res?.data?.data) ? res.data.data : [];
-      setProperties(list.map(mapBackendToUi));
+      const pendingApprovalIds = getPendingApprovalPropertyIdSet();
+      const visibleList = list.filter((dto) => !pendingApprovalIds.has(Number(dto?.id)));
+      setProperties(visibleList.map(mapBackendToUi));
     } catch (e) {
       setError(e?.message || "Failed to load properties");
       setProperties([]);
@@ -101,7 +115,9 @@ const BrowseProperties = () => {
 
       const res = await propertyApi.filter(payload);
       const list = Array.isArray(res?.data?.data) ? res.data.data : [];
-      setProperties(list.map(mapBackendToUi));
+      const pendingApprovalIds = getPendingApprovalPropertyIdSet();
+      const visibleList = list.filter((dto) => !pendingApprovalIds.has(Number(dto?.id)));
+      setProperties(visibleList.map(mapBackendToUi));
     } catch (e) {
       setError(e?.message || "Failed to filter properties");
     } finally {

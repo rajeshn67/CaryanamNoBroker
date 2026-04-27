@@ -45,6 +45,7 @@ import { jwtDecode } from "jwt-decode";
 const ProtectedRoute = ({ children, role }) => {
   const adminToken = localStorage.getItem("adminToken");
   const userToken = localStorage.getItem("userToken");
+  const ownerToken = localStorage.getItem("ownerToken");
 
   let token = null;
 
@@ -53,6 +54,8 @@ const ProtectedRoute = ({ children, role }) => {
     token = adminToken;
   } else if (role === "ROLE_USER") {
     token = userToken;
+  } else if (role === "ROLE_PROPERTY_OWNER") {
+    token = ownerToken;
   }
 
   // ❌ Token nahi → login
@@ -66,6 +69,8 @@ const ProtectedRoute = ({ children, role }) => {
     if (decoded.exp < currentTime) {
       if (role === "ROLE_ADMIN") {
         localStorage.removeItem("adminToken");
+      } else if (role === "ROLE_PROPERTY_OWNER") {
+        localStorage.removeItem("ownerToken");
       } else {
         localStorage.removeItem("userToken");
         localStorage.removeItem("userEmail"); // ⭐ important for multi-user fix
@@ -86,6 +91,8 @@ const ProtectedRoute = ({ children, role }) => {
     // ⚠️ Invalid token
     if (role === "ROLE_ADMIN") {
       localStorage.removeItem("adminToken");
+    } else if (role === "ROLE_PROPERTY_OWNER") {
+      localStorage.removeItem("ownerToken");
     } else {
       localStorage.removeItem("userToken");
       localStorage.removeItem("userEmail");

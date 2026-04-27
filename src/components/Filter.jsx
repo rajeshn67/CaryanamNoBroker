@@ -33,7 +33,7 @@ const Filter = ({
         >
           <option value="All">All Properties</option>
           <option value="Apartment">Apartment</option>
-          <option value="Villa">Villa</option>
+          <option value="Villa">Independent House</option>
           <option value="House">House</option>
         </select>
       </div>

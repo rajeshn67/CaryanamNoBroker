@@ -26,6 +26,39 @@ const uploadApi = axios.create({
   baseURL: API_BASE_URL,
 });
 
+const rootApi = axios.create({
+  baseURL: API_ORIGIN,
+  headers: {
+    "Content-Type": "application/json",
+  },
+});
+
+const resolveAuthTokenForPath = (path = "") => {
+  if (path.startsWith("/auth/")) return null;
+  if (path.startsWith("/owner/")) return localStorage.getItem("ownerToken");
+  if (path.startsWith("/admin/")) return localStorage.getItem("adminToken");
+  if (path.startsWith("/user/")) return localStorage.getItem("userToken");
+
+  const adminToken = localStorage.getItem("adminToken");
+  const ownerToken = localStorage.getItem("ownerToken");
+  const userToken = localStorage.getItem("userToken");
+  return adminToken || ownerToken || userToken || null;
+};
+
+const attachAuthHeader = (config) => {
+  const path = config?.url || "";
+  const token = resolveAuthTokenForPath(path);
+  if (token) {
+    config.headers = config.headers || {};
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+};
+
+api.interceptors.request.use(attachAuthHeader);
+uploadApi.interceptors.request.use(attachAuthHeader);
+rootApi.interceptors.request.use(attachAuthHeader);
+
 const normalizeApiResponse = (response) => {
   const apiStatus = response?.data?.status;
   if (typeof apiStatus === "number" && apiStatus >= 400) {
@@ -46,46 +79,62 @@ uploadApi.interceptors.response.use(
   (error) => Promise.reject(error)
 );
 
+rootApi.interceptors.response.use(
+  (response) => normalizeApiResponse(response),
+  (error) => Promise.reject(error)
+);
+
 // Admin API calls
 export const adminApi = {
-  // Add property
-  addProperty: (adminId, propertyData) => {
-    return api.post(`/admin/add-property/${adminId}`, propertyData);
+  // Add property by owner
+  addProperty: (ownerId, propertyData) => {
+    return api.post(`/admin/addPropertyByOwner/${ownerId}`, propertyData);
   },
 
-  // Get all properties
-  getAllProperties: () => {
-    return api.get('/admin/get-all-properties');
+  // Get properties by owner (served on root /admin controller)
+  getOwnerProperties: (ownerId) => {
+    return rootApi.get(`/admin/owner/${ownerId}/properties`);
   },
 
   // Get property by ID
   getPropertyById: (id) => {
-    return api.get(`/admin/get-property-by-id/${id}`);
+    return api.get(`/admin/getPropertyById/${id}`);
   },
 
   // Update property
   updateProperty: (id, propertyData) => {
-    return api.put(`/admin/update-property/${id}`, propertyData);
+    return api.put(`/admin/updatePropertyById/${id}`, propertyData);
   },
 
   // Delete property
   deleteProperty: (id) => {
-    return api.delete(`/admin/delete-property/${id}`);
+    return api.delete(`/admin/deletePropertyById/${id}`);
   },
 
   // Upload property images
   uploadPropertyImages: (propertyId, formData) => {
-    return uploadApi.post(`/admin/upload-property-images/${propertyId}`, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
+    return uploadApi.post(`/admin/uploadPropertyImagesByPropertyId/${propertyId}`, formData);
   },
 
   // Buy premium
-  buyPremium: (adminId) => {
-    return api.post(`/admin/buy-premium/${adminId}`);
+  buyPremium: (ownerId) => {
+    return api.post(`/admin/buyPremiumByOwner/${ownerId}`);
   },
+};
+
+// Owner API calls (aligned with backend /api/owner controller)
+export const ownerApi = {
+  addProperty: (ownerId, propertyData) =>
+    api.post(`/owner/addPropertyByOwner/${ownerId}`, propertyData),
+  getOwnerProperties: (ownerId) =>
+    api.get(`/owner/${ownerId}/properties`),
+  getPropertyById: (id) => api.get(`/owner/getPropertyById/${id}`),
+  updateProperty: (id, propertyData) =>
+    api.put(`/owner/updatePropertyById/${id}`, propertyData),
+  deleteProperty: (id) => api.delete(`/owner/deletePropertyById/${id}`),
+  uploadPropertyImages: (propertyId, formData) =>
+    uploadApi.post(`/owner/uploadPropertyImagesByPropertyId/${propertyId}`, formData),
+  buyPremium: (ownerId) => api.post(`/owner/buyPremiumByOwner/${ownerId}`),
 };
 
 // Public API calls
@@ -111,4 +160,29 @@ export const authApi = {
   registerAdmin: (data) => api.post("/auth/register/admin", data),
   registerOwner: (data) => api.post("/auth/register/POwner", data),
 };
+
+const withAdminFallback = async (path, method = "get", data) => {
+  try {
+    if (method === "get") return await api.get(path);
+    return await api.post(path, data);
+  } catch (firstError) {
+    const rootPath = path.startsWith("/admin/") ? path : `/admin${path}`;
+    if (method === "get") return await rootApi.get(rootPath);
+    return await rootApi.post(rootPath, data);
+  }
+};
+
+export const adminModerationApi = {
+  getPendingUsers: () => withAdminFallback("/admin/pending-users"),
+  getPendingOwners: () => withAdminFallback("/admin/pending-Owner"),
+  approveUserPremium: (userId) =>
+    withAdminFallback(`/admin/approveUserPremium/${userId}`, "post"),
+  rejectUserPremium: (userId) =>
+    withAdminFallback(`/admin/rejectUserPremium/${userId}`, "post"),
+  approveOwnerPremium: (ownerId) =>
+    withAdminFallback(`/admin/approveOwnerPremium/${ownerId}`, "post"),
+  rejectOwnerPremium: (ownerId) =>
+    withAdminFallback(`/admin/rejectOwnerPremium/${ownerId}`, "post"),
+};
+
 export default api;

@@ -2,9 +2,10 @@ import { useState, useEffect } from "react";
 import { authApi } from "../services/api";
 import { jwtDecode } from "jwt-decode";
 import { useNavigate } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 
 export default function Auth() {
+  const OWNER_ID_BY_EMAIL_KEY = "ownerIdByEmail";
   const [isLogin, setIsLogin] = useState(true);
   const navigate = useNavigate();
 
@@ -13,13 +14,22 @@ export default function Auth() {
     mobileNumber: "",
     email: "",
     password: "",
-    role: "USER",
+    role: "ADMIN",
   });
 
   useEffect(() => {
   // ✅ Separate channels
   const userChannel = new BroadcastChannel("user-auth");
   const adminChannel = new BroadcastChannel("admin-auth");
+  const ownerChannel = new BroadcastChannel("owner-auth");
+    // ✅ admin listener
+    adminChannel.onmessage = (msg) => {
+      if (msg.data === "logout") {
+        localStorage.removeItem("adminToken");
+        navigate("/login");
+      }
+    };
+
 
   
     // ✅ user listener
@@ -30,10 +40,10 @@ export default function Auth() {
       }
     };
 
-    // ✅ admin listener
-    adminChannel.onmessage = (msg) => {
+    // ✅ property owner listener
+    ownerChannel.onmessage = (msg) => {
       if (msg.data === "logout") {
-        localStorage.removeItem("adminToken");
+        localStorage.removeItem("ownerToken");
         navigate("/login");
       }
     };
@@ -42,6 +52,11 @@ export default function Auth() {
     const syncLogout = (event) => {
       if (event.key === "adminLogout") {
         localStorage.removeItem("adminToken");
+        navigate("/login");
+      }
+
+      if (event.key === "ownerLogout") {
+        localStorage.removeItem("ownerToken");
         navigate("/login");
       }
 
@@ -57,6 +72,7 @@ export default function Auth() {
       window.removeEventListener("storage", syncLogout);
       userChannel.close();
       adminChannel.close();
+      ownerChannel.close();
     };
   }, [navigate]);
 
@@ -87,6 +103,8 @@ export default function Auth() {
       const res =
         formData.role === "ADMIN"
           ? await authApi.registerAdmin(formData)
+          : formData.role === "PROPERTY_OWNER"
+          ? await authApi.registerOwner(formData)
           : await authApi.registerUser(formData);
 
       alert(res.data.message);
@@ -107,7 +125,7 @@ export default function Auth() {
       const res = await authApi.login({
         email: formData.email,
         password: formData.password,
-        devicetype: deviceType,
+        deviceType,
       });
 
       console.log("LOGIN RESPONSE:", res.data);
@@ -124,17 +142,27 @@ export default function Auth() {
       // ✅ separate token
       if (role === "ROLE_ADMIN") {
         localStorage.setItem("adminToken", token);
-        
+      } else if (role === "ROLE_PROPERTY_OWNER") {
+        localStorage.setItem("ownerToken", token);
+        const ownerEmail = (decoded?.sub || formData.email || "").toLowerCase().trim();
+        if (ownerEmail) {
+          localStorage.setItem("ownerEmail", ownerEmail);
+          const rawMap = localStorage.getItem(OWNER_ID_BY_EMAIL_KEY);
+          const ownerIdMap = rawMap ? JSON.parse(rawMap) : {};
+          const knownOwnerId = Number(ownerIdMap?.[ownerEmail]);
+          if (Number.isFinite(knownOwnerId) && knownOwnerId > 0) {
+            localStorage.setItem("ownerId", String(knownOwnerId));
+          }
+        }
       } else {
         localStorage.setItem("userToken", token);
-        
       }
 
       alert("Login Successful");
 
       if (role === "ROLE_ADMIN") navigate("/admin");
-      else if (role === "ROLE_USER") navigate("/user");
       else if (role === "ROLE_PROPERTY_OWNER") navigate("/owner");
+      else if (role === "ROLE_USER") navigate("/user");
       else alert("Unknown role");
 
     } catch (err) {
@@ -142,26 +170,10 @@ export default function Auth() {
     }
   };
 
-    const triggerAdminLogout = () => {
-    localStorage.removeItem("adminToken");
-
-    // notify other tabs
-    localStorage.setItem("adminLogout", Date.now());
-
-    const channel = new BroadcastChannel("admin-auth");
-    channel.postMessage("logout");
-    };
-
-
   function handleSubmit(e) {
     e.preventDefault();
     isLogin ? handleLogin() : handleRegister();
   }
-
-  const formVariants = {
-    hidden: { opacity: 0, x: isLogin ? 50 : -50 },
-    visible: { opacity: 1, x: 0, transition: { duration: 0.5 } },
-  };
 
   return (
     <div className="min-h-screen flex flex-col lg:flex-row items-center lg:items-stretch justify-center lg:justify-between px-4 sm:px-6 md:px-10 lg:px-24 bg-[linear-gradient(to_right,#c026d3_50%,#ffffff_50%)] text-gray-800 overflow-hidden relative">
@@ -205,10 +217,11 @@ export default function Auth() {
 
           {!isLogin && (
             <select name="role" onChange={handleChange}
+              value={formData.role}
               className="w-full p-3 border rounded-2xl">
-              <option value="USER">USER</option>
               <option value="ADMIN">ADMIN</option>
               <option value="PROPERTY_OWNER">PROPERTY_OWNER</option>
+              <option value="USER">USER</option>
             </select>
           )}
 
