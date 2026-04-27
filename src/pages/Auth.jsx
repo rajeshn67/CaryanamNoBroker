@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 
 export default function Auth() {
+  const OWNER_ID_BY_EMAIL_KEY = "ownerIdByEmail";
   const [isLogin, setIsLogin] = useState(true);
   const navigate = useNavigate();
 
@@ -143,6 +144,16 @@ export default function Auth() {
         localStorage.setItem("adminToken", token);
       } else if (role === "ROLE_PROPERTY_OWNER") {
         localStorage.setItem("ownerToken", token);
+        const ownerEmail = (decoded?.sub || formData.email || "").toLowerCase().trim();
+        if (ownerEmail) {
+          localStorage.setItem("ownerEmail", ownerEmail);
+          const rawMap = localStorage.getItem(OWNER_ID_BY_EMAIL_KEY);
+          const ownerIdMap = rawMap ? JSON.parse(rawMap) : {};
+          const knownOwnerId = Number(ownerIdMap?.[ownerEmail]);
+          if (Number.isFinite(knownOwnerId) && knownOwnerId > 0) {
+            localStorage.setItem("ownerId", String(knownOwnerId));
+          }
+        }
       } else {
         localStorage.setItem("userToken", token);
       }

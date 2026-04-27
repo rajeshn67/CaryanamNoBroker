@@ -33,6 +33,32 @@ const rootApi = axios.create({
   },
 });
 
+const resolveAuthTokenForPath = (path = "") => {
+  if (path.startsWith("/auth/")) return null;
+  if (path.startsWith("/owner/")) return localStorage.getItem("ownerToken");
+  if (path.startsWith("/admin/")) return localStorage.getItem("adminToken");
+  if (path.startsWith("/user/")) return localStorage.getItem("userToken");
+
+  const adminToken = localStorage.getItem("adminToken");
+  const ownerToken = localStorage.getItem("ownerToken");
+  const userToken = localStorage.getItem("userToken");
+  return adminToken || ownerToken || userToken || null;
+};
+
+const attachAuthHeader = (config) => {
+  const path = config?.url || "";
+  const token = resolveAuthTokenForPath(path);
+  if (token) {
+    config.headers = config.headers || {};
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+};
+
+api.interceptors.request.use(attachAuthHeader);
+uploadApi.interceptors.request.use(attachAuthHeader);
+rootApi.interceptors.request.use(attachAuthHeader);
+
 const normalizeApiResponse = (response) => {
   const apiStatus = response?.data?.status;
   if (typeof apiStatus === "number" && apiStatus >= 400) {
@@ -87,17 +113,28 @@ export const adminApi = {
 
   // Upload property images
   uploadPropertyImages: (propertyId, formData) => {
-    return uploadApi.post(`/admin/uploadPropertyImagesByPropertyId/${propertyId}`, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
+    return uploadApi.post(`/admin/uploadPropertyImagesByPropertyId/${propertyId}`, formData);
   },
 
   // Buy premium
   buyPremium: (ownerId) => {
     return api.post(`/admin/buyPremiumByOwner/${ownerId}`);
   },
+};
+
+// Owner API calls (aligned with backend /api/owner controller)
+export const ownerApi = {
+  addProperty: (ownerId, propertyData) =>
+    api.post(`/owner/addPropertyByOwner/${ownerId}`, propertyData),
+  getOwnerProperties: (ownerId) =>
+    api.get(`/owner/${ownerId}/properties`),
+  getPropertyById: (id) => api.get(`/owner/getPropertyById/${id}`),
+  updateProperty: (id, propertyData) =>
+    api.put(`/owner/updatePropertyById/${id}`, propertyData),
+  deleteProperty: (id) => api.delete(`/owner/deletePropertyById/${id}`),
+  uploadPropertyImages: (propertyId, formData) =>
+    uploadApi.post(`/owner/uploadPropertyImagesByPropertyId/${propertyId}`, formData),
+  buyPremium: (ownerId) => api.post(`/owner/buyPremiumByOwner/${ownerId}`),
 };
 
 // Public API calls

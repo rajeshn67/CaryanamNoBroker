@@ -5,6 +5,18 @@ import Filter from "../components/Filter";
 import PropertyList from "../components/PropertyList";
 import { propertyApi, STATIC_BASE_URL } from "../services/api";
 
+const PENDING_PROPERTY_IDS_KEY = "pendingApprovalPropertyIds";
+
+const getPendingApprovalPropertyIdSet = () => {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(PENDING_PROPERTY_IDS_KEY) || "[]");
+    if (!Array.isArray(parsed)) return new Set();
+    return new Set(parsed.map((id) => Number(id)).filter((id) => Number.isFinite(id)));
+  } catch {
+    return new Set();
+  }
+};
+
 const BrowseProperties = () => {
 
   const [appliedFilters, setAppliedFilters] = useState({
@@ -67,7 +79,9 @@ const BrowseProperties = () => {
     try {
       const res = await propertyApi.getAll();
       const list = Array.isArray(res?.data?.data) ? res.data.data : [];
-      setProperties(list.map(mapBackendToUi));
+      const pendingApprovalIds = getPendingApprovalPropertyIdSet();
+      const visibleList = list.filter((dto) => !pendingApprovalIds.has(Number(dto?.id)));
+      setProperties(visibleList.map(mapBackendToUi));
     } catch (e) {
       setError(e?.message || "Failed to load properties");
       setProperties([]);
@@ -101,7 +115,9 @@ const BrowseProperties = () => {
 
       const res = await propertyApi.filter(payload);
       const list = Array.isArray(res?.data?.data) ? res.data.data : [];
-      setProperties(list.map(mapBackendToUi));
+      const pendingApprovalIds = getPendingApprovalPropertyIdSet();
+      const visibleList = list.filter((dto) => !pendingApprovalIds.has(Number(dto?.id)));
+      setProperties(visibleList.map(mapBackendToUi));
     } catch (e) {
       setError(e?.message || "Failed to filter properties");
     } finally {

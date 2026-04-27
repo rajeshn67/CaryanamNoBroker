@@ -4,6 +4,51 @@ import { adminModerationApi } from "../services/api";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
+const OWNER_PENDING_APPROVAL_KEY = "ownerPendingApprovalProperties";
+const PENDING_PROPERTY_IDS_KEY = "pendingApprovalPropertyIds";
+const PROPERTY_APPROVAL_STATES_KEY = "propertyApprovalStates";
+
+const updateOwnerPendingPropertiesAfterDecision = ({ ownerId, approved }) => {
+  const ownerNumericId = Number(ownerId);
+  if (!Number.isFinite(ownerNumericId) || ownerNumericId <= 0) return;
+
+  let ownerMap = {};
+  let pendingIds = [];
+  let approvalStateMap = {};
+  try {
+    ownerMap = JSON.parse(localStorage.getItem(OWNER_PENDING_APPROVAL_KEY) || "{}");
+  } catch {
+    ownerMap = {};
+  }
+  try {
+    pendingIds = JSON.parse(localStorage.getItem(PENDING_PROPERTY_IDS_KEY) || "[]");
+  } catch {
+    pendingIds = [];
+  }
+  try {
+    approvalStateMap = JSON.parse(localStorage.getItem(PROPERTY_APPROVAL_STATES_KEY) || "{}");
+  } catch {
+    approvalStateMap = {};
+  }
+
+  const ownerKey = String(ownerNumericId);
+  const ownerPropertyIds = Array.isArray(ownerMap[ownerKey]) ? ownerMap[ownerKey] : [];
+  const ownerIdSet = new Set(ownerPropertyIds.map((id) => Number(id)));
+  const nextPendingIds = approved
+    ? pendingIds.filter((id) => !ownerIdSet.has(Number(id)))
+    : pendingIds;
+
+  ownerPropertyIds.forEach((id) => {
+    const key = String(Number(id));
+    approvalStateMap[key] = approved ? "APPROVED" : "REJECTED";
+  });
+
+  delete ownerMap[ownerKey];
+  localStorage.setItem(OWNER_PENDING_APPROVAL_KEY, JSON.stringify(ownerMap));
+  localStorage.setItem(PENDING_PROPERTY_IDS_KEY, JSON.stringify(nextPendingIds));
+  localStorage.setItem(PROPERTY_APPROVAL_STATES_KEY, JSON.stringify(approvalStateMap));
+};
+
 const AdminDashboardMain = () => {
   const navigate = useNavigate();
   const [pendingUsers, setPendingUsers] = useState([]);
@@ -48,8 +93,13 @@ const AdminDashboardMain = () => {
         if (approve) await adminModerationApi.approveUserPremium(id);
         else await adminModerationApi.rejectUserPremium(id);
       } else {
-        if (approve) await adminModerationApi.approveOwnerPremium(id);
-        else await adminModerationApi.rejectOwnerPremium(id);
+        if (approve) {
+          await adminModerationApi.approveOwnerPremium(id);
+          updateOwnerPendingPropertiesAfterDecision({ ownerId: id, approved: true });
+        } else {
+          await adminModerationApi.rejectOwnerPremium(id);
+          updateOwnerPendingPropertiesAfterDecision({ ownerId: id, approved: false });
+        }
       }
       toast.success(`Request ${approve ? "approved" : "rejected"} successfully`);
       await loadPendingData();
