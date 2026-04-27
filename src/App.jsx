@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import BrowseProperties from "./pages/BrowseProperties";
 import PropertyDetails from "./pages/PropertyDetails";
 import AdminDashboard from "./pages/AdminDashboard";
+import AdminDashboardMain from "./pages/AdminDashboardMain";
 import InterestedUsers from "./pages/InterestedUsers";
 import Auth from "./pages/Auth";
 import ProtectedRoute from "./routes/ProtectedRoute";
@@ -41,7 +42,7 @@ function App() {
           path="/admin"
           element={
             <ProtectedRoute role="ROLE_ADMIN">
-              <AdminDashboard />
+              <AdminDashboardMain />
             </ProtectedRoute>
           }
         />
@@ -54,7 +55,7 @@ function App() {
           path="/owner"
           element={
             <ProtectedRoute role="ROLE_PROPERTY_OWNER">
-              <div>Owner Dashboard</div>
+              <AdminDashboard />
             </ProtectedRoute>
           }
         />

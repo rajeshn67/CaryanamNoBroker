@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { adminApi, STATIC_BASE_URL } from "../services/api";
+import { adminApi } from "../services/api";
 import imageCompression from "browser-image-compression";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -44,16 +44,21 @@ const PropertyThumbnail = ({ imageName, title }) => {
   );
 };
 
-const AdminDashboard = () => {
+const PropertyOwnerDashboard = () => {
   const [formData, setFormData] = useState({
     propertyTitle: "",
     price: "",
     propertyType: "",
     location: "",
+    city: "",
+    address: "",
+    state: "",
+    pincode: "",
     mobileNumber: "",
     description: "",
     bhkType: "",
     furnishing: "",
+    carpetArea: "",
   });
 
   const [images, setImages] = useState([]);
@@ -65,15 +70,15 @@ const AdminDashboard = () => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showPreviewModal, setShowPreviewModal] = useState(false);
   const latestPreviewsRef = useRef([]);
-  const adminId = 1; // Admin ID for rajeshnarwade67@gmail.com
+  const ownerId = 1; // Property owner ID (replace with logged-in owner id when available)
   
 
   const navigate = useNavigate();
 
 const handleLogout = () => {
-  localStorage.removeItem("adminToken");
-  localStorage.setItem("adminLogout", Date.now());
-  const channel = new BroadcastChannel("admin-auth");
+  localStorage.removeItem("ownerToken");
+  localStorage.setItem("ownerLogout", Date.now());
+  const channel = new BroadcastChannel("owner-auth");
   channel.postMessage("logout");
   navigate("/login");
 };
@@ -116,21 +121,46 @@ const handleLogout = () => {
     setImagePreviews([]);
   };
 
+  const parseDoctypeImages = (value) => {
+    if (!value) return [];
+    if (Array.isArray(value)) return value;
+    if (typeof value !== "string") return [];
+    const trimmed = value.trim();
+    if (!trimmed) return [];
+    if (trimmed.startsWith("[") && trimmed.endsWith("]")) {
+      return trimmed
+        .slice(1, -1)
+        .split(",")
+        .map((item) => item.trim())
+        .filter(Boolean);
+    }
+    return trimmed
+      .split(",")
+      .map((item) => item.trim())
+      .filter(Boolean);
+  };
+
   const fetchProperties = async () => {
     try {
       setLoading(true);
-      const response = await adminApi.getAllProperties();
-      if (response.data && response.data.data) {
-        const baseProperties = response.data.data;
+      const response = await adminApi.getOwnerProperties(ownerId);
+      if (response?.data) {
+        const baseProperties = Array.isArray(response.data.properties)
+          ? response.data.properties
+          : [];
 
         const propertiesWithImages = await Promise.all(
           baseProperties.map(async (property) => {
             try {
               const detailsResponse = await adminApi.getPropertyById(property.id);
               const detailData = detailsResponse?.data?.data;
+              const images = [
+                detailData?.coverImage,
+                ...parseDoctypeImages(detailData?.doctypeImages),
+              ].filter(Boolean);
               return {
                 ...property,
-                images: Array.isArray(detailData?.images) ? detailData.images : [],
+                images,
               };
             } catch (error) {
               console.error(`Error fetching images for property ${property.id}:`, error);
@@ -245,8 +275,9 @@ const handleLogout = () => {
   const validateBeforeUpload = () => {
     // Validate form
     if (!formData.propertyTitle || !formData.price || !formData.propertyType ||
-        !formData.location || !formData.mobileNumber || !formData.description ||
-        !formData.bhkType || !formData.furnishing) {
+        !formData.location || !formData.city || !formData.address ||
+        !formData.state || !formData.pincode || !formData.mobileNumber ||
+        !formData.description || !formData.bhkType || !formData.furnishing) {
       toast.error("All fields are required");
       return false;
     }
@@ -254,6 +285,10 @@ const handleLogout = () => {
     // Validate mobile number
     if (formData.mobileNumber.length !== 10 || !/^[6-9]/.test(formData.mobileNumber)) {
       toast.error("Invalid mobile number");
+      return false;
+    }
+    if (!/^[1-9][0-9]{5}$/.test(formData.pincode)) {
+      toast.error("Invalid pincode");
       return false;
     }
 
@@ -289,14 +324,19 @@ const handleLogout = () => {
         price: parseFloat(formData.price),
         propertyType: formData.propertyType,
         location: formData.location,
+        city: formData.city,
+        address: formData.address,
+        state: formData.state,
+        pincode: formData.pincode,
         mobileNumber: formData.mobileNumber,
         description: formData.description,
         bhkType: formData.bhkType,
         furnishing: formData.furnishing,
+        carpetArea: formData.carpetArea,
       };
 
       // Add property
-      const propertyResponse = await adminApi.addProperty(adminId, propertyData);
+      const propertyResponse = await adminApi.addProperty(ownerId, propertyData);
       
       if (propertyResponse.data && propertyResponse.data.data) {
         const propertyId = propertyResponse.data.data.id;
@@ -329,10 +369,15 @@ const handleLogout = () => {
           price: "",
           propertyType: "",
           location: "",
+          city: "",
+          address: "",
+          state: "",
+          pincode: "",
           mobileNumber: "",
           description: "",
           bhkType: "",
           furnishing: "",
+          carpetArea: "",
         });
         clearSelectedImages();
 
@@ -379,10 +424,15 @@ const handleLogout = () => {
       price: property.price || "",
       propertyType: property.propertyType || "",
       location: property.location || "",
+      city: property.city || "",
+      address: property.address || "",
+      state: property.state || "",
+      pincode: property.pincode || "",
       mobileNumber: property.mobileNumber || "",
       description: property.description || "",
       bhkType: property.bhkType || "",
       furnishing: property.furnishing || "",
+      carpetArea: property.carpetArea || "",
     });
     setShowEditModal(true);
   };
@@ -395,8 +445,9 @@ const handleLogout = () => {
 
     // Validate form
     if (!formData.propertyTitle || !formData.price || !formData.propertyType ||
-        !formData.location || !formData.mobileNumber || !formData.description ||
-        !formData.bhkType || !formData.furnishing) {
+        !formData.location || !formData.city || !formData.address ||
+        !formData.state || !formData.pincode || !formData.mobileNumber ||
+        !formData.description || !formData.bhkType || !formData.furnishing) {
       toast.error("All fields are required");
       return;
     }
@@ -404,6 +455,10 @@ const handleLogout = () => {
     // Validate mobile number
     if (formData.mobileNumber.length !== 10 || !/^[6-9]/.test(formData.mobileNumber)) {
       toast.error("Invalid mobile number");
+      return;
+    }
+    if (!/^[1-9][0-9]{5}$/.test(formData.pincode)) {
+      toast.error("Invalid pincode");
       return;
     }
 
@@ -415,10 +470,15 @@ const handleLogout = () => {
         price: parseFloat(formData.price),
         propertyType: formData.propertyType,
         location: formData.location,
+        city: formData.city,
+        address: formData.address,
+        state: formData.state,
+        pincode: formData.pincode,
         mobileNumber: formData.mobileNumber,
         description: formData.description,
         bhkType: formData.bhkType,
         furnishing: formData.furnishing,
+        carpetArea: formData.carpetArea,
       };
 
       const response = await adminApi.updateProperty(editingProperty.id, propertyData);
@@ -444,10 +504,15 @@ const handleLogout = () => {
       price: "",
       propertyType: "",
       location: "",
+      city: "",
+      address: "",
+      state: "",
+      pincode: "",
       mobileNumber: "",
       description: "",
       bhkType: "",
       furnishing: "",
+      carpetArea: "",
     });
   };
 
@@ -476,10 +541,10 @@ const handleLogout = () => {
 
         <div className="flex items-center gap-4 text-sm">
           <span className="text-gray-700 font-medium">
-            Admin User <span className="text-blue-600">(Admin)</span>
+            Property Owner <span className="text-blue-600">(Property Owner)</span>
           </span>
           <button
-            onClick={() => navigate("/admin/interested-users")}
+            onClick={() => navigate("/interested-users")}
             className="relative text-gray-700 hover:text-blue-500"
             title="Interested Users"
           >
@@ -511,7 +576,7 @@ const handleLogout = () => {
       <div className="max-w-7xl mx-auto px-6 py-8">
         <div>
           <h1 className="text-3xl font-bold text-gray-800">
-            Admin Dashboard
+            Property Owner Dashboard
           </h1>
           <p className="text-gray-500 mt-1">
             Manage property listings
@@ -584,13 +649,13 @@ const handleLogout = () => {
                 >
                   <option value="">Select property type</option>
                   <option value="APARTMENT">Apartment</option>
-                  <option value="VILLA">Villa</option>
-                  <option value="HOME">House</option>
+                  <option value="INDEPENDENT_HOUSE">Villa</option>
+                  <option value="STANDALONE_BUILDING">House</option>
                 </select>
               </div>
             </div>
 
-            {/* Second Row: Location, Mobile Number */}
+            {/* Second Row: Location, City */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -603,6 +668,72 @@ const handleLogout = () => {
                   value={formData.location}
                   onChange={(e) =>
                     setFormData({ ...formData, location: e.target.value })
+                  }
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  City <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="Enter city"
+                  value={formData.city}
+                  onChange={(e) =>
+                    setFormData({ ...formData, city: e.target.value })
+                  }
+                />
+              </div>
+            </div>
+
+            {/* Third Row: Address, State */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Address <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="Enter address"
+                  value={formData.address}
+                  onChange={(e) =>
+                    setFormData({ ...formData, address: e.target.value })
+                  }
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  State <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="Enter state"
+                  value={formData.state}
+                  onChange={(e) =>
+                    setFormData({ ...formData, state: e.target.value })
+                  }
+                />
+              </div>
+            </div>
+
+            {/* Fourth Row: Pincode, Mobile Number */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Pincode <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="Enter pincode"
+                  value={formData.pincode}
+                  onChange={(e) =>
+                    setFormData({ ...formData, pincode: e.target.value })
                   }
                 />
               </div>
@@ -623,7 +754,7 @@ const handleLogout = () => {
               </div>
             </div>
 
-            {/* Third Row: Description */}
+            {/* Fifth Row: Description */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Description <span className="text-red-500">*</span>
@@ -639,8 +770,8 @@ const handleLogout = () => {
               />
             </div>
 
-            {/* Fourth Row: BHK Type and Furnishing */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Sixth Row: BHK Type, Furnishing and Carpet Area */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   BHK Type <span className="text-red-500">*</span>
@@ -677,6 +808,21 @@ const handleLogout = () => {
                   <option value="SEMI_FURNISHED">Semi Furnished</option>
                   <option value="UNFURNISHED">Unfurnished</option>
                 </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Carpet Area
+                </label>
+                <input
+                  type="text"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="Enter carpet area"
+                  value={formData.carpetArea}
+                  onChange={(e) =>
+                    setFormData({ ...formData, carpetArea: e.target.value })
+                  }
+                />
               </div>
             </div>
 
@@ -818,13 +964,9 @@ const handleLogout = () => {
                 >
                   <div className="h-48 bg-gray-200">
                     {property.images && property.images.length > 0 ? (
-                      <img
-                        src={`${STATIC_BASE_URL}/${String(property.images[0]).replace(/^\/+/, "")}`}
-                        alt={property.title}
-                        className="w-full h-full object-cover"
-                        onError={(e) => {
-                          e.currentTarget.style.display = "none";
-                        }}
+                      <PropertyThumbnail
+                        imageName={property.images[0]}
+                        title={property.title}
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center bg-gray-300">
@@ -1178,8 +1320,8 @@ const handleLogout = () => {
                 >
                   <option value="">Select property type</option>
                   <option value="APARTMENT">Apartment</option>
-                  <option value="VILLA">Villa</option>
-                  <option value="HOME">House</option>
+                  <option value="INDEPENDENT_HOUSE">Villa</option>
+                  <option value="STANDALONE_BUILDING">House</option>
                 </select>
               </div>
 
@@ -1193,6 +1335,62 @@ const handleLogout = () => {
                   value={formData.location}
                   onChange={(e) =>
                     setFormData({ ...formData, location: e.target.value })
+                  }
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  City <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  value={formData.city}
+                  onChange={(e) =>
+                    setFormData({ ...formData, city: e.target.value })
+                  }
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Address <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  value={formData.address}
+                  onChange={(e) =>
+                    setFormData({ ...formData, address: e.target.value })
+                  }
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  State <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  value={formData.state}
+                  onChange={(e) =>
+                    setFormData({ ...formData, state: e.target.value })
+                  }
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Pincode <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  value={formData.pincode}
+                  onChange={(e) =>
+                    setFormData({ ...formData, pincode: e.target.value })
                   }
                 />
               </div>
@@ -1225,7 +1423,7 @@ const handleLogout = () => {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-3 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     BHK Type <span className="text-red-500">*</span>
@@ -1263,6 +1461,20 @@ const handleLogout = () => {
                     <option value="UNFURNISHED">Unfurnished</option>
                   </select>
                 </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Carpet Area
+                  </label>
+                  <input
+                    type="text"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    value={formData.carpetArea}
+                    onChange={(e) =>
+                      setFormData({ ...formData, carpetArea: e.target.value })
+                    }
+                  />
+                </div>
               </div>
 
               <div className="flex gap-3 pt-4">
@@ -1291,4 +1503,4 @@ const handleLogout = () => {
   );
 };
 
-export default AdminDashboard;
+export default PropertyOwnerDashboard;

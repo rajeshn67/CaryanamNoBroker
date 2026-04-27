@@ -22,8 +22,8 @@ const BrowseProperties = () => {
   const mapUiTypeToBackend = (uiType) => {
     if (!uiType || uiType === "All") return null;
     if (uiType === "Apartment") return "APARTMENT";
-    if (uiType === "Villa") return "VILLA";
-    if (uiType === "House") return "HOME";
+    if (uiType === "Villa") return "INDEPENDENT_HOUSE";
+    if (uiType === "House") return "STANDALONE_BUILDING";
     return null;
   };
 
@@ -40,11 +40,11 @@ const BrowseProperties = () => {
     const details = [bhk, area].filter(Boolean).join(" · ");
 
     const type =
-      dto?.propertyType === "HOME"
+      dto?.propertyType === "STANDALONE_BUILDING"
         ? "House"
         : dto?.propertyType === "APARTMENT"
           ? "Apartment"
-          : dto?.propertyType === "VILLA"
+          : dto?.propertyType === "INDEPENDENT_HOUSE"
             ? "Villa"
             : "All";
 
