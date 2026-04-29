@@ -32,9 +32,10 @@ const PropertyCard = ({ property }) => {
             transition={{ duration: 0.7, ease: "easeOut" }}
             src={property.image}
             className="h-60 w-full object-cover"
-            onError={(e) => {
-              e.currentTarget.src = "https://via.placeholder.com/400x300?text=No+Image";
-            }}
+           onError={(e) => {
+  e.currentTarget.onerror = null;
+  e.currentTarget.src = "/no-image.png";
+}}
             alt={property.title}
           />
 

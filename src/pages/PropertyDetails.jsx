@@ -1,12 +1,27 @@
+
+
 import { useEffect, useMemo, useState, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import { motion, AnimatePresence } from "framer-motion";
 import { propertyApi, STATIC_BASE_URL } from "../services/api";
+
 import {
-  MapPin, Phone, ArrowLeft, Home,
-  Maximize, Layout, Sofa, MessageCircle,
-  ChevronLeft, ChevronRight, Share2, ShieldCheck
+  MapPin,
+  Phone,
+  ArrowLeft,
+  Home,
+  Maximize,
+  Layout,
+  Sofa,
+  MessageCircle,
+  ChevronLeft,
+  ChevronRight,
+  ShieldCheck,
+  BedDouble,
+  Bath,
+  Share2,
+  Heart,
 } from "lucide-react";
 
 const PropertyDetails = () => {
@@ -20,209 +35,336 @@ const PropertyDetails = () => {
 
   useEffect(() => {
     let cancelled = false;
+
     async function load() {
       if (!id) return;
+
       setLoading(true);
+
       try {
         const res = await propertyApi.getById(id);
         const dto = res?.data?.data ?? null;
+
         if (!cancelled) setProperty(dto);
       } catch (e) {
-        if (!cancelled) setError(e?.response?.data?.message || "Failed to load property");
+        if (!cancelled)
+          setError(
+            e?.response?.data?.message || "Failed to load property"
+          );
       } finally {
         if (!cancelled) setLoading(false);
       }
     }
+
     load();
+
     return () => (cancelled = true);
   }, [id]);
 
   const imageUrls = useMemo(() => {
-    const images = Array.isArray(property?.images) ? property.images : [];
-    return images.map((img) => `${STATIC_BASE_URL}/${img}`);
+    if (!property) return [];
+
+    if (Array.isArray(property.images) && property.images.length > 0) {
+      return property.images.map(
+        (img) => `${STATIC_BASE_URL}/${img}`
+      );
+    }
+
+    if (property.doctypeImages) {
+      return property.doctypeImages
+        .replace(/^\[|\]$/g, "")
+        .split(",")
+        .map((img) => `${STATIC_BASE_URL}/${img.trim()}`);
+    }
+
+    return [];
   }, [property]);
 
   const nextSlide = useCallback(() => {
     if (imageUrls.length === 0) return;
-    setCurrentIndex((prev) => (prev === imageUrls.length - 1 ? 0 : prev + 1));
+
+    setCurrentIndex((prev) =>
+      prev === imageUrls.length - 1 ? 0 : prev + 1
+    );
   }, [imageUrls.length]);
 
   const prevSlide = () => {
     if (imageUrls.length === 0) return;
-    setCurrentIndex((prev) => (prev === 0 ? imageUrls.length - 1 : prev - 1));
+
+    setCurrentIndex((prev) =>
+      prev === 0 ? imageUrls.length - 1 : prev - 1
+    );
   };
 
-  // Auto-play interval set to 4 seconds for a slower pace
   useEffect(() => {
     if (imageUrls.length <= 1) return;
+
     const interval = setInterval(nextSlide, 4000);
+
     return () => clearInterval(interval);
   }, [nextSlide, imageUrls.length]);
 
   return (
-    <div className="bg-slate-50 min-h-screen pb-16">
+    <div className="min-h-screen bg-[#f4f7fb] font-inter">
       <Navbar />
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
-        {/* TOP BAR */}
-        <div className="flex justify-between items-center mb-6">
-          <button
-            onClick={() => navigate(-1)}
-            className="flex items-center gap-2 text-sm sm:text-base font-medium text-slate-600 hover:text-blue-600 transition-colors"
-          >
-            <ArrowLeft size={18} />
-            Back to list
-          </button>
-        </div>
+      <main className="max-w-7xl mx-auto px-4 md:px-6 py-8">
+        {/* BACK BUTTON */}
+        <button
+          onClick={() => navigate(-1)}
+          className="flex items-center gap-2 text-slate-600 hover:text-[#0f172a] font-semibold mb-6 transition"
+        >
+          <ArrowLeft size={18} />
+          Back to Properties
+        </button>
 
         {loading ? (
-          <div className="h-96 flex items-center justify-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          <div className="h-[70vh] flex items-center justify-center">
+            <div className="w-10 h-10 rounded-full border-4 border-slate-200 border-t-[#0f172a] animate-spin"></div>
           </div>
         ) : error ? (
-          <div className="bg-red-50 text-red-500 p-6 rounded-2xl text-center border border-red-100">{error}</div>
+          <div className="bg-red-50 border border-red-200 rounded-3xl p-6 text-red-500">
+            {error}
+          </div>
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-            
-            {/* LEFT CONTENT */}
-            <div className="lg:col-span-8 space-y-8">
-              
-              {/* IMAGE SLIDER SECTION */}
-<div className="bg-white rounded-[2rem] shadow-sm border border-slate-100 overflow-hidden">
-  {/* The Image Container - Removed p-3 here */}
-  <div className="relative aspect-video bg-slate-100 shadow-inner overflow-hidden">
-    <AnimatePresence mode="wait">
-      <motion.img
-        key={currentIndex}
-        src={imageUrls[currentIndex] || "https://via.placeholder.com/800x400"}
-        className="w-full h-full object-cover"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        transition={{ duration: 1.5, ease: "easeInOut" }} // Cinematic slow fade
-      />
-    </AnimatePresence>
+          <div className="grid grid-cols-1 xl:grid-cols-12 gap-8">
+            {/* LEFT SIDE */}
+            <div className="xl:col-span-8 space-y-8">
+              {/* HERO IMAGE */}
+              <div className="bg-white rounded-[32px] overflow-hidden shadow-xl border border-slate-200">
+                <div className="relative h-[300px] md:h-[550px] overflow-hidden">
+                  <AnimatePresence mode="wait">
+                    <motion.img
+                      key={currentIndex}
+                      src={
+                        imageUrls[currentIndex] ||
+                        "https://via.placeholder.com/1200x700"
+                      }
+                      className="w-full h-full object-cover"
+                      initial={{ opacity: 0, scale: 1.05 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.8 }}
+                    />
+                  </AnimatePresence>
 
-    {/* Navigation Arrows */}
-    {imageUrls.length > 1 && (
-      <>
-        <button 
-          onClick={prevSlide} 
-          className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/80 backdrop-blur-md p-2 rounded-full shadow-lg hover:bg-white transition-all z-10"
-        >
-          <ChevronLeft size={20} className="text-slate-800" />
-        </button>
-        <button 
-          onClick={nextSlide} 
-          className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/80 backdrop-blur-md p-2 rounded-full shadow-lg hover:bg-white transition-all z-10"
-        >
-          <ChevronRight size={20} className="text-slate-800" />
-        </button>
-      </>
-    )}
-  </div>
+               
 
-  {/* THUMBNAIL GALLERY - Placed inside the same white box with side padding */}
-  <div className="px-6 py-4 flex gap-3 overflow-x-auto no-scrollbar border-t border-slate-50 bg-white">
-    {imageUrls.map((img, i) => (
+                  {imageUrls.length > 1 && (
+  <>
+    <button
+      onClick={prevSlide}
+      className="absolute left-5 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white p-3 rounded-full shadow-xl z-20 transition"
+    >
+      <ChevronLeft className="text-slate-800" />
+    </button>
+
+    <button
+      onClick={nextSlide}
+      className="absolute right-5 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white p-3 rounded-full shadow-xl z-20 transition"
+    >
+      <ChevronRight className="text-slate-800" />
+    </button>
+  </>
+)}
+{imageUrls.length > 1 && (
+  <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-3 z-20">
+    {imageUrls.map((_, index) => (
       <button
-        key={i}
-        onClick={() => setCurrentIndex(i)}
-        className={`relative shrink-0 w-20 h-14 md:w-28 md:h-20 rounded-xl overflow-hidden border-2 transition-all duration-300 ${
-          i === currentIndex 
-            ? "border-blue-600 ring-2 ring-blue-100 scale-105" 
-            : "border-transparent opacity-50 hover:opacity-100"
+        key={index}
+        onClick={() => setCurrentIndex(index)}
+        className={`transition-all duration-300 rounded-full ${
+          currentIndex === index
+            ? "w-8 h-3 bg-white"
+            : "w-3 h-3 bg-white/50 hover:bg-white/80"
         }`}
-      >
-        <img src={img} className="w-full h-full object-cover" alt={`Thumb ${i}`} />
-      </button>
+      />
     ))}
   </div>
-</div>
+)}
 
-              {/* DESCRIPTION & FEATURES */}
-              <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-slate-100">
-                <h2 className="text-xl font-bold text-slate-900 mb-4">About this Property</h2>
-                <p className="text-slate-600 leading-relaxed text-base md:text-lg">
-                  {property?.description || "No description provided."}
-                </p>
+                  {/* PROPERTY TITLE */}
+                  <div className="absolute bottom-6 left-6 text-white z-10">
+                    <h1 className="text-3xl md:text-5xl font-black font-manrope tracking-tight">
+                      {property?.title}
+                    </h1>
 
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-10">
-                  <Feature
-                    icon={<Home size={20} className="text-blue-600" />}
-                    label="Type"
+                    <div className="flex items-center gap-2 text-white/90">
+                      <MapPin size={18} />
+                      <span>{property?.location}</span>
+                    </div>
+                  </div>
+                </div>
+
+                
+              </div>
+
+              {/* PROPERTY DETAILS */}
+              <div className="bg-white rounded-[32px] p-8 shadow-xl border border-slate-200">
+                <div className="flex items-center justify-between flex-wrap gap-4 mb-8">
+                  <div>
+                    <h2 className="font-blactext-2xl k text-slate-900">
+                      Property Overview
+                    </h2>
+
+                    <p className="text-slate-500 mt-1">
+                      Premium property information
+                    </p>
+                  </div>
+
+                  <div className="bg-[#0f172a] text-white px-6 py-4 rounded-2xl shadow-lg">
+                    <p className="text-xs uppercase tracking-widest text-slate-300">
+                      Price
+                    </p>
+
+                    <p className="text-3xl font-black font-poppins tracking-tight">
+                      ₹
+                      {Number(property?.price || 0).toLocaleString()}
+                    </p>
+                  </div>
+                </div>
+
+                {/* FEATURES */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
+                  <FeatureCard
+                    icon={<Home size={22} />}
+                    title="Property Type"
                     value={property?.propertyType}
-                    bgColor="bg-blue-50 border-blue-200"
                   />
-                  <Feature
-                    icon={<Layout size={20} className="text-indigo-600" />}
-                    label="BHK"
+
+                  <FeatureCard
+                    icon={<Layout size={22} />}
+                    title="BHK"
                     value={property?.bhkType}
-                    bgColor="bg-violet-50 border-violet-200"
                   />
-                  <Feature
-                    icon={<Sofa size={20} className="text-emerald-600" />}
-                    label="Furnish"
+
+                  <FeatureCard
+                    icon={<Sofa size={22} />}
+                    title="Furnishing"
                     value={property?.furnishing}
-                    bgColor="bg-emerald-50 border-emerald-200"
                   />
-                  <Feature
-                    icon={<Maximize size={20} className="text-slate-600" />}
-                    label="Area"
+
+                  <FeatureCard
+                    icon={<Maximize size={22} />}
+                    title="Carpet Area"
                     value={property?.carpetArea}
-                    bgColor="bg-slate-100 border-slate-200"
                   />
+                </div>
+
+                {/* DESCRIPTION */}
+                <div className="mt-10">
+                  <h3 className="text-2xl font-black text-slate-900 mb-4">
+                    About Property
+                  </h3>
+
+                  <p className="text-slate-600 leading-8 text-[16px]">
+                    {property?.description ||
+                      "No description available."}
+                  </p>
                 </div>
               </div>
             </div>
 
-            {/* RIGHT SIDEBAR */}
-            <div className="lg:col-span-4 lg:sticky lg:top-8 space-y-6">
-              <div className="bg-white rounded-[2.5rem] p-8 shadow-xl shadow-slate-200/50 border border-slate-500">
-                <div className="mb-6">
-                  <h1 className="text-2xl md:text-3xl font-black text-slate-900 leading-tight mb-2">{property?.title}</h1>
-                  <div className="flex items-center gap-2 text-slate-500 text-sm">
-                    <MapPin size={16} className="text-blue-600 shrink-0" />
-                    <span>{property?.location}</span>
+            {/* RIGHT SIDE */}
+            <div className="xl:col-span-4">
+              <div className="sticky top-6 space-y-6">
+                {/* CONTACT CARD */}
+                <div className="bg-[#0f172a] text-white rounded-[32px] p-8 shadow-2xl overflow-hidden relative">
+                  {/* GLOW EFFECT */}
+                  <div className="absolute -top-24 -right-24 w-60 h-60 bg-blue-500/20 rounded-full blur-3xl"></div>
+
+                  <div className="relative z-10">
+                    <div className="flex items-center gap-4 mb-8">
+                      <div className="w-16 h-16 rounded-full bg-white text-[#0f172a] flex items-center justify-center font-black text-2xl">
+                        {property?.ownerName?.charAt(0) || "O"}
+                      </div>
+
+                      <div>
+                        <h3 className="text-xl font-bold font-poppins">
+                          {property?.ownerName || "Owner"}
+                        </h3>
+
+                        <p className="flex items-center gap-1 text-sm text-emerald-300">
+                          <ShieldCheck size={16} />
+                          Verified Seller
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="bg-white/10 border border-white/10 rounded-3xl p-5 mb-6 backdrop-blur-xl">
+                      <p className="text-xs uppercase tracking-widest text-slate-300 mb-2">
+                        Direct Contact
+                      </p>
+
+                      <div className="flex items-center gap-3">
+                        <Phone size={20} />
+
+                        <span className="text-2xl font-bold">
+                          {property?.mobileNumber || "N/A"}
+                        </span>
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={() => navigate(`/chat/${property.id}`)}
+                      className="w-full bg-white text-[#0f172a] py-4 rounded-2xl font-black text-lg hover:scale-[1.02] transition-all duration-300 shadow-lg flex items-center justify-center gap-3"
+                    >
+                      <MessageCircle size={22} />
+                      Chat with Owner
+                    </button>
                   </div>
                 </div>
 
-                <div className="bg-slate-100 rounded-2xl p-6 border border-slate-100 mb-8">
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-1">Asking Price</p>
-                  <p className="text-4xl font-black text-red-600">₹{Number(property?.price || 0).toLocaleString()}</p>
-                </div>
+                {/* SAFETY CARD */}
+                <div className="bg-white rounded-[28px] p-6 border border-slate-200 shadow-lg">
+                  <h3 className="font-black text-slate-900 mb-3">
+                    Safety Tips
+                  </h3>
 
-                <div className="space-y-6">
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center"><Phone size={22} /></div>
-                    <div>
-                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider ">Direct Contact</p>
-                      <p className="text-xl font-bold text-slate-900">{property?.mobileNumber || "Not Available"}</p>
+                  <div className="space-y-4 text-sm text-slate-600">
+                    <div className="flex gap-3">
+                      <span>✅</span>
+                      <p>Visit property before making payment</p>
+                    </div>
+
+                    <div className="flex gap-3">
+                      <span>✅</span>
+                      <p>Verify owner identity and documents</p>
+                    </div>
+
+                    <div className="flex gap-3">
+                      <span>✅</span>
+                      <p>Never share OTP or banking details</p>
                     </div>
                   </div>
-                  <button
-                    onClick={() => navigate(`/chat/${property.id}`)}
-                    className="w-full flex items-center justify-center gap-3 bg-slate-900 text-white py-4 rounded-2xl font-bold text-lg hover:bg-slate-800 transition-all shadow-lg active:scale-[0.98]"
-                  >
-                    <MessageCircle size={22} /> Chat with Owner
-                  </button>
                 </div>
 
-                {/* OWNER DETAILS SECTION (Re-added for completeness) */}
-                <div className="mt-8 pt-6 border-t border-slate-100 flex items-center gap-3">
-                  <div className="w-10 h-10 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold">
-                    {property?.ownerName?.charAt(0) || "O"}
-                  </div>
-                  <div>
-                    <p className="text-sm font-bold text-slate-800 capitalize">{property?.ownerName || "Owner"}</p>
-                    <p className="text-[10px] text-slate-400 flex items-center gap-1"><ShieldCheck size={12} className="text-emerald-500" /> Verified Seller</p>
+                {/* QUICK INFO */}
+                <div className="bg-white rounded-[28px] p-6 border border-slate-200 shadow-lg">
+                  <h3 className="font-black text-slate-900 mb-5">
+                    Quick Info
+                  </h3>
+
+                  <div className="space-y-5">
+                    <QuickItem
+                      icon={<BedDouble size={25} />}
+                      label="BHK Type"
+                      value={property?.bhkType}
+                    />
+
+                    <QuickItem
+                      icon={<Sofa size={25} />}
+                      label="Furnishing"
+                      value={property?.furnishing}
+                    />
+
+                    <QuickItem
+                      icon={<Home size={25} />}
+                      label="Property Type"
+                      value={property?.propertyType}
+                    />
                   </div>
                 </div>
-              </div>
-
-              <div className="bg-amber-50 rounded-2xl p-4 border border-amber-100 flex gap-3">
-                <span className="text-xl">💡</span>
-                <p className="text-xs text-amber-800 leading-relaxed font-medium">Meet the owner in person and verify all documents before making any payments.</p>
               </div>
             </div>
           </div>
@@ -232,14 +374,30 @@ const PropertyDetails = () => {
   );
 };
 
-// Feature component helper
-const Feature = ({ icon, label, value, bgColor }) => (
-  <div className={`${bgColor} p-4 rounded-2xl border flex flex-col items-center justify-center text-center transition-all hover:scale-105 duration-300 group`}>
-    <div className="mb-2 p-2 bg-white rounded-lg shadow-sm group-hover:shadow-md transition-shadow">
+const FeatureCard = ({ icon, title, value }) => (
+  <div className="bg-[#f8fafc] border border-slate-200 rounded-3xl p-5 hover:-translate-y-1 transition-all duration-300">
+    <div className="w-12 h-12 rounded-2xl bg-[#0f172a] text-white flex items-center justify-center mb-4">
       {icon}
     </div>
-    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">{label}</p>
-    <p className="text-sm font-black text-slate-900 truncate w-full">{value || "N/A"}</p>
+
+    <p className="text-sm text-slate-500 mb-1">{title}</p>
+
+    <h3 className="text-[15px] font-extrabold text-slate-900 leading-5 break-words">
+  {value || "N/A"}
+</h3>
+  </div>
+);
+
+const QuickItem = ({ icon, label, value }) => (
+  <div className="flex items-center justify-between">
+    <div className="flex items-center gap-3 text-slate-700">
+      {icon}
+      <span>{label}</span>
+    </div>
+
+    <span className="font-bold text-slate-900">
+      {value || "N/A"}
+    </span>
   </div>
 );
 
