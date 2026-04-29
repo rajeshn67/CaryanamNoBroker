@@ -1,3 +1,6 @@
+
+
+
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import Navbar from "../components/Navbar";
@@ -9,16 +12,19 @@ const PENDING_PROPERTY_IDS_KEY = "pendingApprovalPropertyIds";
 
 const getPendingApprovalPropertyIdSet = () => {
   try {
-    const parsed = JSON.parse(localStorage.getItem(PENDING_PROPERTY_IDS_KEY) || "[]");
+    const parsed = JSON.parse(
+      localStorage.getItem(PENDING_PROPERTY_IDS_KEY) || "[]"
+    );
     if (!Array.isArray(parsed)) return new Set();
-    return new Set(parsed.map((id) => Number(id)).filter((id) => Number.isFinite(id)));
+    return new Set(
+      parsed.map((id) => Number(id)).filter((id) => Number.isFinite(id))
+    );
   } catch {
     return new Set();
   }
 };
 
 const BrowseProperties = () => {
-
   const [appliedFilters, setAppliedFilters] = useState({
     type: "All",
     minPrice: "",
@@ -26,7 +32,6 @@ const BrowseProperties = () => {
   });
 
   const [tempFilters, setTempFilters] = useState(appliedFilters);
-
   const [properties, setProperties] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -39,8 +44,23 @@ const BrowseProperties = () => {
     return null;
   };
 
+  // ✅ image parser
+  const parseImages = (imgString) => {
+    if (!imgString) return [];
+    try {
+      return imgString
+        .replace(/^\[|\]$/g, "")
+        .split(",")
+        .map((img) => img.trim())
+        .filter(Boolean);
+    } catch {
+      return [];
+    }
+  };
+
+  // ✅ UI mapper
   const mapBackendToUi = (dto) => {
-    const images = Array.isArray(dto?.images) ? dto.images : [];
+    const images = parseImages(dto?.doctypeImages);
     const imagePath = images[0];
 
     const imageUrl = imagePath
@@ -48,75 +68,81 @@ const BrowseProperties = () => {
       : "";
 
     const bhk = dto?.bhkType ? String(dto.bhkType).replace(/_/g, " ") : "";
-    const area = dto?.carpetArea ? String(dto.carpetArea) : "";
-    const details = [bhk, area].filter(Boolean).join(" · ");
-
-    const type =
-      dto?.propertyType === "STANDALONE_BUILDING"
-        ? "House"
-        : dto?.propertyType === "APARTMENT"
-          ? "Apartment"
-          : dto?.propertyType === "INDEPENDENT_HOUSE"
-            ? "Villa"
-            : "All";
+    const area = dto?.carpetArea ? `${dto.carpetArea} sqft` : "";
 
     return {
       id: dto?.id,
-      type,
-      title: dto?.title || "Untitled",
+      title: dto?.address || "Untitled Property",
+      location: `${dto?.city || ""} ${dto?.state || ""}`.trim(),
+      type: dto?.propertyType || "N/A",
       price: Number(dto?.price || 0),
-      location: dto?.location || "",
-      phone: dto?.mobileNumber || "",
-      details,
+      phone:
+        dto?.mobileNumber ||
+        dto?.mobile ||
+        dto?.contactNumber ||
+        "Not Available",
+      details: [bhk, area].filter(Boolean).join(" · ") || "No details",
       image: imageUrl,
       _raw: dto,
     };
   };
 
+  // ✅ FETCH ALL
   const fetchAll = async () => {
     setLoading(true);
     setError("");
+
     try {
       const res = await propertyApi.getAll();
+
+      console.log("API DATA:", res.data);
+
       const list = Array.isArray(res?.data?.data) ? res.data.data : [];
-      const pendingApprovalIds = getPendingApprovalPropertyIdSet();
-      const visibleList = list.filter((dto) => !pendingApprovalIds.has(Number(dto?.id)));
-      setProperties(visibleList.map(mapBackendToUi));
+
+      if (!list.length) {
+        setProperties([]);
+        return;
+      }
+
+      setProperties(list.map(mapBackendToUi));
     } catch (e) {
-      setError(e?.message || "Failed to load properties");
+      setError("Failed to load properties");
       setProperties([]);
     } finally {
       setLoading(false);
     }
   };
 
+  // ✅ FILTER API
   const applyBackendFilter = async (filters) => {
     setLoading(true);
     setError("");
+
     try {
       const payload = {
         propertyType: mapUiTypeToBackend(filters.type),
         minPrice:
-          filters.minPrice === "" || filters.minPrice == null
-            ? null
-            : Number(filters.minPrice),
+          filters.minPrice === "" ? null : Number(filters.minPrice),
         maxPrice:
-          filters.maxPrice === "" || filters.maxPrice == null
-            ? null
-            : Number(filters.maxPrice),
+          filters.maxPrice === "" ? null : Number(filters.maxPrice),
       };
 
-      // Backend expects null/omitted for "All"
       if (!payload.propertyType) delete payload.propertyType;
-      if (payload.minPrice == null || Number.isNaN(payload.minPrice))
+      if (!payload.minPrice || Number.isNaN(payload.minPrice))
         delete payload.minPrice;
-      if (payload.maxPrice == null || Number.isNaN(payload.maxPrice))
+      if (!payload.maxPrice || Number.isNaN(payload.maxPrice))
         delete payload.maxPrice;
 
       const res = await propertyApi.filter(payload);
+
       const list = Array.isArray(res?.data?.data) ? res.data.data : [];
+
       const pendingApprovalIds = getPendingApprovalPropertyIdSet();
-      const visibleList = list.filter((dto) => !pendingApprovalIds.has(Number(dto?.id)));
+
+      const visibleList = list.filter(
+        (dto) => !pendingApprovalIds.has(Number(dto?.id))
+      );
+
       setProperties(visibleList.map(mapBackendToUi));
     } catch (e) {
       setError(e?.message || "Failed to filter properties");
@@ -125,9 +151,9 @@ const BrowseProperties = () => {
     }
   };
 
+  // ✅ ONLY ONE USEEFFECT (FIXED)
   useEffect(() => {
     fetchAll();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const filteredProperties = useMemo(() => properties, [properties]);
@@ -141,9 +167,7 @@ const BrowseProperties = () => {
         animate={{ opacity: 1, y: 0 }}
         className="max-w-7xl mx-auto px-6 py-6"
       >
-        <h1 className="text-3xl font-semibold tracking-tight">
-          Browse Properties
-        </h1>
+        <h1 className="text-3xl font-semibold">Browse Properties</h1>
 
         <p className="text-gray-500 mb-6">
           Find your dream home without any brokerage
@@ -157,7 +181,11 @@ const BrowseProperties = () => {
             applyBackendFilter(tempFilters);
           }}
           clearFilters={() => {
-            const reset = { type: "All", minPrice: "", maxPrice: "" };
+            const reset = {
+              type: "All",
+              minPrice: "",
+              maxPrice: "",
+            };
             setTempFilters(reset);
             setAppliedFilters(reset);
             fetchAll();
@@ -165,11 +193,14 @@ const BrowseProperties = () => {
         />
 
         <div className="mt-8">
-          {loading ? (
+          {loading && (
             <p className="text-gray-600 font-medium">Loading properties...</p>
-          ) : error ? (
+          )}
+
+          {error && (
             <p className="text-red-600 font-medium">{error}</p>
-          ) : null}
+          )}
+
           <PropertyList properties={filteredProperties} />
         </div>
       </motion.div>

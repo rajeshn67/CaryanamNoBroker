@@ -1,4 +1,5 @@
 import { useNavigate } from "react-router-dom";
+import { LogOut } from "lucide-react";
 
 
 const Navbar = () => {
@@ -76,14 +77,14 @@ const userChannel = new BroadcastChannel(`user-auth-${userEmail}`); // ⭐ CHANG
             <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" />
           </svg>
         </button>
-        <span className="text-gray-600">
-          Niranjan Baviskar <span className="text-blue-500">(User)</span>
-        </span>
+        
         <button
-          onClick={handleLogout}
-          className="text-gray-700 hover:text-red-500">
-          Logout
-        </button>
+  onClick={handleLogout}
+  className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-semibold rounded-xl shadow-lg hover:shadow-red-200 transition-all duration-300 active:scale-95"
+>
+  <LogOut size={18} />
+  Logout
+</button>
       </div>
     </div>
   );
