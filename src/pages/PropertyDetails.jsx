@@ -24,6 +24,16 @@ import {
   Heart,
 } from "lucide-react";
 
+const formatPropertyType = (type) => {
+  const typeMap = {
+    'APARTMENT': 'Apartment',
+    'INDEPENDENT_HOUSE': 'Independent House',
+    'STANDALONE_BUILDING': 'Standalone Building',
+    'ALL': 'All'
+  };
+  return typeMap[type] || type;
+};
+
 const PropertyDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -211,38 +221,6 @@ const PropertyDetails = () => {
                       Premium property information
                     </p>
                   </div>
-
-                  <div className="bg-[#0f172a] text-white px-6 py-4 rounded-2xl shadow-lg">
-                    <p className="text-xs uppercase tracking-widest text-slate-300">
-                      Price
-                    </p>
-
-                    <p className="text-3xl font-black font-poppins tracking-tight">
-                      ₹
-                      {Number(property?.price || 0).toLocaleString()}
-                    </p>
-                  </div>
-                </div>
-
-                {/* FEATURES */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
-                  <FeatureCard
-                    icon={<Home size={22} />}
-                    title="Property Type"
-                    value={property?.propertyType}
-                  />
-
-                  <FeatureCard
-                    icon={<Layout size={22} />}
-                    title="BHK"
-                    value={property?.bhkType}
-                  />
-
-                  <FeatureCard
-                    icon={<Sofa size={22} />}
-                    title="Furnishing"
-                    value={property?.furnishing}
-                  />
 
                   <FeatureCard
                     icon={<Maximize size={22} />}

@@ -1088,8 +1088,8 @@ const handleLogout = () => {
                 >
                   <option value="">Select property type</option>
                   <option value="APARTMENT">Apartment</option>
-                  <option value="INDEPENDENT_HOUSE">Villa</option>
-                  <option value="STANDALONE_BUILDING">House</option>
+                  <option value="INDEPENDENT_HOUSE">Independent House</option>
+                  <option value="STANDALONE_BUILDING">Standalone Building</option>
                 </select>
               </div>
             </div>
@@ -1819,8 +1819,8 @@ const handleLogout = () => {
                 >
                   <option value="">Select property type</option>
                   <option value="APARTMENT">Apartment</option>
-                  <option value="INDEPENDENT_HOUSE">Villa</option>
-                  <option value="STANDALONE_BUILDING">House</option>
+                  <option value="INDEPENDENT_HOUSE">Independent House</option>
+                  <option value="STANDALONE_BUILDING">Standalone Building</option>
                 </select>
               </div>
 
