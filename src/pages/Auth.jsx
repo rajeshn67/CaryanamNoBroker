@@ -40,6 +40,7 @@ export default function Auth() {
     ownerChannel.onmessage = (msg) => {
       if (msg.data === "logout") {
         localStorage.removeItem("ownerToken");
+        localStorage.removeItem("ownerId");
         navigate("/login");
       }
     };
@@ -52,6 +53,7 @@ export default function Auth() {
  
       if (event.key === "ownerLogout") {
         localStorage.removeItem("ownerToken");
+        localStorage.removeItem("ownerId");
         navigate("/login");
       }
  
@@ -116,6 +118,18 @@ export default function Auth() {
         formData.role === "PROPERTY_OWNER"
           ? await authApi.registerOwner(formData)
           : await authApi.registerUser(formData);
+
+      if (formData.role === "PROPERTY_OWNER") {
+        const ownerEmail = formData.email.toLowerCase().trim();
+        const registeredOwnerId = Number(res?.data?.data?.id);
+        if (ownerEmail && Number.isFinite(registeredOwnerId) && registeredOwnerId > 0) {
+          const rawMap = localStorage.getItem(OWNER_ID_BY_EMAIL_KEY);
+          const ownerIdMap = rawMap ? JSON.parse(rawMap) : {};
+          ownerIdMap[ownerEmail] = registeredOwnerId;
+          localStorage.setItem(OWNER_ID_BY_EMAIL_KEY, JSON.stringify(ownerIdMap));
+          localStorage.setItem(`ownerId:${ownerEmail}`, String(registeredOwnerId));
+        }
+      }
  
       alert(res.data.message);
  
@@ -169,10 +183,14 @@ export default function Auth() {
           const rawMap = localStorage.getItem(OWNER_ID_BY_EMAIL_KEY);
           const ownerIdMap = rawMap ? JSON.parse(rawMap) : {};
  
-          const knownOwnerId = Number(ownerIdMap?.[ownerEmail]);
+          const knownOwnerId = Number(
+            ownerIdMap?.[ownerEmail] || localStorage.getItem(`ownerId:${ownerEmail}`)
+          );
  
           if (Number.isFinite(knownOwnerId) && knownOwnerId > 0) {
             localStorage.setItem("ownerId", String(knownOwnerId));
+          } else {
+            localStorage.removeItem("ownerId");
           }
         }
       } else {

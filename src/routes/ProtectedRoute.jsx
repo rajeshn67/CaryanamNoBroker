@@ -71,6 +71,7 @@ const ProtectedRoute = ({ children, role }) => {
         localStorage.removeItem("adminToken");
       } else if (role === "ROLE_PROPERTY_OWNER") {
         localStorage.removeItem("ownerToken");
+        localStorage.removeItem("ownerId");
       } else {
         localStorage.removeItem("userToken");
         localStorage.removeItem("userEmail"); // ⭐ important for multi-user fix
@@ -93,6 +94,7 @@ const ProtectedRoute = ({ children, role }) => {
       localStorage.removeItem("adminToken");
     } else if (role === "ROLE_PROPERTY_OWNER") {
       localStorage.removeItem("ownerToken");
+      localStorage.removeItem("ownerId");
     } else {
       localStorage.removeItem("userToken");
       localStorage.removeItem("userEmail");
