@@ -46,6 +46,9 @@ const resolveAuthTokenForPath = (path = "") => {
 };
 
 const attachAuthHeader = (config) => {
+  if (config?.headers?.Authorization) {
+    return config;
+  }
   const path = config?.url || "";
   const token = resolveAuthTokenForPath(path);
   if (token) {
@@ -126,8 +129,11 @@ export const adminApi = {
 export const ownerApi = {
   addProperty: (ownerId, propertyData) =>
     api.post(`/owner/addPropertyByOwner/${ownerId}`, propertyData),
-  getOwnerProperties: (ownerId) =>
-    api.get(`/owner/${ownerId}/properties`),
+  getOwnerProperties: async (ownerId) => {
+    // This function is no longer used - properties are fetched individually using getPropertyById
+    // Kept for backward compatibility
+    return Promise.reject("Use getPropertyById for individual property fetch");
+  },
   getPropertyById: (id) => api.get(`/owner/getPropertyById/${id}`),
   updateProperty: (id, propertyData) =>
     api.put(`/owner/updatePropertyById/${id}`, propertyData),

@@ -16,6 +16,7 @@ const PENDING_PROPERTY_IDS_KEY = "pendingApprovalPropertyIds";
 const PROPERTY_APPROVAL_STATES_KEY = "propertyApprovalStates";
 const OWNER_LOCAL_PROPERTIES_KEY = "ownerLocalProperties";
 const OWNER_ID_BY_EMAIL_KEY = "ownerIdByEmail";
+const OWNER_PROPERTY_IDS_KEY = "ownerPropertyIds";
 
 const readPropertyApprovalStateMap = () => {
   try {
@@ -35,10 +36,20 @@ const readOwnerLocalPropertiesMap = () => {
   }
 };
 
-const readOwnerLocalProperties = (ownerId) => {
-  const map = readOwnerLocalPropertiesMap();
+const readOwnerPropertyIds = () => {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(OWNER_PROPERTY_IDS_KEY) || "{}");
+    return parsed && typeof parsed === "object" ? parsed : {};
+  } catch {
+    return {};
+  }
+};
+
+const writeOwnerPropertyIds = (ownerId, propertyIds) => {
+  const map = readOwnerPropertyIds();
   const ownerKey = String(Number(ownerId));
-  return Array.isArray(map[ownerKey]) ? map[ownerKey] : [];
+  map[ownerKey] = Array.isArray(propertyIds) ? propertyIds : [];
+  localStorage.setItem(OWNER_PROPERTY_IDS_KEY, JSON.stringify(map));
 };
 
 const writeOwnerLocalProperties = (ownerId, properties) => {
@@ -46,38 +57,6 @@ const writeOwnerLocalProperties = (ownerId, properties) => {
   const ownerKey = String(Number(ownerId));
   map[ownerKey] = Array.isArray(properties) ? properties : [];
   localStorage.setItem(OWNER_LOCAL_PROPERTIES_KEY, JSON.stringify(map));
-};
-
-const getSingleKnownOwnerId = () => {
-  const candidates = new Set();
-
-  const addCandidate = (value) => {
-    const numeric = Number(value);
-    if (Number.isFinite(numeric) && numeric > 0) {
-      candidates.add(numeric);
-    }
-  };
-
-  addCandidate(localStorage.getItem("ownerId"));
-
-  try {
-    const ownerMap = JSON.parse(localStorage.getItem(OWNER_LOCAL_PROPERTIES_KEY) || "{}");
-    Object.keys(ownerMap || {}).forEach(addCandidate);
-  } catch {
-    // ignore malformed cache
-  }
-
-  try {
-    const pendingMap = JSON.parse(localStorage.getItem(OWNER_PENDING_APPROVAL_KEY) || "{}");
-    Object.keys(pendingMap || {}).forEach(addCandidate);
-  } catch {
-    // ignore malformed cache
-  }
-
-  if (candidates.size === 1) {
-    return [...candidates][0];
-  }
-  return null;
 };
 
 const registerPendingApprovalProperty = (ownerId, propertyId) => {
@@ -118,43 +97,90 @@ const registerPendingApprovalProperty = (ownerId, propertyId) => {
   localStorage.setItem(PROPERTY_APPROVAL_STATES_KEY, JSON.stringify(statusMap));
 };
 
-const buildImageCandidates = (imageName) => {
-  if (!imageName) return [IMAGE_FALLBACK];
-
+const fetchImageAsBlob = async (imageName) => {
+  if (!imageName) return null;
+  
   const rawValue = String(imageName).trim();
   if (/^(blob:|data:|https?:)/i.test(rawValue)) {
-    return [rawValue, IMAGE_FALLBACK];
+    return rawValue;
   }
 
   const cleanedName = rawValue.replace(/^\/+/, "");
-  return [
+  const token = localStorage.getItem("ownerToken") || localStorage.getItem("adminToken") || localStorage.getItem("userToken");
+  
+  const imageUrls = [
     `http://localhost:8080/uploads/${cleanedName}`,
     `http://localhost:8080/${cleanedName}`,
     `http://localhost:8080/api/uploads/${cleanedName}`,
-    IMAGE_FALLBACK,
   ];
+
+  for (const url of imageUrls) {
+    try {
+      const response = await fetch(url, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      if (response.ok) {
+        const blob = await response.blob();
+        return URL.createObjectURL(blob);
+      }
+    } catch (error) {
+      console.log(`Failed to fetch image from ${url}:`, error);
+    }
+  }
+  
+  return null;
 };
 
 const PropertyThumbnail = ({ imageName, title }) => {
-  const candidates = buildImageCandidates(imageName);
-  const [candidateIndex, setCandidateIndex] = useState(0);
+  const [imageUrl, setImageUrl] = useState(IMAGE_FALLBACK);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    setCandidateIndex(0);
+    let mounted = true;
+    
+    const loadImage = async () => {
+      setLoading(true);
+      try {
+        const blobUrl = await fetchImageAsBlob(imageName);
+        if (mounted) {
+          setImageUrl(blobUrl || IMAGE_FALLBACK);
+        }
+      } catch (error) {
+        console.error('Error loading image:', error);
+        if (mounted) {
+          setImageUrl(IMAGE_FALLBACK);
+        }
+      } finally {
+        if (mounted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    loadImage();
+
+    return () => {
+      mounted = false;
+      if (imageUrl && imageUrl.startsWith('blob:')) {
+        URL.revokeObjectURL(imageUrl);
+      }
+    };
   }, [imageName]);
 
-  const handleImageError = () => {
-    setCandidateIndex((current) =>
-      current < candidates.length - 1 ? current + 1 : current
+  if (loading) {
+    return (
+      <div className="w-full h-full flex items-center justify-center bg-gray-200">
+        <div className="text-gray-400">Loading...</div>
+      </div>
     );
-  };
+  }
 
   return (
     <img
-      src={candidates[candidateIndex]}
+      src={imageUrl}
       alt={title}
       className="w-full h-full object-cover"
-      onError={handleImageError}
+      onError={() => setImageUrl(IMAGE_FALLBACK)}
     />
   );
 };
@@ -187,14 +213,16 @@ const PropertyOwnerDashboard = () => {
   const [showPremiumModal, setShowPremiumModal] = useState(false);
   const [premiumLoading, setPremiumLoading] = useState(false);
   const [ownerPremiumStatus, setOwnerPremiumStatus] = useState("NONE");
+  const [propertyFetchMessage, setPropertyFetchMessage] = useState("");
   const [pendingApprovalPropertyId, setPendingApprovalPropertyId] = useState(null);
   const [propertyApprovalStates, setPropertyApprovalStates] = useState(() =>
     readPropertyApprovalStateMap()
   );
   const latestPreviewsRef = useRef([]);
   const [ownerId, setOwnerId] = useState(null);
-  const [ownerIdInput, setOwnerIdInput] = useState("");
-  const [showOwnerIdPrompt, setShowOwnerIdPrompt] = useState(false);
+  const [ownerSessionMessage, setOwnerSessionMessage] = useState("");
+  const [manualOwnerId, setManualOwnerId] = useState("");
+  const [showManualIdInput, setShowManualIdInput] = useState(false);
   
 
   const navigate = useNavigate();
@@ -229,10 +257,48 @@ const PropertyOwnerDashboard = () => {
 
 const handleLogout = () => {
   localStorage.removeItem("ownerToken");
+  localStorage.removeItem("ownerId");
   localStorage.setItem("ownerLogout", Date.now());
   const channel = new BroadcastChannel("owner-auth");
   channel.postMessage("logout");
   navigate("/login");
+};
+
+const handleManualOwnerIdSubmit = () => {
+  const numericId = Number(manualOwnerId);
+  if (!Number.isFinite(numericId) || numericId <= 0) {
+    toast.error("Please enter a valid owner ID");
+    return;
+  }
+  setOwnerId(numericId);
+  localStorage.setItem("ownerId", String(numericId));
+  
+  // Also save by email if available
+  const token = localStorage.getItem("ownerToken");
+  if (token) {
+    try {
+      const decoded = jwtDecode(token);
+      const ownerEmail = String(decoded?.sub || "").toLowerCase().trim();
+      if (ownerEmail) {
+        let ownerIdMap = {};
+        try {
+          ownerIdMap = JSON.parse(localStorage.getItem(OWNER_ID_BY_EMAIL_KEY) || "{}");
+        } catch {
+          ownerIdMap = {};
+        }
+        ownerIdMap[ownerEmail] = numericId;
+        localStorage.setItem(OWNER_ID_BY_EMAIL_KEY, JSON.stringify(ownerIdMap));
+        localStorage.setItem(`ownerId:${ownerEmail}`, String(numericId));
+      }
+    } catch (e) {
+      console.log("Error decoding token for email mapping");
+    }
+  }
+  
+  setOwnerSessionMessage("");
+  setShowManualIdInput(false);
+  setManualOwnerId("");
+  toast.success("Owner ID set successfully");
 };
 
   const imageLabels = [
@@ -261,7 +327,18 @@ const handleLogout = () => {
       if (tokenOwnerId) {
         setOwnerId(Number(tokenOwnerId));
         localStorage.setItem("ownerId", String(Number(tokenOwnerId)));
-        setShowOwnerIdPrompt(false);
+        if (ownerEmail) {
+          let ownerIdMap = {};
+          try {
+            ownerIdMap = JSON.parse(localStorage.getItem(OWNER_ID_BY_EMAIL_KEY) || "{}");
+          } catch {
+            ownerIdMap = {};
+          }
+          ownerIdMap[ownerEmail] = Number(tokenOwnerId);
+          localStorage.setItem(OWNER_ID_BY_EMAIL_KEY, JSON.stringify(ownerIdMap));
+          localStorage.setItem(`ownerId:${ownerEmail}`, String(Number(tokenOwnerId)));
+        }
+        setOwnerSessionMessage("");
         return;
       }
 
@@ -272,82 +349,34 @@ const handleLogout = () => {
         } catch {
           ownerIdMap = {};
         }
-        const mappedOwnerId = Number(ownerIdMap?.[ownerEmail]);
+        const mappedOwnerId = Number(
+          ownerIdMap?.[ownerEmail] || localStorage.getItem(`ownerId:${ownerEmail}`)
+        );
         if (Number.isFinite(mappedOwnerId) && mappedOwnerId > 0) {
           setOwnerId(mappedOwnerId);
           localStorage.setItem("ownerId", String(mappedOwnerId));
-          setShowOwnerIdPrompt(false);
+          setOwnerSessionMessage("");
           return;
         }
       }
 
-      const inferredOwnerId = getSingleKnownOwnerId();
-      if (Number.isFinite(inferredOwnerId) && inferredOwnerId > 0) {
-        setOwnerId(inferredOwnerId);
-        localStorage.setItem("ownerId", String(inferredOwnerId));
-        if (ownerEmail) {
-          let ownerIdMap = {};
-          try {
-            ownerIdMap = JSON.parse(localStorage.getItem(OWNER_ID_BY_EMAIL_KEY) || "{}");
-          } catch {
-            ownerIdMap = {};
-          }
-          ownerIdMap[ownerEmail] = inferredOwnerId;
-          localStorage.setItem(OWNER_ID_BY_EMAIL_KEY, JSON.stringify(ownerIdMap));
-        }
-        setShowOwnerIdPrompt(false);
-        return;
-      }
-
-      const savedOwnerId = Number(localStorage.getItem("ownerId"));
-      if (Number.isFinite(savedOwnerId) && savedOwnerId > 0) {
-        setOwnerId(savedOwnerId);
-        setShowOwnerIdPrompt(false);
-        return;
-      }
-
-      setShowOwnerIdPrompt(true);
-      toast.error("Owner ID not found in token. Please enter your Owner ID once.");
+      setOwnerId(null);
+      localStorage.removeItem("ownerId");
+      setOwnerSessionMessage(
+        "Owner profile id is not available from the current backend login response. New owner registrations are saved automatically; existing owners need a backend login response that includes ownerId."
+      );
       return;
     } catch {
-      const savedOwnerId = Number(localStorage.getItem("ownerId"));
-      if (Number.isFinite(savedOwnerId) && savedOwnerId > 0) {
-        setOwnerId(savedOwnerId);
-        setShowOwnerIdPrompt(false);
-        return;
-      }
-      setShowOwnerIdPrompt(true);
-      toast.error("Invalid owner session. Please login again.");
+      setOwnerId(null);
+      localStorage.removeItem("ownerId");
+      setOwnerSessionMessage("Invalid owner session. Please login again.");
     }
   }, [navigate]);
-
-  const handleOwnerIdSave = () => {
-    const numericOwnerId = Number(ownerIdInput);
-    if (!Number.isFinite(numericOwnerId) || numericOwnerId <= 0) {
-      toast.error("Please enter a valid Owner ID.");
-      return;
-    }
-    setOwnerId(numericOwnerId);
-    localStorage.setItem("ownerId", String(numericOwnerId));
-    const ownerEmail = localStorage.getItem("ownerEmail");
-    if (ownerEmail) {
-      let ownerIdMap = {};
-      try {
-        ownerIdMap = JSON.parse(localStorage.getItem(OWNER_ID_BY_EMAIL_KEY) || "{}");
-      } catch {
-        ownerIdMap = {};
-      }
-      ownerIdMap[String(ownerEmail).toLowerCase().trim()] = numericOwnerId;
-      localStorage.setItem(OWNER_ID_BY_EMAIL_KEY, JSON.stringify(ownerIdMap));
-    }
-    setShowOwnerIdPrompt(false);
-    toast.success("Owner ID saved.");
-  };
 
   useEffect(() => {
     if (!ownerId) return;
     setPropertyApprovalStates(readPropertyApprovalStateMap());
-    setProperties(readOwnerLocalProperties(ownerId));
+    setProperties([]);
     fetchProperties();
   }, [ownerId]);
 
@@ -390,52 +419,94 @@ const handleLogout = () => {
       .filter(Boolean);
   };
 
-  const fetchProperties = async () => {
+  const getDetailImages = (detailData) => [
+    detailData?.coverImage,
+    ...parseDoctypeImages(detailData?.doctypeImages),
+  ].filter(Boolean);
+
+  const hydratePropertiesWithDetails = async (baseProperties) => {
+    return Promise.all(
+      baseProperties.map(async (property) => {
+        if (!property?.id) return property;
+        try {
+          const detailsResponse = await ownerApi.getPropertyById(property.id);
+          const detailData = detailsResponse?.data?.data || {};
+          const detailImages = getDetailImages(detailData);
+
+          return {
+            ...property,
+            ...detailData,
+            images: detailImages,
+          };
+        } catch (error) {
+          console.error(`Error fetching details for property ${property.id}:`, error);
+          return {
+            ...property,
+            images: [],
+          };
+        }
+      })
+    );
+  };
+
+  const fetchProperties = async ({ preserveCurrent = false } = {}) => {
     if (!ownerId) return;
-    const adminToken = localStorage.getItem("adminToken");
-    if (!adminToken) {
-      setLoading(false);
-      return;
-    }
     try {
       setLoading(true);
-      const response = await ownerApi.getOwnerProperties(ownerId);
-      if (response?.data) {
-        const payload = response?.data?.data || response?.data || {};
-        const baseProperties = Array.isArray(payload.properties)
-          ? payload.properties
-          : [];
-
-        const propertiesWithImages = await Promise.all(
-          baseProperties.map(async (property) => {
-            try {
-              const detailsResponse = await ownerApi.getPropertyById(property.id);
-              const detailData = detailsResponse?.data?.data;
-              const images = [
-                detailData?.coverImage,
-                ...parseDoctypeImages(detailData?.doctypeImages),
-              ].filter(Boolean);
-              return {
-                ...property,
-                images,
-              };
-            } catch (error) {
-              console.error(`Error fetching images for property ${property.id}:`, error);
-              return {
-                ...property,
-                images: [],
-              };
-            }
-          })
-        );
-
-        setProperties(propertiesWithImages);
-        writeOwnerLocalProperties(ownerId, propertiesWithImages);
+      setPropertyFetchMessage("");
+      
+      // Get property IDs from localStorage
+      const propertyIdsMap = readOwnerPropertyIds();
+      const ownerKey = String(Number(ownerId));
+      const propertyIds = Array.isArray(propertyIdsMap[ownerKey]) ? propertyIdsMap[ownerKey] : [];
+      
+      if (propertyIds.length === 0) {
+        setProperties([]);
+        setPropertyFetchMessage("No properties found. Add a property to get started.");
+        return;
       }
+      
+      // Fetch each property individually using getPropertyById
+      const propertyPromises = propertyIds.map(async (id) => {
+        try {
+          const response = await ownerApi.getPropertyById(id);
+          const detailData = response?.data?.data || {};
+          
+          const detailImages = getDetailImages(detailData);
+          
+          return {
+            ...detailData,
+            id: id,
+            images: detailImages.length > 0 ? detailImages : [],
+          };
+        } catch (error) {
+          console.error(`Error fetching property ${id}:`, error);
+          return null;
+        }
+      });
+      
+      const fetchedProperties = (await Promise.all(propertyPromises)).filter(Boolean);
+      
+      setProperties(fetchedProperties);
+      writeOwnerLocalProperties(ownerId, fetchedProperties);
+      setPropertyFetchMessage("");
     } catch (err) {
       console.error("Error fetching properties:", err?.message || err);
-      if (err?.response?.status !== 403) {
-        toast.error("Failed to fetch properties");
+      // Fallback to localStorage if API fails
+      const localPropertiesMap = readOwnerLocalPropertiesMap();
+      const ownerKey = String(Number(ownerId));
+      const localProperties = Array.isArray(localPropertiesMap[ownerKey]) 
+        ? localPropertiesMap[ownerKey] 
+        : [];
+      
+      if (localProperties.length > 0) {
+        setProperties(localProperties);
+        setPropertyFetchMessage("Showing properties from your current session.");
+      } else {
+        if (!preserveCurrent) {
+          setProperties([]);
+        }
+        setPropertyFetchMessage("No properties found. Add a property to get started.");
       }
     } finally {
       setLoading(false);
@@ -691,31 +762,24 @@ const handleLogout = () => {
           ...prev,
           [String(propertyId)]: "PENDING",
         }));
-        const localPreviewImages = uploadedImages
-          .filter(Boolean)
-          .map((img) => URL.createObjectURL(img));
-        const createdProperty = {
-          id: propertyId,
-          title: formData.propertyTitle,
-          price: parseFloat(formData.price),
-          propertyType: formData.propertyType,
-          location: formData.location,
-          city: formData.city,
-          address: formData.address,
-          state: formData.state,
-          pincode: formData.pincode,
-          mobileNumber: formData.mobileNumber,
-          description: formData.description,
-          bhkType: formData.bhkType,
-          furnishing: formData.furnishing,
-          carpetArea: formData.carpetArea,
-          status: "PENDING",
-          images: localPreviewImages,
-        };
+        const [createdPropertyFromDb] = await hydratePropertiesWithDetails([{ id: propertyId }]);
+        setPropertyFetchMessage("");
+        
+        // Save property ID to localStorage for future fetching
+        const propertyIdsMap = readOwnerPropertyIds();
+        const ownerKey = String(Number(ownerId));
+        const currentIds = Array.isArray(propertyIdsMap[ownerKey]) ? propertyIdsMap[ownerKey] : [];
+        if (!currentIds.includes(propertyId)) {
+          writeOwnerPropertyIds(ownerId, [...currentIds, propertyId]);
+        }
+        
         setProperties((prev) => {
-          const next = [createdProperty, ...prev.filter((item) => item.id !== propertyId)];
-          writeOwnerLocalProperties(ownerId, next);
-          return next;
+          const updated = [
+            createdPropertyFromDb,
+            ...prev.filter((item) => item.id !== propertyId),
+          ];
+          writeOwnerLocalProperties(ownerId, updated);
+          return updated;
         });
         setPendingApprovalPropertyId(propertyId);
         setOwnerPremiumStatus("PENDING");
@@ -739,8 +803,8 @@ const handleLogout = () => {
         });
         clearSelectedImages();
 
-        // Refresh properties list
-        await fetchProperties();
+        // Refresh from the database owner list when the backend permits it.
+        fetchProperties({ preserveCurrent: true });
       }
     } catch (err) {
       console.error("Error adding property:", err);
@@ -767,6 +831,14 @@ const handleLogout = () => {
     try {
       const response = await ownerApi.deleteProperty(propertyId);
       toast.success(response?.data?.message || "Property deactivated successfully");
+      
+      // Remove property ID from localStorage
+      const propertyIdsMap = readOwnerPropertyIds();
+      const ownerKey = String(Number(ownerId));
+      const currentIds = Array.isArray(propertyIdsMap[ownerKey]) ? propertyIdsMap[ownerKey] : [];
+      const updatedIds = currentIds.filter((id) => id !== propertyId);
+      writeOwnerPropertyIds(ownerId, updatedIds);
+      
       setProperties((prev) => {
         const next = prev.filter((item) => item.id !== propertyId);
         if (ownerId) writeOwnerLocalProperties(ownerId, next);
@@ -997,28 +1069,45 @@ const handleLogout = () => {
           </p>
         </div>
 
-        {showOwnerIdPrompt && (
+        {ownerSessionMessage && (
           <div className="mt-4 bg-amber-50 border border-amber-200 rounded-lg p-4">
             <p className="text-sm text-amber-800 mb-3">
-              Owner ID is not present in your token. Enter it once to continue.
+              {ownerSessionMessage}
             </p>
-            <div className="flex gap-3">
-              <input
-                type="number"
-                min="1"
-                value={ownerIdInput}
-                onChange={(e) => setOwnerIdInput(e.target.value)}
-                placeholder="Enter Owner ID"
-                className="flex-1 px-3 py-2 border border-amber-300 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-400"
-              />
+            {!showManualIdInput && (
               <button
-                type="button"
-                onClick={handleOwnerIdSave}
-                className="px-4 py-2 bg-amber-600 text-white rounded-md hover:bg-amber-700"
+                onClick={() => setShowManualIdInput(true)}
+                className="text-sm bg-amber-100 hover:bg-amber-200 text-amber-800 px-3 py-1.5 rounded-md transition-colors"
               >
-                Save
+                Enter Owner ID Manually
               </button>
-            </div>
+            )}
+            {showManualIdInput && (
+              <div className="flex gap-2 mt-2">
+                <input
+                  type="number"
+                  value={manualOwnerId}
+                  onChange={(e) => setManualOwnerId(e.target.value)}
+                  placeholder="Enter your Owner ID"
+                  className="flex-1 px-3 py-1.5 border border-amber-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+                />
+                <button
+                  onClick={handleManualOwnerIdSubmit}
+                  className="bg-amber-600 hover:bg-amber-700 text-white px-4 py-1.5 rounded-md text-sm transition-colors"
+                >
+                  Set ID
+                </button>
+                <button
+                  onClick={() => {
+                    setShowManualIdInput(false);
+                    setManualOwnerId("");
+                  }}
+                  className="bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-1.5 rounded-md text-sm transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
+            )}
           </div>
         )}
 
@@ -1396,7 +1485,9 @@ const handleLogout = () => {
             </div>
           ) : properties.length === 0 ? (
             <div className="text-center py-8">
-              <p className="text-gray-500">No properties found</p>
+              <p className="text-gray-500">
+                {propertyFetchMessage || "No properties found"}
+              </p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
