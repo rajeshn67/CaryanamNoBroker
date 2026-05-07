@@ -19,9 +19,14 @@ const writeOwnerApprovalStatus = (owner, status) => {
   if (ownerId) approvalStatuses[String(ownerId)] = status;
   if (ownerEmail) approvalStatuses[`email:${ownerEmail}`] = status;
   localStorage.setItem(OWNER_APPROVAL_STATUS_KEY, JSON.stringify(approvalStatuses));
-  const channel = new BroadcastChannel("owner-approval-status");
-  channel.postMessage({ ownerId, ownerEmail, status });
-  channel.close();
+  // Trigger storage event for cross-tab sync
+  window.dispatchEvent(new StorageEvent('storage', {
+    key: OWNER_APPROVAL_STATUS_KEY,
+    newValue: JSON.stringify(approvalStatuses),
+    oldValue: localStorage.getItem(OWNER_APPROVAL_STATUS_KEY),
+    url: window.location.href,
+    storageArea: localStorage
+  }));
 };
 
 const AdminDashboardMain = () => {
@@ -77,18 +82,38 @@ const AdminDashboardMain = () => {
         if (approve) await adminModerationApi.approveUserPremium(id);
         else await adminModerationApi.rejectUserPremium(id);
       } else {
-        if (approve) {
-          await adminModerationApi.approveOwnerPremium(id);
+        // For owners, check if they already have APPROVED in their status
+        const ownerData = pendingOwners.find(o => (o?.ownerId ?? o?.id) === id);
+        const currentStatus = String(ownerData?.premiumStatus || "").toUpperCase();
+        const isAlreadyApproved = currentStatus.includes("APPROVED");
+
+        if (isAlreadyApproved) {
+          // Owner is already approved, just update localStorage and show success
+          // This handles the case where owner adds a second property after being approved
           writeOwnerApprovalStatus(owner || id, "APPROVED");
+          toast.success("Owner is already premium - no additional approval needed");
         } else {
-          await adminModerationApi.rejectOwnerPremium(id);
-          writeOwnerApprovalStatus(owner || id, "REJECTED");
+          // Normal approval/reject flow
+          if (approve) {
+            await adminModerationApi.approveOwnerPremium(id);
+            writeOwnerApprovalStatus(owner || id, "APPROVED");
+          } else {
+            await adminModerationApi.rejectOwnerPremium(id);
+            writeOwnerApprovalStatus(owner || id, "REJECTED");
+          }
+          toast.success(`Request ${approve ? "approved" : "rejected"} successfully`);
         }
       }
-      toast.success(`Request ${approve ? "approved" : "rejected"} successfully`);
       await loadPendingData();
     } catch (error) {
-      toast.error(error?.response?.data?.message || "Action failed");
+      // If backend rejects because status is not exactly "PENDING", handle it gracefully
+      if (error?.response?.data?.message?.includes("already approved")) {
+        writeOwnerApprovalStatus(owner || id, "APPROVED");
+        toast.success("Owner is already premium - no additional approval needed");
+        await loadPendingData();
+      } else {
+        toast.error(error?.response?.data?.message || "Action failed");
+      }
     } finally {
       setActionLoading("");
     }

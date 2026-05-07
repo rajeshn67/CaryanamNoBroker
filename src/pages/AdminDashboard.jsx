@@ -308,18 +308,17 @@ const handleManualOwnerIdSubmit = () => {
     syncOwnerApprovalStatus();
     setProperties([]);
     fetchProperties();
+    fetchOwnerPremiumStatus();
     const intervalId = window.setInterval(() => {
       syncOwnerApprovalStatus();
       fetchProperties({ preserveCurrent: true, silent: true });
+      fetchOwnerPremiumStatus({ silent: true });
     }, 10000);
 
-    const channel = new BroadcastChannel("owner-approval-status");
-    channel.onmessage = syncOwnerApprovalStatus;
     window.addEventListener("storage", syncOwnerApprovalStatus);
 
     return () => {
       window.clearInterval(intervalId);
-      channel.close();
       window.removeEventListener("storage", syncOwnerApprovalStatus);
     };
   }, [ownerId]);
@@ -393,11 +392,18 @@ const handleManualOwnerIdSubmit = () => {
       setPropertyFetchMessage("");
 
       const response = await ownerApi.getOwnerProperties(ownerId);
-      const apiProperties = Array.isArray(response?.data?.data)
-        ? response.data.data
-        : Array.isArray(response?.data)
-          ? response.data
-          : [];
+      // Handle new response structure with properties wrapped in an object
+      let apiProperties = [];
+      if (Array.isArray(response?.data?.data?.properties)) {
+        apiProperties = response.data.data.properties;
+      } else if (Array.isArray(response?.data?.properties)) {
+        apiProperties = response.data.properties;
+      } else if (Array.isArray(response?.data?.data)) {
+        apiProperties = response.data.data;
+      } else if (Array.isArray(response?.data)) {
+        apiProperties = response.data;
+      }
+
       const fetchedProperties = apiProperties
         .filter((property) => String(property?.status || "").toUpperCase() !== "INACTIVE")
         .map(normalizePropertyForDashboard);
@@ -420,6 +426,36 @@ const handleManualOwnerIdSubmit = () => {
       );
     } finally {
       if (!silent) setLoading(false);
+    }
+  };
+
+  const fetchOwnerPremiumStatus = async ({ silent = false } = {}) => {
+    if (!ownerId) return;
+    try {
+      const response = await ownerApi.getOwnerProperties(ownerId);
+      const premiumStatus = response?.data?.data?.premiumStatus || response?.data?.premiumStatus;
+      const premiumActive = response?.data?.data?.premiumActive || response?.data?.premiumActive;
+
+      if (premiumStatus) {
+        const status = String(premiumStatus).toUpperCase();
+        if (status === "APPROVED" || status.includes("APPROVED")) {
+          writeStoredOwnerApprovalStatus(ownerId, "APPROVED");
+          setOwnerApprovalStatus("APPROVED");
+          setOwnerPremiumStatus("APPROVED");
+        } else if (status === "REJECTED" || status.includes("REJECTED")) {
+          writeStoredOwnerApprovalStatus(ownerId, "REJECTED");
+          setOwnerApprovalStatus("REJECTED");
+          setOwnerPremiumStatus("REJECTED");
+        } else if (status === "PENDING" || status.includes("PENDING")) {
+          writeStoredOwnerApprovalStatus(ownerId, "PENDING");
+          setOwnerApprovalStatus("PENDING");
+          setOwnerPremiumStatus("PENDING");
+        }
+      }
+    } catch (err) {
+      if (!silent) {
+        console.error("Error fetching owner premium status:", err?.message || err);
+      }
     }
   };
 
