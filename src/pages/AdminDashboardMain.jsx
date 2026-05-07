@@ -4,49 +4,24 @@ import { adminModerationApi } from "../services/api";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
-const OWNER_PENDING_APPROVAL_KEY = "ownerPendingApprovalProperties";
-const PENDING_PROPERTY_IDS_KEY = "pendingApprovalPropertyIds";
-const PROPERTY_APPROVAL_STATES_KEY = "propertyApprovalStates";
+const OWNER_APPROVAL_STATUS_KEY = "ownerApprovalStatuses";
 
-const updateOwnerPendingPropertiesAfterDecision = ({ ownerId, approved }) => {
-  const ownerNumericId = Number(ownerId);
-  if (!Number.isFinite(ownerNumericId) || ownerNumericId <= 0) return;
-
-  let ownerMap = {};
-  let pendingIds = [];
-  let approvalStateMap = {};
+const writeOwnerApprovalStatus = (owner, status) => {
+  const ownerId = owner?.ownerId ?? owner?.id ?? owner;
+  const ownerEmail = String(owner?.email || "").toLowerCase().trim();
+  if (!ownerId && !ownerEmail) return;
+  let approvalStatuses = {};
   try {
-    ownerMap = JSON.parse(localStorage.getItem(OWNER_PENDING_APPROVAL_KEY) || "{}");
+    approvalStatuses = JSON.parse(localStorage.getItem(OWNER_APPROVAL_STATUS_KEY) || "{}");
   } catch {
-    ownerMap = {};
+    approvalStatuses = {};
   }
-  try {
-    pendingIds = JSON.parse(localStorage.getItem(PENDING_PROPERTY_IDS_KEY) || "[]");
-  } catch {
-    pendingIds = [];
-  }
-  try {
-    approvalStateMap = JSON.parse(localStorage.getItem(PROPERTY_APPROVAL_STATES_KEY) || "{}");
-  } catch {
-    approvalStateMap = {};
-  }
-
-  const ownerKey = String(ownerNumericId);
-  const ownerPropertyIds = Array.isArray(ownerMap[ownerKey]) ? ownerMap[ownerKey] : [];
-  const ownerIdSet = new Set(ownerPropertyIds.map((id) => Number(id)));
-  const nextPendingIds = approved
-    ? pendingIds.filter((id) => !ownerIdSet.has(Number(id)))
-    : pendingIds;
-
-  ownerPropertyIds.forEach((id) => {
-    const key = String(Number(id));
-    approvalStateMap[key] = approved ? "APPROVED" : "REJECTED";
-  });
-
-  delete ownerMap[ownerKey];
-  localStorage.setItem(OWNER_PENDING_APPROVAL_KEY, JSON.stringify(ownerMap));
-  localStorage.setItem(PENDING_PROPERTY_IDS_KEY, JSON.stringify(nextPendingIds));
-  localStorage.setItem(PROPERTY_APPROVAL_STATES_KEY, JSON.stringify(approvalStateMap));
+  if (ownerId) approvalStatuses[String(ownerId)] = status;
+  if (ownerEmail) approvalStatuses[`email:${ownerEmail}`] = status;
+  localStorage.setItem(OWNER_APPROVAL_STATUS_KEY, JSON.stringify(approvalStatuses));
+  const channel = new BroadcastChannel("owner-approval-status");
+  channel.postMessage({ ownerId, ownerEmail, status });
+  channel.close();
 };
 
 const AdminDashboardMain = () => {
@@ -55,6 +30,8 @@ const AdminDashboardMain = () => {
   const [pendingOwners, setPendingOwners] = useState([]);
   const [loading, setLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState("");
+  const [ownerProperties, setOwnerProperties] = useState(null);
+  const [ownerPropertiesLoading, setOwnerPropertiesLoading] = useState("");
 
   const logout = () => {
     localStorage.removeItem("adminToken");
@@ -65,8 +42,8 @@ const AdminDashboardMain = () => {
     navigate("/login");
   };
 
-  const loadPendingData = async () => {
-    setLoading(true);
+  const loadPendingData = async ({ silent = false } = {}) => {
+    if (!silent) setLoading(true);
     try {
       const [usersRes, ownersRes] = await Promise.all([
         adminModerationApi.getPendingUsers(),
@@ -75,17 +52,24 @@ const AdminDashboardMain = () => {
       setPendingUsers(Array.isArray(usersRes?.data) ? usersRes.data : usersRes?.data?.data || []);
       setPendingOwners(Array.isArray(ownersRes?.data) ? ownersRes.data : ownersRes?.data?.data || []);
     } catch (error) {
-      toast.error(error?.response?.data?.message || "Failed to load admin data");
+      if (!silent) {
+        toast.error(error?.response?.data?.message || "Failed to load admin data");
+      }
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   };
 
   useEffect(() => {
     loadPendingData();
+    const intervalId = window.setInterval(() => {
+      loadPendingData({ silent: true });
+    }, 10000);
+
+    return () => window.clearInterval(intervalId);
   }, []);
 
-  const handleDecision = async ({ id, type, approve }) => {
+  const handleDecision = async ({ id, type, approve, owner }) => {
     const actionKey = `${type}-${id}-${approve ? "approve" : "reject"}`;
     setActionLoading(actionKey);
     try {
@@ -95,10 +79,10 @@ const AdminDashboardMain = () => {
       } else {
         if (approve) {
           await adminModerationApi.approveOwnerPremium(id);
-          updateOwnerPendingPropertiesAfterDecision({ ownerId: id, approved: true });
+          writeOwnerApprovalStatus(owner || id, "APPROVED");
         } else {
           await adminModerationApi.rejectOwnerPremium(id);
-          updateOwnerPendingPropertiesAfterDecision({ ownerId: id, approved: false });
+          writeOwnerApprovalStatus(owner || id, "REJECTED");
         }
       }
       toast.success(`Request ${approve ? "approved" : "rejected"} successfully`);
@@ -107,6 +91,29 @@ const AdminDashboardMain = () => {
       toast.error(error?.response?.data?.message || "Action failed");
     } finally {
       setActionLoading("");
+    }
+  };
+
+  const handleViewOwnerProperties = async (owner) => {
+    const ownerId = owner?.ownerId ?? owner?.id;
+    if (!ownerId) {
+      toast.error("Owner id is missing");
+      return;
+    }
+
+    setOwnerPropertiesLoading(String(ownerId));
+    try {
+      const response = await adminModerationApi.getOwnerProperties(ownerId);
+      setOwnerProperties({
+        ownerId,
+        ownerName: response?.data?.ownerName || owner?.fullName || "Property Owner",
+        totalProperties: response?.data?.totalProperties ?? 0,
+        properties: Array.isArray(response?.data?.properties) ? response.data.properties : [],
+      });
+    } catch (error) {
+      toast.error(error?.response?.data?.message || "Failed to load owner properties");
+    } finally {
+      setOwnerPropertiesLoading("");
     }
   };
 
@@ -197,14 +204,21 @@ const AdminDashboardMain = () => {
                         <p className="text-sm text-gray-500">{owner?.mobileNumber || "-"}</p>
                         <div className="flex gap-2 mt-3">
                           <button
-                            onClick={() => handleDecision({ id, type: "owner", approve: true })}
+                            onClick={() => handleViewOwnerProperties(owner)}
+                            disabled={ownerPropertiesLoading === String(id)}
+                            className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 disabled:bg-gray-400"
+                          >
+                            {ownerPropertiesLoading === String(id) ? "Loading..." : "Properties"}
+                          </button>
+                          <button
+                            onClick={() => handleDecision({ id, type: "owner", approve: true, owner })}
                             disabled={actionLoading === `${keyPrefix}-approve`}
                             className="px-3 py-1.5 text-sm bg-green-600 text-white rounded hover:bg-green-700 disabled:bg-gray-400"
                           >
                             Approve
                           </button>
                           <button
-                            onClick={() => handleDecision({ id, type: "owner", approve: false })}
+                            onClick={() => handleDecision({ id, type: "owner", approve: false, owner })}
                             disabled={actionLoading === `${keyPrefix}-reject`}
                             className="px-3 py-1.5 text-sm bg-red-600 text-white rounded hover:bg-red-700 disabled:bg-gray-400"
                           >
@@ -220,6 +234,60 @@ const AdminDashboardMain = () => {
           </div>
         )}
       </div>
+      {ownerProperties && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 px-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-4xl w-full max-h-[85vh] overflow-y-auto">
+            <div className="flex items-center justify-between p-5 border-b">
+              <div>
+                <h3 className="text-xl font-semibold text-gray-800">
+                  {ownerProperties.ownerName}
+                </h3>
+                <p className="text-sm text-gray-500">
+                  {ownerProperties.totalProperties} properties listed
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setOwnerProperties(null)}
+                className="px-3 py-2 rounded-md border border-gray-300 hover:bg-gray-50"
+              >
+                Close
+              </button>
+            </div>
+
+            {ownerProperties.properties.length === 0 ? (
+              <div className="p-5 text-gray-500">No properties found for this owner.</div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="min-w-full text-sm">
+                  <thead className="bg-gray-50 text-gray-600">
+                    <tr>
+                      <th className="text-left p-3 font-semibold">Title</th>
+                      <th className="text-left p-3 font-semibold">City</th>
+                      <th className="text-left p-3 font-semibold">Location</th>
+                      <th className="text-left p-3 font-semibold">Price</th>
+                      <th className="text-left p-3 font-semibold">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {ownerProperties.properties.map((property) => (
+                      <tr key={property.id} className="border-t">
+                        <td className="p-3 font-medium text-gray-800">{property.title || "-"}</td>
+                        <td className="p-3 text-gray-600">{property.city || "-"}</td>
+                        <td className="p-3 text-gray-600">{property.location || "-"}</td>
+                        <td className="p-3 text-gray-600">
+                          {property.price ? `Rs. ${Number(property.price).toLocaleString()}` : "-"}
+                        </td>
+                        <td className="p-3 text-gray-600">{property.status || "-"}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
       <ToastContainer position="top-right" autoClose={2500} />
     </div>
   );

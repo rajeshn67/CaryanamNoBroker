@@ -127,13 +127,14 @@ export const adminApi = {
 
 // Owner API calls (aligned with backend /api/owner controller)
 export const ownerApi = {
+  getAreasByCity: (city) =>
+    api.get(`/owner/getAreasByCity/${encodeURIComponent(city)}`),
+  getPincode: (city, area) =>
+    api.get("/owner/getPincode", { params: { city, area } }),
   addProperty: (ownerId, propertyData) =>
     api.post(`/owner/addPropertyByOwner/${ownerId}`, propertyData),
-  getOwnerProperties: async (ownerId) => {
-    // This function is no longer used - properties are fetched individually using getPropertyById
-    // Kept for backward compatibility
-    return Promise.reject("Use getPropertyById for individual property fetch");
-  },
+  getOwnerProperties: (ownerId) =>
+    api.get(`/owner/getAllPropertiesByOwnerId/${ownerId}`),
   getPropertyById: (id) => api.get(`/owner/getPropertyById/${id}`),
   updateProperty: (id, propertyData) =>
     api.put(`/owner/updatePropertyById/${id}`, propertyData),
@@ -153,7 +154,7 @@ export const propertyApi = {
       try {
         const payload = JSON.parse(atob(token.split(".")[1]));
         userId = payload.id; 
-      } catch (e) {
+      } catch {
         console.log("Invalid token");
       }
     }
@@ -187,28 +188,24 @@ export const authApi = {
   registerOwner: (data) => api.post("/auth/register/POwner", data),
 };
 
-const withAdminFallback = async (path, method = "get", data) => {
-  try {
-    if (method === "get") return await api.get(path);
-    return await api.post(path, data);
-  } catch (firstError) {
-    const rootPath = path.startsWith("/admin/") ? path : `/admin${path}`;
-    if (method === "get") return await rootApi.get(rootPath);
-    return await rootApi.post(rootPath, data);
-  }
+const adminRootRequest = (path, method = "get", data) => {
+  const rootPath = path.startsWith("/admin/") ? path : `/admin${path}`;
+  if (method === "get") return rootApi.get(rootPath);
+  return rootApi.post(rootPath, data);
 };
 
 export const adminModerationApi = {
-  getPendingUsers: () => withAdminFallback("/admin/pending-users"),
-  getPendingOwners: () => withAdminFallback("/admin/pending-Owner"),
+  getPendingUsers: () => adminRootRequest("/admin/pending-users"),
+  getPendingOwners: () => adminRootRequest("/admin/pending-owner"),
   approveUserPremium: (userId) =>
-    withAdminFallback(`/admin/approveUserPremium/${userId}`, "post"),
+    adminRootRequest(`/admin/approveUserPremium/${userId}`, "post"),
   rejectUserPremium: (userId) =>
-    withAdminFallback(`/admin/rejectUserPremium/${userId}`, "post"),
+    adminRootRequest(`/admin/rejectUserPremium/${userId}`, "post"),
   approveOwnerPremium: (ownerId) =>
-    withAdminFallback(`/admin/approveOwnerPremium/${ownerId}`, "post"),
+    adminRootRequest(`/admin/approveOwnerPremium/${ownerId}`, "post"),
   rejectOwnerPremium: (ownerId) =>
-    withAdminFallback(`/admin/rejectOwnerPremium/${ownerId}`, "post"),
+    adminRootRequest(`/admin/rejectOwnerPremium/${ownerId}`, "post"),
+  getOwnerProperties: (ownerId) => rootApi.get(`/admin/owner/${ownerId}/properties`),
 };
 
 export default api;

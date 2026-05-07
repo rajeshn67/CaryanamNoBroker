@@ -464,6 +464,9 @@ export default function Auth() {
     if (!formData.password || formData.password.length < 6)
       return "Password min 6 characters";
 
+    if (!isLogin && !/^(?=.*[A-Z])(?=.*[!@#$%^&*(),.?":{}|<>])(?=\S+$).{8,}$/.test(formData.password))
+      return "Password must be 8+ characters with one uppercase letter, one special character, and no spaces";
+
     return null;
   };
 

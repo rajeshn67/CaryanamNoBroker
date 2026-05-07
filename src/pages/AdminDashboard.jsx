@@ -2,7 +2,6 @@ import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
 import { ownerApi } from "../services/api";
-import imageCompression from "browser-image-compression";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import OwnerPremiumQrImage from "../assets/QR.jpeg";
@@ -11,176 +10,51 @@ const IMAGE_FALLBACK =
   "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='400' height='300' viewBox='0 0 400 300'><rect width='100%25' height='100%25' fill='%23D1D5DB'/><text x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' fill='%236B7280' font-family='Arial, sans-serif' font-size='24'>No Image</text></svg>";
 const OWNER_PREMIUM_QR_IMAGE =
   OwnerPremiumQrImage || IMAGE_FALLBACK;
-const OWNER_PENDING_APPROVAL_KEY = "ownerPendingApprovalProperties";
-const PENDING_PROPERTY_IDS_KEY = "pendingApprovalPropertyIds";
-const PROPERTY_APPROVAL_STATES_KEY = "propertyApprovalStates";
-const OWNER_LOCAL_PROPERTIES_KEY = "ownerLocalProperties";
 const OWNER_ID_BY_EMAIL_KEY = "ownerIdByEmail";
-const OWNER_PROPERTY_IDS_KEY = "ownerPropertyIds";
+const OWNER_APPROVAL_STATUS_KEY = "ownerApprovalStatuses";
 
-const readPropertyApprovalStateMap = () => {
+const readOwnerApprovalStatuses = () => {
   try {
-    const parsed = JSON.parse(localStorage.getItem(PROPERTY_APPROVAL_STATES_KEY) || "{}");
+    const parsed = JSON.parse(localStorage.getItem(OWNER_APPROVAL_STATUS_KEY) || "{}");
     return parsed && typeof parsed === "object" ? parsed : {};
   } catch {
     return {};
   }
 };
 
-const readOwnerLocalPropertiesMap = () => {
-  try {
-    const parsed = JSON.parse(localStorage.getItem(OWNER_LOCAL_PROPERTIES_KEY) || "{}");
-    return parsed && typeof parsed === "object" ? parsed : {};
-  } catch {
-    return {};
-  }
+const getStoredOwnerApprovalStatus = (ownerId) => {
+  const approvalStatuses = readOwnerApprovalStatuses();
+  const ownerEmail = String(localStorage.getItem("ownerEmail") || "").toLowerCase().trim();
+  return (
+    approvalStatuses[String(ownerId)] ||
+    (ownerEmail ? approvalStatuses[`email:${ownerEmail}`] : "") ||
+    ""
+  );
 };
 
-const readOwnerPropertyIds = () => {
-  try {
-    const parsed = JSON.parse(localStorage.getItem(OWNER_PROPERTY_IDS_KEY) || "{}");
-    return parsed && typeof parsed === "object" ? parsed : {};
-  } catch {
-    return {};
-  }
-};
-
-const writeOwnerPropertyIds = (ownerId, propertyIds) => {
-  const map = readOwnerPropertyIds();
-  const ownerKey = String(Number(ownerId));
-  map[ownerKey] = Array.isArray(propertyIds) ? propertyIds : [];
-  localStorage.setItem(OWNER_PROPERTY_IDS_KEY, JSON.stringify(map));
-};
-
-const writeOwnerLocalProperties = (ownerId, properties) => {
-  const map = readOwnerLocalPropertiesMap();
-  const ownerKey = String(Number(ownerId));
-  map[ownerKey] = Array.isArray(properties) ? properties : [];
-  localStorage.setItem(OWNER_LOCAL_PROPERTIES_KEY, JSON.stringify(map));
-};
-
-const registerPendingApprovalProperty = (ownerId, propertyId) => {
-  const ownerNumericId = Number(ownerId);
-  const propertyNumericId = Number(propertyId);
-  if (!Number.isFinite(ownerNumericId) || ownerNumericId <= 0) return;
-  if (!Number.isFinite(propertyNumericId) || propertyNumericId <= 0) return;
-
-  let ownerMap = {};
-  let pendingIds = [];
-  try {
-    ownerMap = JSON.parse(localStorage.getItem(OWNER_PENDING_APPROVAL_KEY) || "{}");
-  } catch {
-    ownerMap = {};
-  }
-  try {
-    pendingIds = JSON.parse(localStorage.getItem(PENDING_PROPERTY_IDS_KEY) || "[]");
-  } catch {
-    pendingIds = [];
-  }
-
-  const key = String(ownerNumericId);
-  const ownerIds = Array.isArray(ownerMap[key]) ? ownerMap[key] : [];
-  if (!ownerIds.includes(propertyNumericId)) {
-    ownerMap[key] = [...ownerIds, propertyNumericId];
-    localStorage.setItem(OWNER_PENDING_APPROVAL_KEY, JSON.stringify(ownerMap));
-  }
-
-  if (!pendingIds.includes(propertyNumericId)) {
-    localStorage.setItem(
-      PENDING_PROPERTY_IDS_KEY,
-      JSON.stringify([...pendingIds, propertyNumericId])
-    );
-  }
-
-  const statusMap = readPropertyApprovalStateMap();
-  statusMap[String(propertyNumericId)] = "PENDING";
-  localStorage.setItem(PROPERTY_APPROVAL_STATES_KEY, JSON.stringify(statusMap));
-};
-
-const fetchImageAsBlob = async (imageName) => {
-  if (!imageName) return null;
-  
-  const rawValue = String(imageName).trim();
-  if (/^(blob:|data:|https?:)/i.test(rawValue)) {
-    return rawValue;
-  }
-
-  const cleanedName = rawValue.replace(/^\/+/, "");
-  const token = localStorage.getItem("ownerToken") || localStorage.getItem("adminToken") || localStorage.getItem("userToken");
-  
-  const imageUrls = [
-    `http://localhost:8080/uploads/${cleanedName}`,
-    `http://localhost:8080/${cleanedName}`,
-    `http://localhost:8080/api/uploads/${cleanedName}`,
-  ];
-
-  for (const url of imageUrls) {
-    try {
-      const response = await fetch(url, {
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-      });
-      if (response.ok) {
-        const blob = await response.blob();
-        return URL.createObjectURL(blob);
-      }
-    } catch (error) {
-      console.log(`Failed to fetch image from ${url}:`, error);
-    }
-  }
-  
-  return null;
+const writeStoredOwnerApprovalStatus = (ownerId, status) => {
+  const approvalStatuses = readOwnerApprovalStatuses();
+  const ownerEmail = String(localStorage.getItem("ownerEmail") || "").toLowerCase().trim();
+  if (ownerId) approvalStatuses[String(ownerId)] = status;
+  if (ownerEmail) approvalStatuses[`email:${ownerEmail}`] = status;
+  localStorage.setItem(OWNER_APPROVAL_STATUS_KEY, JSON.stringify(approvalStatuses));
 };
 
 const PropertyThumbnail = ({ imageName, title }) => {
-  const [imageUrl, setImageUrl] = useState(IMAGE_FALLBACK);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    let mounted = true;
-    
-    const loadImage = async () => {
-      setLoading(true);
-      try {
-        const blobUrl = await fetchImageAsBlob(imageName);
-        if (mounted) {
-          setImageUrl(blobUrl || IMAGE_FALLBACK);
-        }
-      } catch (error) {
-        console.error('Error loading image:', error);
-        if (mounted) {
-          setImageUrl(IMAGE_FALLBACK);
-        }
-      } finally {
-        if (mounted) {
-          setLoading(false);
-        }
-      }
-    };
-
-    loadImage();
-
-    return () => {
-      mounted = false;
-      if (imageUrl && imageUrl.startsWith('blob:')) {
-        URL.revokeObjectURL(imageUrl);
-      }
-    };
-  }, [imageName]);
-
-  if (loading) {
-    return (
-      <div className="w-full h-full flex items-center justify-center bg-gray-200">
-        <div className="text-gray-400">Loading...</div>
-      </div>
-    );
-  }
+  const rawValue = String(imageName || "").trim();
+  const cleanedName = rawValue.replace(/^\/+/, "").replace(/^uploads\//i, "");
+  const imageUrl = /^(blob:|data:|https?:)/i.test(rawValue)
+    ? rawValue
+    : `${window.location.origin}/uploads/${encodeURIComponent(cleanedName)}`;
 
   return (
     <img
       src={imageUrl}
-      alt={title}
+      alt={title || "Property"}
       className="w-full h-full object-cover"
-      onError={() => setImageUrl(IMAGE_FALLBACK)}
+      onError={(event) => {
+        event.currentTarget.src = IMAGE_FALLBACK;
+      }}
     />
   );
 };
@@ -212,6 +86,25 @@ const CITY_LOCATION_DATA = {
     "Chakan": "410501",
   },
 };
+const CITY_OPTIONS = [
+  { label: "Pune", value: "Pune", state: "Maharashtra", aliases: ["Pune"] },
+  {
+    label: "Pimpri-Chinchwad (PCMC)",
+    value: "PCMC",
+    state: "Maharashtra",
+    aliases: ["PCMC", "Pimpri-Chinchwad", "Pimpri Chinchwad", "Pimpri"],
+  },
+];
+const CITY_FALLBACK_KEY = {
+  PCMC: "Pimpri-Chinchwad",
+  "Pimpri Chinchwad": "Pimpri-Chinchwad",
+  Pimpri: "Pimpri-Chinchwad",
+};
+const getCityOption = (city) =>
+  CITY_OPTIONS.find(
+    (option) => option.value === city || option.aliases.includes(city)
+  );
+const getFallbackCityKey = (city) => CITY_FALLBACK_KEY[city] || city;
 
 const PropertyOwnerDashboard = () => {
   const [formData, setFormData] = useState({
@@ -243,11 +136,12 @@ const PropertyOwnerDashboard = () => {
   const [showPremiumModal, setShowPremiumModal] = useState(false);
   const [premiumLoading, setPremiumLoading] = useState(false);
   const [ownerPremiumStatus, setOwnerPremiumStatus] = useState("NONE");
+  const [ownerApprovalStatus, setOwnerApprovalStatus] = useState("");
   const [propertyFetchMessage, setPropertyFetchMessage] = useState("");
-  const [pendingApprovalPropertyId, setPendingApprovalPropertyId] = useState(null);
-  const [propertyApprovalStates, setPropertyApprovalStates] = useState(() =>
-    readPropertyApprovalStateMap()
-  );
+  const [areaOptions, setAreaOptions] = useState([]);
+  const [areaLoading, setAreaLoading] = useState(false);
+  const [areaMessage, setAreaMessage] = useState("");
+  const [resolvedCity, setResolvedCity] = useState("");
   const latestPreviewsRef = useRef([]);
   const [ownerId, setOwnerId] = useState(null);
   const [ownerSessionMessage, setOwnerSessionMessage] = useState("");
@@ -320,7 +214,7 @@ const handleManualOwnerIdSubmit = () => {
         localStorage.setItem(OWNER_ID_BY_EMAIL_KEY, JSON.stringify(ownerIdMap));
         localStorage.setItem(`ownerId:${ownerEmail}`, String(numericId));
       }
-    } catch (e) {
+    } catch {
       console.log("Error decoding token for email mapping");
     }
   }
@@ -405,9 +299,29 @@ const handleManualOwnerIdSubmit = () => {
 
   useEffect(() => {
     if (!ownerId) return;
-    setPropertyApprovalStates(readPropertyApprovalStateMap());
+    const syncOwnerApprovalStatus = () => {
+      const status = getStoredOwnerApprovalStatus(ownerId);
+      setOwnerApprovalStatus(status);
+      if (status) setOwnerPremiumStatus(status);
+    };
+
+    syncOwnerApprovalStatus();
     setProperties([]);
     fetchProperties();
+    const intervalId = window.setInterval(() => {
+      syncOwnerApprovalStatus();
+      fetchProperties({ preserveCurrent: true, silent: true });
+    }, 10000);
+
+    const channel = new BroadcastChannel("owner-approval-status");
+    channel.onmessage = syncOwnerApprovalStatus;
+    window.addEventListener("storage", syncOwnerApprovalStatus);
+
+    return () => {
+      window.clearInterval(intervalId);
+      channel.close();
+      window.removeEventListener("storage", syncOwnerApprovalStatus);
+    };
   }, [ownerId]);
 
   useEffect(() => {
@@ -451,107 +365,74 @@ const handleManualOwnerIdSubmit = () => {
 
   const getDetailImages = (detailData) => [
     detailData?.coverImage,
+    detailData?.imagePath,
+    detailData?.imageName,
     ...parseDoctypeImages(detailData?.doctypeImages),
   ].filter(Boolean);
 
-  const hydratePropertiesWithDetails = async (baseProperties) => {
-    return Promise.all(
-      baseProperties.map(async (property) => {
-        if (!property?.id) return property;
-        try {
-          const detailsResponse = await ownerApi.getPropertyById(property.id);
-          const detailData = detailsResponse?.data?.data || {};
-          const detailImages = getDetailImages(detailData);
+  const getPropertyImageName = (property) =>
+    property?.coverImage ||
+    property?.imagePath ||
+    property?.imageName ||
+    property?.images?.[0] ||
+    parseDoctypeImages(property?.doctypeImages)[0] ||
+    "";
 
-          return {
-            ...property,
-            ...detailData,
-            images: detailImages,
-          };
-        } catch (error) {
-          console.error(`Error fetching details for property ${property.id}:`, error);
-          return {
-            ...property,
-            images: [],
-          };
-        }
-      })
-    );
+  const normalizePropertyForDashboard = (property) => {
+    const detailImages = getDetailImages(property || {});
+    return {
+      ...property,
+      images: detailImages,
+    };
   };
 
-  const fetchProperties = async ({ preserveCurrent = false } = {}) => {
+  const fetchProperties = async ({ preserveCurrent = false, silent = false } = {}) => {
     if (!ownerId) return;
     try {
-      setLoading(true);
+      if (!silent) setLoading(true);
       setPropertyFetchMessage("");
-      
-      // Get property IDs from localStorage
-      const propertyIdsMap = readOwnerPropertyIds();
-      const ownerKey = String(Number(ownerId));
-      const propertyIds = Array.isArray(propertyIdsMap[ownerKey]) ? propertyIdsMap[ownerKey] : [];
-      
-      if (propertyIds.length === 0) {
+
+      const response = await ownerApi.getOwnerProperties(ownerId);
+      const apiProperties = Array.isArray(response?.data?.data)
+        ? response.data.data
+        : Array.isArray(response?.data)
+          ? response.data
+          : [];
+      const fetchedProperties = apiProperties
+        .filter((property) => String(property?.status || "").toUpperCase() !== "INACTIVE")
+        .map(normalizePropertyForDashboard);
+
+      if (fetchedProperties.length === 0) {
         setProperties([]);
-        setPropertyFetchMessage("No properties found. Add a property to get started.");
+        setPropertyFetchMessage("No properties found in the database. Add a property to get started.");
         return;
       }
-      
-      // Fetch each property individually using getPropertyById
-      const propertyPromises = propertyIds.map(async (id) => {
-        try {
-          const response = await ownerApi.getPropertyById(id);
-          const detailData = response?.data?.data || {};
-          
-          const detailImages = getDetailImages(detailData);
-          
-          return {
-            ...detailData,
-            id: id,
-            images: detailImages.length > 0 ? detailImages : [],
-          };
-        } catch (error) {
-          console.error(`Error fetching property ${id}:`, error);
-          return null;
-        }
-      });
-      
-      const fetchedProperties = (await Promise.all(propertyPromises)).filter(Boolean);
-      
+
       setProperties(fetchedProperties);
-      writeOwnerLocalProperties(ownerId, fetchedProperties);
       setPropertyFetchMessage("");
     } catch (err) {
       console.error("Error fetching properties:", err?.message || err);
-      // Fallback to localStorage if API fails
-      const localPropertiesMap = readOwnerLocalPropertiesMap();
-      const ownerKey = String(Number(ownerId));
-      const localProperties = Array.isArray(localPropertiesMap[ownerKey]) 
-        ? localPropertiesMap[ownerKey] 
-        : [];
-      
-      if (localProperties.length > 0) {
-        setProperties(localProperties);
-        setPropertyFetchMessage("Showing properties from your current session.");
-      } else {
-        if (!preserveCurrent) {
-          setProperties([]);
-        }
-        setPropertyFetchMessage("No properties found. Add a property to get started.");
+      if (!preserveCurrent) {
+        setProperties([]);
       }
+      setPropertyFetchMessage(
+        "Could not fetch properties from the database. Please check your owner session and backend API."
+      );
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   };
 
   const resolvePropertyApprovalStatus = (property) => {
-    const propertyId = String(property?.id ?? "");
-    const localStatus = propertyApprovalStates[propertyId];
-    if (localStatus) return localStatus;
+    const workflowStatus = String(ownerApprovalStatus || ownerPremiumStatus || "").toUpperCase();
+    if (workflowStatus === "APPROVED") return "APPROVED";
+    if (workflowStatus === "REJECTED") return "REJECTED";
+    if (workflowStatus === "PENDING") return "PENDING";
 
     const backendStatus = String(property?.status || "").toUpperCase();
-    if (backendStatus === "ACTIVE") return "APPROVED";
     if (backendStatus === "PENDING") return "PENDING";
     if (backendStatus === "INACTIVE") return "REJECTED";
+    if (backendStatus === "ACTIVE") return "PENDING";
     return "PENDING";
   };
 
@@ -565,21 +446,57 @@ const handleManualOwnerIdSubmit = () => {
     return "bg-amber-100 text-amber-700 border border-amber-200";
   };
 
-  // Compress image before upload
-  const compressImage = async (file) => {
-    const options = {
-      maxSizeMB: 2,
-      maxWidthOrHeight: 1280,
-      useWebWorker: true,
-    };
+  const loadImageElement = (file) =>
+    new Promise((resolve, reject) => {
+      const imageUrl = URL.createObjectURL(file);
+      const image = new Image();
+      image.onload = () => {
+        URL.revokeObjectURL(imageUrl);
+        resolve(image);
+      };
+      image.onerror = () => {
+        URL.revokeObjectURL(imageUrl);
+        reject(new Error("Could not read selected image"));
+      };
+      image.src = imageUrl;
+    });
 
-    try {
-      const compressedFile = await imageCompression(file, options);
-      return compressedFile;
-    } catch (error) {
-      console.error("Error compressing image:", error);
-      throw new Error("Failed to compress image");
+  const canvasToBlob = (canvas, quality) =>
+    new Promise((resolve, reject) => {
+      canvas.toBlob(
+        (blob) => (blob ? resolve(blob) : reject(new Error("Could not prepare image"))),
+        "image/jpeg",
+        quality
+      );
+    });
+
+  const prepareImageForBackend = async (file, index, suffix = "") => {
+    const image = await loadImageElement(file);
+    const maxDimension = 960;
+    const scale = Math.min(1, maxDimension / Math.max(image.width, image.height));
+    const width = Math.max(1, Math.round(image.width * scale));
+    const height = Math.max(1, Math.round(image.height * scale));
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+    const context = canvas.getContext("2d");
+    context.fillStyle = "#fff";
+    context.fillRect(0, 0, width, height);
+    context.drawImage(image, 0, 0, width, height);
+
+    let blob = null;
+    for (const quality of [0.72, 0.62, 0.52, 0.42]) {
+      blob = await canvasToBlob(canvas, quality);
+      if (blob.size <= 700 * 1024) break;
     }
+
+    const originalName = file.name.toLowerCase();
+    const baseName = originalName.replace(/\.[^/.]+$/, "").replace(/[^a-z0-9-_]/g, "-");
+    const uniqueSuffix = `${Date.now()}-${index}-${Math.random().toString(36).slice(2, 8)}${suffix}`;
+    return new File([blob], `${baseName || "property-image"}-${uniqueSuffix}.jpg`, {
+      type: "image/jpeg",
+      lastModified: Date.now(),
+    });
   };
 
   // Validate image
@@ -601,26 +518,7 @@ const handleManualOwnerIdSubmit = () => {
 
     try {
       validateImage(file);
-      const compressedFile = await compressImage(file);
-
-      // Ensure filename has valid extension and make it unique to avoid duplicate-image errors.
-      const originalName = file.name.toLowerCase();
-      const baseName = originalName.replace(/\.[^/.]+$/, "").replace(/[^a-z0-9-_]/g, "-");
-      let extension = originalName.split(".").pop();
-
-      if (!["jpg", "jpeg", "png"].includes(extension)) {
-        if (file.type === "image/jpeg") extension = "jpg";
-        if (file.type === "image/png") extension = "png";
-      }
-
-      const uniqueSuffix = `${Date.now()}-${index}-${Math.random().toString(36).slice(2, 8)}`;
-      const fileName = `${baseName || "property-image"}-${uniqueSuffix}.${extension}`;
-
-      // Create a new File object with correct name and type
-      const fileWithCorrectName = new File([compressedFile], fileName, {
-        type: file.type,
-        lastModified: Date.now()
-      });
+      const backendReadyFile = await prepareImageForBackend(file, index);
 
       const newImages = [...images];
       const newPreviews = [...imagePreviews];
@@ -629,8 +527,8 @@ const handleManualOwnerIdSubmit = () => {
         URL.revokeObjectURL(newPreviews[index]);
       }
 
-      newImages[index] = fileWithCorrectName;
-      newPreviews[index] = URL.createObjectURL(fileWithCorrectName);
+      newImages[index] = backendReadyFile;
+      newPreviews[index] = URL.createObjectURL(backendReadyFile);
 
       setImages(newImages);
       setImagePreviews(newPreviews);
@@ -655,12 +553,118 @@ const handleManualOwnerIdSubmit = () => {
     setImagePreviews(newPreviews);
   };
 
+  const handleCityChange = async (selectedCity) => {
+    const cityOption = getCityOption(selectedCity);
+    setFormData((current) => ({
+      ...current,
+      city: selectedCity,
+      location: "",
+      pincode: "",
+      state: cityOption?.state || "",
+    }));
+    setAreaOptions([]);
+    setAreaMessage("");
+    setResolvedCity("");
+
+    if (!selectedCity) return;
+
+    try {
+      setAreaLoading(true);
+      const cityCandidates = cityOption?.aliases || [selectedCity];
+
+      for (const cityCandidate of cityCandidates) {
+        try {
+          const response = await ownerApi.getAreasByCity(cityCandidate);
+          const areas = Array.isArray(response?.data?.data) ? response.data.data : [];
+          if (areas.length > 0) {
+            setAreaOptions(areas);
+            setResolvedCity(cityCandidate);
+            return;
+          }
+        } catch {
+          // Try the next known backend city alias.
+        }
+      }
+
+      const fallbackAreas = Object.keys(CITY_LOCATION_DATA[getFallbackCityKey(selectedCity)] || {});
+      setAreaOptions(fallbackAreas);
+      setResolvedCity(selectedCity);
+      setAreaMessage(
+        fallbackAreas.length > 0
+          ? "Showing saved PCMC/Pune areas because the API returned no areas."
+          : "No areas found for this city."
+      );
+    } catch (error) {
+      const fallbackAreas = Object.keys(CITY_LOCATION_DATA[getFallbackCityKey(selectedCity)] || {});
+      setAreaOptions(fallbackAreas);
+      setResolvedCity(selectedCity);
+      setAreaMessage(
+        error?.response?.data?.message ||
+          "Could not load live areas. Showing saved options if available."
+      );
+    } finally {
+      setAreaLoading(false);
+    }
+  };
+
+  const handleLocationChange = async (selectedLocation) => {
+    setFormData((current) => ({
+      ...current,
+      location: selectedLocation,
+      pincode: "",
+    }));
+    setAreaMessage("");
+
+    if (!formData.city || !selectedLocation) return;
+
+    try {
+      const cityOption = getCityOption(formData.city);
+      const cityCandidates = [
+        resolvedCity,
+        ...(cityOption?.aliases || [formData.city]),
+      ].filter((city, index, cities) => city && cities.indexOf(city) === index);
+
+      let pincode = "";
+      let matchedCity = "";
+      for (const cityCandidate of cityCandidates) {
+        try {
+          const response = await ownerApi.getPincode(cityCandidate, selectedLocation);
+          pincode = response?.data?.data || "";
+          if (pincode) {
+            matchedCity = cityCandidate;
+            break;
+          }
+        } catch {
+          // Try the next known backend city alias.
+        }
+      }
+
+      if (!pincode) throw new Error("Pincode not found");
+      setResolvedCity(matchedCity || resolvedCity || formData.city);
+      setFormData((current) => ({
+        ...current,
+        location: selectedLocation,
+        pincode,
+      }));
+    } catch (error) {
+      const fallbackPincode =
+        CITY_LOCATION_DATA[getFallbackCityKey(formData.city)]?.[selectedLocation] || "";
+      setFormData((current) => ({
+        ...current,
+        location: selectedLocation,
+        pincode: fallbackPincode,
+      }));
+      setAreaMessage(error?.response?.data?.message || "Could not auto-fill pincode.");
+    }
+  };
+
   const validateBeforeUpload = () => {
     // Validate form
     if (!formData.propertyTitle || !formData.price || !formData.propertyType ||
         !formData.location || !formData.city || !formData.address ||
         !formData.state || !formData.pincode || !formData.mobileNumber ||
-        !formData.description || !formData.bhkType || !formData.furnishing) {
+        !formData.description || !formData.bhkType || !formData.furnishing ||
+        !formData.apartmentName || !formData.carpetArea) {
       toast.error("All fields are required");
       return false;
     }
@@ -681,6 +685,10 @@ const handleManualOwnerIdSubmit = () => {
       toast.error("At least one image is required");
       return false;
     }
+    if (!images[0]) {
+      toast.error("Door image is required and will be used as the cover photo");
+      return false;
+    }
 
     return true;
   };
@@ -693,7 +701,7 @@ const handleManualOwnerIdSubmit = () => {
   // Handle form submission after preview confirmation
   const handleSubmit = async () => {
     if (uploading || loading) return;
-    const uploadedImages = images.filter(img => img !== undefined);
+    const uploadedImages = [images[0], ...images.slice(1).filter(img => img !== undefined)].filter(Boolean);
 
     let createdPropertyId = null;
     try {
@@ -708,17 +716,16 @@ const handleManualOwnerIdSubmit = () => {
         propertyType: formData.propertyType,
         pgType: formData.pgType || null,
         location: formData.location,
-        city: formData.city,
-        address: formData.apartmentName 
-          ? `${formData.apartmentName}, ${formData.address}` 
-          : formData.address,
+        city: resolvedCity || formData.city,
+        address: formData.address,
         state: formData.state,
         pincode: formData.pincode,
         mobileNumber: formData.mobileNumber,
         description: formData.description,
         bhkType: formData.bhkType,
         furnishing: formData.furnishing,
-        carpetArea: formData.carpetArea,
+        carpetArea: String(formData.carpetArea),
+        apartmentName: formData.apartmentName,
       };
 
       // Add property
@@ -732,53 +739,45 @@ const handleManualOwnerIdSubmit = () => {
           const formDataImages = new FormData();
           imagesToUpload.forEach((image) => {
             if (!image) return;
-            console.log("Appending image:", image.name, image.type, image.size);
             formDataImages.append("files", image, image.name);
           });
           return formDataImages;
         };
 
-        const recompressAggressively = async (imagesToUpload) => {
-          const retryOptions = {
-            maxSizeMB: 0.8,
-            maxWidthOrHeight: 960,
-            useWebWorker: true,
-          };
-          const compressedRetryFiles = await Promise.all(
-            imagesToUpload.map(async (image, index) => {
-              const compressed = await imageCompression(image, retryOptions);
-              const baseName = image.name
-                .replace(/\.[^/.]+$/, "")
-                .replace(/[^a-z0-9-_]/gi, "-")
-                .toLowerCase();
-              const extension = image.name.toLowerCase().endsWith(".png") ? "png" : "jpg";
-              const mimeType = extension === "png" ? "image/png" : "image/jpeg";
-              return new File(
-                [compressed],
-                `${baseName || "property-image"}-retry-${Date.now()}-${index}.${extension}`,
-                { type: mimeType, lastModified: Date.now() }
-              );
-            })
+        const uploadPreparedImages = async (imagesToUpload) => {
+          const [doorImage, ...otherImages] = imagesToUpload;
+
+          await ownerApi.uploadPropertyImages(
+            propertyId,
+            buildImageFormData([doorImage])
           );
-          return compressedRetryFiles;
+
+          if (otherImages.length === 0) return;
+
+          try {
+            await ownerApi.uploadPropertyImages(
+              propertyId,
+              buildImageFormData(otherImages)
+            );
+          } catch (error) {
+            console.warn("Some non-cover images were not uploaded:", error);
+          }
         };
 
         try {
-          await ownerApi.uploadPropertyImages(
-            propertyId,
-            buildImageFormData(uploadedImages)
-          );
+          await uploadPreparedImages(uploadedImages);
           const responseMessage =
             propertyResponse?.data?.message || "Property added successfully!";
           toast.success(responseMessage);
         } catch (uploadErr) {
           console.error("Error uploading images (first attempt):", uploadErr);
           try {
-            const retryFiles = await recompressAggressively(uploadedImages);
-            await ownerApi.uploadPropertyImages(
-              propertyId,
-              buildImageFormData(retryFiles)
+            const retryFiles = await Promise.all(
+              uploadedImages.map((image, index) =>
+                prepareImageForBackend(image, index, "-retry")
+              )
             );
+            await uploadPreparedImages(retryFiles);
             toast.success("Images uploaded after retry with optimized size.");
           } catch (retryErr) {
             console.error("Error uploading images (retry attempt):", retryErr);
@@ -790,32 +789,9 @@ const handleManualOwnerIdSubmit = () => {
           }
         }
         
-        registerPendingApprovalProperty(ownerId, propertyId);
-        setPropertyApprovalStates((prev) => ({
-          ...prev,
-          [String(propertyId)]: "PENDING",
-        }));
-        const [createdPropertyFromDb] = await hydratePropertiesWithDetails([{ id: propertyId }]);
         setPropertyFetchMessage("");
-        
-        // Save property ID to localStorage for future fetching
-        const propertyIdsMap = readOwnerPropertyIds();
-        const ownerKey = String(Number(ownerId));
-        const currentIds = Array.isArray(propertyIdsMap[ownerKey]) ? propertyIdsMap[ownerKey] : [];
-        if (!currentIds.includes(propertyId)) {
-          writeOwnerPropertyIds(ownerId, [...currentIds, propertyId]);
-        }
-        
-        setProperties((prev) => {
-          const updated = [
-            createdPropertyFromDb,
-            ...prev.filter((item) => item.id !== propertyId),
-          ];
-          writeOwnerLocalProperties(ownerId, updated);
-          return updated;
-        });
-        setPendingApprovalPropertyId(propertyId);
         setOwnerPremiumStatus("PENDING");
+        setOwnerApprovalStatus("PENDING");
         setShowPremiumModal(true);
 
         // Reset form
@@ -838,8 +814,7 @@ const handleManualOwnerIdSubmit = () => {
         });
         clearSelectedImages();
 
-        // Refresh from the database owner list when the backend permits it.
-        fetchProperties({ preserveCurrent: true });
+        await fetchProperties({ preserveCurrent: true });
       }
     } catch (err) {
       console.error("Error adding property:", err);
@@ -866,19 +841,7 @@ const handleManualOwnerIdSubmit = () => {
     try {
       const response = await ownerApi.deleteProperty(propertyId);
       toast.success(response?.data?.message || "Property deactivated successfully");
-      
-      // Remove property ID from localStorage
-      const propertyIdsMap = readOwnerPropertyIds();
-      const ownerKey = String(Number(ownerId));
-      const currentIds = Array.isArray(propertyIdsMap[ownerKey]) ? propertyIdsMap[ownerKey] : [];
-      const updatedIds = currentIds.filter((id) => id !== propertyId);
-      writeOwnerPropertyIds(ownerId, updatedIds);
-      
-      setProperties((prev) => {
-        const next = prev.filter((item) => item.id !== propertyId);
-        if (ownerId) writeOwnerLocalProperties(ownerId, next);
-        return next;
-      });
+      await fetchProperties({ preserveCurrent: true });
     } catch (err) {
       console.error("Error deleting property:", err);
       toast.error(err.response?.data?.message || err.message || "Failed to delete property");
@@ -893,7 +856,7 @@ const handleManualOwnerIdSubmit = () => {
       price: property.price || "",
       propertyType: property.propertyType || "",
       pgType: property.pgType || "",
-      apartmentName: "",
+      apartmentName: property.apartmentName || "",
       location: property.location || "",
       city: property.city || "",
       address: property.address || "",
@@ -905,6 +868,11 @@ const handleManualOwnerIdSubmit = () => {
       furnishing: property.furnishing || "",
       carpetArea: property.carpetArea || "",
     });
+    setResolvedCity(property.city || "");
+    const fallbackAreas = Object.keys(CITY_LOCATION_DATA[getFallbackCityKey(property.city)] || {});
+    setAreaOptions(property.location && !fallbackAreas.includes(property.location)
+      ? [property.location, ...fallbackAreas]
+      : fallbackAreas);
     setShowEditModal(true);
   };
 
@@ -918,7 +886,8 @@ const handleManualOwnerIdSubmit = () => {
     if (!formData.propertyTitle || !formData.price || !formData.propertyType ||
         !formData.location || !formData.city || !formData.address ||
         !formData.state || !formData.pincode || !formData.mobileNumber ||
-        !formData.description || !formData.bhkType || !formData.furnishing) {
+        !formData.description || !formData.bhkType || !formData.furnishing ||
+        !formData.apartmentName || !formData.carpetArea) {
       toast.error("All fields are required");
       return;
     }
@@ -942,49 +911,23 @@ const handleManualOwnerIdSubmit = () => {
         propertyType: formData.propertyType,
         pgType: formData.pgType || null,
         location: formData.location,
-        city: formData.city,
-        address: formData.apartmentName 
-          ? `${formData.apartmentName}, ${formData.address}` 
-          : formData.address,
+        city: resolvedCity || formData.city,
+        address: formData.address,
         state: formData.state,
         pincode: formData.pincode,
         mobileNumber: formData.mobileNumber,
         description: formData.description,
         bhkType: formData.bhkType,
         furnishing: formData.furnishing,
-        carpetArea: formData.carpetArea,
+        carpetArea: String(formData.carpetArea),
+        apartmentName: formData.apartmentName,
       };
 
       const response = await ownerApi.updateProperty(editingProperty.id, propertyData);
       toast.success(response?.data?.message || "Property updated successfully");
-
-      setProperties((prev) => {
-        const next = prev.map((item) =>
-          item.id === editingProperty.id
-            ? {
-                ...item,
-                title: propertyData.title,
-                price: propertyData.price,
-                propertyType: propertyData.propertyType,
-                location: propertyData.location,
-                city: propertyData.city,
-                address: propertyData.address,
-                state: propertyData.state,
-                pincode: propertyData.pincode,
-                mobileNumber: propertyData.mobileNumber,
-                description: propertyData.description,
-                bhkType: propertyData.bhkType,
-                furnishing: propertyData.furnishing,
-                carpetArea: propertyData.carpetArea,
-              }
-            : item
-        );
-        if (ownerId) writeOwnerLocalProperties(ownerId, next);
-        return next;
-      });
-
       setShowEditModal(false);
       setEditingProperty(null);
+      await fetchProperties({ preserveCurrent: true });
     } catch (err) {
       console.error("Error updating property:", err);
       toast.error(err.response?.data?.message || "Failed to update property");
@@ -1029,13 +972,14 @@ const handleManualOwnerIdSubmit = () => {
         response?.data?.data?.status ||
         response?.data?.status ||
         "PENDING";
-      setOwnerPremiumStatus(status);
+      const nextStatus = String(status).toUpperCase() === "APPROVED" ? "APPROVED" : "PENDING";
+      writeStoredOwnerApprovalStatus(ownerId, nextStatus);
+      setOwnerPremiumStatus(nextStatus);
+      setOwnerApprovalStatus(nextStatus);
       toast.success(
         "Payment request submitted. Admin can now approve or reject your premium request."
       );
       setShowPremiumModal(false);
-      setPendingApprovalPropertyId(null);
-      setPropertyApprovalStates(readPropertyApprovalStateMap());
       await fetchProperties();
     } catch (err) {
       toast.error(err?.response?.data?.message || "Failed to submit premium request");
@@ -1252,20 +1196,12 @@ const handleManualOwnerIdSubmit = () => {
                 <select
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
                   value={formData.city}
-                  onChange={(e) => {
-                    const selectedCity = e.target.value;
-                    setFormData({
-                      ...formData,
-                      city: selectedCity,
-                      location: "",
-                      pincode: "",
-                    });
-                  }}
+                  onChange={(e) => handleCityChange(e.target.value)}
                 >
                   <option value="">Select city</option>
-                  {Object.keys(CITY_LOCATION_DATA).map((city) => (
-                    <option key={city} value={city}>
-                      {city}
+                  {CITY_OPTIONS.map((city) => (
+                    <option key={city.value} value={city.value}>
+                      {city.label}
                     </option>
                   ))}
                 </select>
@@ -1278,29 +1214,24 @@ const handleManualOwnerIdSubmit = () => {
                 <select
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
                   value={formData.location}
-                  onChange={(e) => {
-                    const selectedLocation = e.target.value;
-                    const pincode = formData.city ? CITY_LOCATION_DATA[formData.city]?.[selectedLocation] || "" : "";
-                    setFormData({
-                      ...formData,
-                      location: selectedLocation,
-                      pincode: pincode,
-                    });
-                  }}
-                  disabled={!formData.city}
+                  onChange={(e) => handleLocationChange(e.target.value)}
+                  disabled={!formData.city || areaLoading}
                 >
-                  <option value="">Select location</option>
-                  {formData.city && Object.keys(CITY_LOCATION_DATA[formData.city] || {}).map((location) => (
+                  <option value="">{areaLoading ? "Loading areas..." : "Select location"}</option>
+                  {areaOptions.map((location) => (
                     <option key={location} value={location}>
                       {location}
                     </option>
                   ))}
                 </select>
+                {areaMessage && (
+                  <p className="text-xs text-amber-600 mt-2">{areaMessage}</p>
+                )}
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Apartment Name
+                  Apartment Name <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
@@ -1335,15 +1266,13 @@ const handleManualOwnerIdSubmit = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   State <span className="text-red-500">*</span>
                 </label>
-                <select
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+                <input
+                  type="text"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50"
+                  placeholder="Auto-filled from city"
                   value={formData.state}
-                  onChange={(e) =>
-                    setFormData({ ...formData, state: e.target.value })
-                  }
-                >
-                  <option value="Maharashtra">Maharashtra</option>
-                </select>
+                  readOnly
+                />
               </div>
             </div>
 
@@ -1467,7 +1396,7 @@ const handleManualOwnerIdSubmit = () => {
                   />
                 </svg>
                 <label className="text-sm font-medium text-gray-700">
-                  Property Images <span className="text-red-500">(10 Required)</span>
+                  Property Images <span className="text-red-500">(Door image required)</span>
                 </label>
               </div>
               <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
@@ -1485,6 +1414,8 @@ const handleManualOwnerIdSubmit = () => {
                       className={`border-2 border-dashed rounded-lg p-6 flex flex-col items-center justify-center transition-colors cursor-pointer min-h-[120px] ${
                         imagePreviews[index]
                           ? "border-green-500 bg-green-50"
+                          : index === 0
+                            ? "border-blue-500 bg-blue-50"
                           : "border-gray-300 hover:border-blue-500 hover:bg-blue-50"
                       }`}
                     >
@@ -1511,6 +1442,7 @@ const handleManualOwnerIdSubmit = () => {
                           </svg>
                           <span className="text-xs text-gray-500 text-center font-medium">
                             {label}
+                            {index === 0 ? " *" : ""}
                           </span>
                         </>
                       )}
@@ -1593,16 +1525,10 @@ const handleManualOwnerIdSubmit = () => {
                   className="border border-gray-200 rounded-lg overflow-hidden hover:shadow-md transition-shadow"
                 >
                   <div className="h-48 bg-gray-200">
-                    {property.images && property.images.length > 0 ? (
-                      <PropertyThumbnail
-                        imageName={property.images[0]}
-                        title={property.title}
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center bg-gray-300">
-                        <span className="text-gray-500">No Image</span>
-                      </div>
-                    )}
+                    <PropertyThumbnail
+                      imageName={getPropertyImageName(property)}
+                      title={property.title}
+                    />
                   </div>
                   <div className="p-4">
                     <div className="flex items-start justify-between gap-2 mb-2">
@@ -2013,6 +1939,20 @@ const handleManualOwnerIdSubmit = () => {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Apartment Name <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  value={formData.apartmentName}
+                  onChange={(e) =>
+                    setFormData({ ...formData, apartmentName: e.target.value })
+                  }
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
                   Location <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -2059,11 +1999,9 @@ const handleManualOwnerIdSubmit = () => {
                 </label>
                 <input
                   type="text"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50"
                   value={formData.state}
-                  onChange={(e) =>
-                    setFormData({ ...formData, state: e.target.value })
-                  }
+                  readOnly
                 />
               </div>
 
