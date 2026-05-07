@@ -355,18 +355,17 @@
 //   );
 // }
 
-
-
 import { useState, useEffect } from "react";
 import { authApi } from "../services/api";
 import { jwtDecode } from "jwt-decode";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Home, Search } from "lucide-react";
+import { Home, Search, Eye, EyeOff } from "lucide-react";
 
 export default function Auth() {
   const OWNER_ID_BY_EMAIL_KEY = "ownerIdByEmail";
   const [isLogin, setIsLogin] = useState(true);
+  const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
@@ -688,14 +687,30 @@ export default function Auth() {
             className="w-full p-4 rounded-2xl bg-white text-black placeholder:text-black/40 border border-[#ff7f50]/20"
           />
 
-          <input
-            type="password"
-            name="password"
-            value={formData.password}
-            placeholder="Password"
-            onChange={handleChange}
-            className="w-full p-4 rounded-2xl bg-white text-black placeholder:text-black/40 border border-[#ff7f50]/20"
-          />
+          <div className="relative">
+            <input
+              type={isPasswordVisible ? "text" : "password"}
+              name="password"
+              value={formData.password}
+              placeholder="Password"
+              onChange={handleChange}
+              className="w-full p-4 pr-12 rounded-2xl bg-white text-black placeholder:text-black/40 border border-[#ff7f50]/20"
+            />
+
+            <button
+              type="button"
+              onClick={() =>
+                setIsPasswordVisible(!isPasswordVisible)
+              }
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-[#ff7f50]"
+            >
+              {isPasswordVisible ? (
+                <EyeOff className="w-5 h-5" />
+              ) : (
+                <Eye className="w-5 h-5" />
+              )}
+            </button>
+          </div>
 
           {!isLogin && (
             <select

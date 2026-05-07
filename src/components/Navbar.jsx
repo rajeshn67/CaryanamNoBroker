@@ -138,7 +138,7 @@ const Navbar = () => {
   return (
     <div className="flex justify-between items-center px-6 py-4 bg-white shadow-sm">
       <h1 className="text-blue-600 font-bold text-lg">
-        Caryanam No Brokar
+        Caryanam Brokar
       </h1>
 
       <button
