@@ -20,6 +20,7 @@ const BrowseProperties = () => {
     address: "",
     minPrice: "",
     maxPrice: "",
+     pgType: "",
   });
 
   const [properties, setProperties] = useState([]);
@@ -279,6 +280,11 @@ const BrowseProperties = () => {
             : Number(
                 filters.maxPrice
               ),
+
+          pgType:
+  filters.pgType === ""
+    ? null
+    : filters.pgType,
       };
 
       // REMOVE EMPTY FIELDS
