@@ -185,15 +185,45 @@ const PropertyThumbnail = ({ imageName, title }) => {
   );
 };
 
+const CITY_LOCATION_DATA = {
+  Pune: {
+    "Kothrud": "411038",
+    "Shivaji Nagar": "411005",
+    "Hinjewadi": "411057",
+    "Hadapsar": "411028",
+    "Baner": "411045",
+    "Wakad": "411057",
+    "Aundh": "411007",
+    "Deccan Gymkhana": "411004",
+    "Kalyani Nagar": "411006",
+    "Viman Nagar": "411014",
+    "Koregaon Park": "411001",
+    "Magarpatta": "411028",
+  },
+  "Pimpri-Chinchwad": {
+    "Pimpri": "411018",
+    "Chinchwad": "411019",
+    "Nigdi": "411044",
+    "Akurdi": "411035",
+    "Ravet": "412101",
+    "Bhosari": "411039",
+    "Thergaon": "411033",
+    "Moshi": "411042",
+    "Chakan": "410501",
+  },
+};
+
 const PropertyOwnerDashboard = () => {
   const [formData, setFormData] = useState({
     propertyTitle: "",
     price: "",
     propertyType: "",
+    pgType: "",
+    apartmentName: "",
     location: "",
     city: "",
     address: "",
-    state: "",
+    state: "Maharashtra",
     pincode: "",
     mobileNumber: "",
     description: "",
@@ -676,9 +706,12 @@ const handleManualOwnerIdSubmit = () => {
         title: formData.propertyTitle,
         price: parseFloat(formData.price),
         propertyType: formData.propertyType,
+        pgType: formData.pgType || null,
         location: formData.location,
         city: formData.city,
-        address: formData.address,
+        address: formData.apartmentName 
+          ? `${formData.apartmentName}, ${formData.address}` 
+          : formData.address,
         state: formData.state,
         pincode: formData.pincode,
         mobileNumber: formData.mobileNumber,
@@ -790,10 +823,12 @@ const handleManualOwnerIdSubmit = () => {
           propertyTitle: "",
           price: "",
           propertyType: "",
+          pgType: "",
+          apartmentName: "",
           location: "",
           city: "",
           address: "",
-          state: "",
+          state: "Maharashtra",
           pincode: "",
           mobileNumber: "",
           description: "",
@@ -857,10 +892,12 @@ const handleManualOwnerIdSubmit = () => {
       propertyTitle: property.title || "",
       price: property.price || "",
       propertyType: property.propertyType || "",
+      pgType: property.pgType || "",
+      apartmentName: "",
       location: property.location || "",
       city: property.city || "",
       address: property.address || "",
-      state: property.state || "",
+      state: property.state || "Maharashtra",
       pincode: property.pincode || "",
       mobileNumber: property.mobileNumber || "",
       description: property.description || "",
@@ -903,9 +940,12 @@ const handleManualOwnerIdSubmit = () => {
         title: formData.propertyTitle,
         price: parseFloat(formData.price),
         propertyType: formData.propertyType,
+        pgType: formData.pgType || null,
         location: formData.location,
         city: formData.city,
-        address: formData.address,
+        address: formData.apartmentName 
+          ? `${formData.apartmentName}, ${formData.address}` 
+          : formData.address,
         state: formData.state,
         pincode: formData.pincode,
         mobileNumber: formData.mobileNumber,
@@ -961,10 +1001,12 @@ const handleManualOwnerIdSubmit = () => {
       propertyTitle: "",
       price: "",
       propertyType: "",
+      pgType: "",
+      apartmentName: "",
       location: "",
       city: "",
       address: "",
-      state: "",
+      state: "Maharashtra",
       pincode: "",
       mobileNumber: "",
       description: "",
@@ -1132,8 +1174,8 @@ const handleManualOwnerIdSubmit = () => {
           </div>
 
           <div className="space-y-6">
-            {/* First Row: Property Title, Price, Property Type */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* First Row: Property Title, Price, Property Type, PG Type */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Property Title <span className="text-red-500">*</span>
@@ -1181,36 +1223,92 @@ const handleManualOwnerIdSubmit = () => {
                   <option value="STANDALONE_BUILDING">Standalone Building</option>
                 </select>
               </div>
-            </div>
 
-            {/* Second Row: Location, City */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Location <span className="text-red-500">*</span>
+                  PG Type
                 </label>
-                <input
-                  type="text"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="Enter location"
-                  value={formData.location}
+                <select
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+                  value={formData.pgType}
                   onChange={(e) =>
-                    setFormData({ ...formData, location: e.target.value })
+                    setFormData({ ...formData, pgType: e.target.value })
                   }
-                />
+                >
+                  <option value="">Select PG type (if applicable)</option>
+                  <option value="GIRLS_ONLY">Girls PG</option>
+                  <option value="BOYS_ONLY">Boys PG</option>
+                  <option value="CO_ED">Co-Ed PG</option>
+                </select>
               </div>
+            </div>
 
+            {/* Second Row: City, Location, Apartment Name */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   City <span className="text-red-500">*</span>
                 </label>
+                <select
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+                  value={formData.city}
+                  onChange={(e) => {
+                    const selectedCity = e.target.value;
+                    setFormData({
+                      ...formData,
+                      city: selectedCity,
+                      location: "",
+                      pincode: "",
+                    });
+                  }}
+                >
+                  <option value="">Select city</option>
+                  {Object.keys(CITY_LOCATION_DATA).map((city) => (
+                    <option key={city} value={city}>
+                      {city}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Location <span className="text-red-500">*</span>
+                </label>
+                <select
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+                  value={formData.location}
+                  onChange={(e) => {
+                    const selectedLocation = e.target.value;
+                    const pincode = formData.city ? CITY_LOCATION_DATA[formData.city]?.[selectedLocation] || "" : "";
+                    setFormData({
+                      ...formData,
+                      location: selectedLocation,
+                      pincode: pincode,
+                    });
+                  }}
+                  disabled={!formData.city}
+                >
+                  <option value="">Select location</option>
+                  {formData.city && Object.keys(CITY_LOCATION_DATA[formData.city] || {}).map((location) => (
+                    <option key={location} value={location}>
+                      {location}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Apartment Name
+                </label>
                 <input
                   type="text"
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="Enter city"
-                  value={formData.city}
+                  placeholder="Enter apartment name"
+                  value={formData.apartmentName}
                   onChange={(e) =>
-                    setFormData({ ...formData, city: e.target.value })
+                    setFormData({ ...formData, apartmentName: e.target.value })
                   }
                 />
               </div>
@@ -1237,15 +1335,15 @@ const handleManualOwnerIdSubmit = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   State <span className="text-red-500">*</span>
                 </label>
-                <input
-                  type="text"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="Enter state"
+                <select
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
                   value={formData.state}
                   onChange={(e) =>
                     setFormData({ ...formData, state: e.target.value })
                   }
-                />
+                >
+                  <option value="Maharashtra">Maharashtra</option>
+                </select>
               </div>
             </div>
 
@@ -1257,12 +1355,10 @@ const handleManualOwnerIdSubmit = () => {
                 </label>
                 <input
                   type="text"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="Enter pincode"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50"
+                  placeholder="Auto-filled based on location"
                   value={formData.pincode}
-                  onChange={(e) =>
-                    setFormData({ ...formData, pincode: e.target.value })
-                  }
+                  readOnly
                 />
               </div>
 
