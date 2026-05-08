@@ -1198,7 +1198,7 @@ const handleManualOwnerIdSubmit = () => {
             />
           </svg>
           <h1 className="text-blue-600 font-bold text-xl">
-            Caryanam Broker
+             Caryanam Broker
           </h1>
         </div>
 
