@@ -117,7 +117,7 @@ const item = {
   },
 };
 
-const PropertyList = ({ properties = [] }) => {
+const PropertyList = ({ properties = [], onChatClick }) => {
   return (
     <div className="w-full">
       {/* Header Info */}
@@ -170,7 +170,8 @@ const PropertyList = ({ properties = [] }) => {
               >
                 <PropertyCard
                   property={p}
-                  approvalStatus={approvalStatus}
+                  onChatClick={onChatClick}
+                  approvalStatus={approvalStatus} // UPDATED
                 />
               </motion.div>
             );

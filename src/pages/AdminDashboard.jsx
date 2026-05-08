@@ -5,6 +5,8 @@ import { ownerApi } from "../services/api";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import OwnerPremiumQrImage from "../assets/QR.jpeg";
+import { MessageCircle } from "lucide-react";
+import ChatDrawer from "../components/ChatDrawer";
 
 const IMAGE_FALLBACK =
   "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='400' height='300' viewBox='0 0 400 300'><rect width='100%25' height='100%25' fill='%23D1D5DB'/><text x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' fill='%236B7280' font-family='Arial, sans-serif' font-size='24'>No Image</text></svg>";
@@ -144,9 +146,11 @@ const PropertyOwnerDashboard = () => {
   const [resolvedCity, setResolvedCity] = useState("");
   const latestPreviewsRef = useRef([]);
   const [ownerId, setOwnerId] = useState(null);
+ 
   const [ownerSessionMessage, setOwnerSessionMessage] = useState("");
   const [manualOwnerId, setManualOwnerId] = useState("");
   const [showManualIdInput, setShowManualIdInput] = useState(false);
+ 
   
 
   const navigate = useNavigate();
@@ -1073,6 +1077,18 @@ const handleManualOwnerIdSubmit = () => {
               6
             </span>
           </button>
+          <button
+            onClick={() => setChatOpen(true)}
+            className="relative text-gray-700 hover:text-blue-500"
+            title="Messages"
+          >
+            <MessageCircle className="w-6 h-6" />
+            {chatCount > 0 && (
+              <span className="absolute -top-1 -right-1 bg-blue-600 text-white text-xs rounded-full h-5 min-w-[20px] px-1 flex items-center justify-center">
+                {chatCount}
+              </span>
+            )}
+          </button>
           <button 
           onClick={handleLogout}
           className="text-gray-700 hover:text-red-500 font-medium">
@@ -1818,6 +1834,15 @@ const handleManualOwnerIdSubmit = () => {
           </div>
         </div>
       )}
+
+      <ChatDrawer
+        isOpen={chatOpen}
+        onClose={() => setChatOpen(false)}
+        currentRole="PROPERTY_OWNER"
+        currentUserId={ownerId}
+        selectedProperty={null}
+        onCountChange={setChatCount}
+      />
 
       {/* Property Preview Modal */}
       {showPreviewModal && (

@@ -4,7 +4,9 @@ import { motion } from "framer-motion";
 import Navbar from "../components/Navbar";
 import Filter from "../components/Filter";
 import PropertyList from "../components/PropertyList";
-
+ 
+import ChatDrawer from "../components/ChatDrawer";
+ 
 import {
   propertyApi,
   STATIC_BASE_URL,
@@ -30,6 +32,10 @@ const BrowseProperties = () => {
   const [loading, setLoading] = useState(true);
 
   const [error, setError] = useState("");
+  const [chatOpen, setChatOpen] = useState(false);
+  const [chatCount, setChatCount] = useState(0);
+  const [selectedPropertyForChat, setSelectedPropertyForChat] = useState(null);
+  const currentUserId = getUserIdFromToken();
 
   // =========================================
   // TYPE MAPPER
@@ -370,7 +376,7 @@ const BrowseProperties = () => {
   return (
     <div className="bg-[#F5F7FA] min-h-screen">
 
-      <Navbar />
+      <Navbar onOpenChat={() => setChatOpen(true)} chatCount={chatCount} />
 
       <motion.div
         initial={{
@@ -441,10 +447,26 @@ const BrowseProperties = () => {
 
           <PropertyList
             properties={properties}
+            onChatClick={(property) => {
+              setSelectedPropertyForChat(property);
+              setChatOpen(true);
+            }}
           />
 
         </div>
       </motion.div>
+
+      <ChatDrawer
+        isOpen={chatOpen}
+        onClose={() => {
+          setChatOpen(false);
+          setSelectedPropertyForChat(null);
+        }}
+        currentRole="USER"
+        currentUserId={currentUserId}
+        selectedProperty={selectedPropertyForChat}
+        onCountChange={setChatCount}
+      />
     </div>
   );
 };

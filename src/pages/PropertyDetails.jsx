@@ -52,12 +52,8 @@ import {
 } from "react-router-dom";
 
 import Navbar from "../components/Navbar";
-
-import {
-  motion,
-  AnimatePresence,
-} from "framer-motion";
-
+import ChatDrawer from "../components/ChatDrawer";
+import { motion, AnimatePresence } from "framer-motion";
 import { STATIC_BASE_URL } from "../services/api";
 
 import {
@@ -73,6 +69,7 @@ import {
   ShieldCheck,
   BedDouble,
 } from "lucide-react";
+import { getUserIdFromToken } from "../utlis/authSync";
 
 const FALLBACK_IMAGE = "/no-image.png";
 
@@ -81,17 +78,14 @@ const PropertyDetails = () => {
 
   const navigate = useNavigate();
 
-  const [property, setProperty] =
-    useState(null);
-
-  const [loading, setLoading] =
-    useState(true);
-
-  const [error, setError] =
-    useState("");
-
-  const [currentIndex, setCurrentIndex] =
-    useState(0);
+  const [property, setProperty] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [chatOpen, setChatOpen] = useState(false);
+  const [chatCount, setChatCount] = useState(0);
+  const [selectedPropertyForChat, setSelectedPropertyForChat] = useState(null);
+  const currentUserId = getUserIdFromToken();
 
   useEffect(() => {
     let cancelled = false;
@@ -316,8 +310,8 @@ const PropertyDetails = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[#f4f7fb]">
-      <Navbar />
+    <div className="min-h-screen bg-[#f4f7fb] font-inter">
+      <Navbar onOpenChat={() => setChatOpen(true)} chatCount={chatCount} />
 
       <main className="max-w-7xl mx-auto px-4 md:px-6 py-8">
         {/* BACK BUTTON */}
@@ -597,11 +591,16 @@ const PropertyDetails = () => {
                 </div>
 
                 <button
-                  onClick={() =>
-                    navigate(
-                      `/chat/${property.id}`
-                    )
-                  }
+                  onClick={() => {
+                    setSelectedPropertyForChat({
+                      id: property?.id,
+                      title: property?.title,
+                      ownerName: property?.ownerName,
+                      ownerId: property?.ownerId || property?.userId,
+                      _raw: property,
+                    });
+                    setChatOpen(true);
+                  }}
                   className="w-full bg-white text-[#0f172a] py-4 rounded-2xl font-black text-lg hover:scale-[1.02] transition-all duration-300 flex items-center justify-center gap-3"
                 >
                   <MessageCircle
@@ -676,6 +675,18 @@ const PropertyDetails = () => {
           </div>
         </div>
       </main>
+
+      <ChatDrawer
+        isOpen={chatOpen}
+        onClose={() => {
+          setChatOpen(false);
+          setSelectedPropertyForChat(null);
+        }}
+        currentRole="USER"
+        currentUserId={currentUserId}
+        selectedProperty={selectedPropertyForChat}
+        onCountChange={setChatCount}
+      />
     </div>
   );
 };

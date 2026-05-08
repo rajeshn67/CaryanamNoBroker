@@ -234,7 +234,7 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 
-const PropertyCard = ({ property }) => {
+const PropertyCard = ({ property, onChatClick }) => {
   const navigate = useNavigate();
   const [premiumStatus, setPremiumStatus] =
     useState(null);
@@ -495,13 +495,16 @@ const PropertyCard = ({ property }) => {
               Details
             </button>
 
-            <button className="flex-1 bg-blue-600 text-white py-3 rounded-xl">
-              <MessageCircle
-                size={18}
-                className="inline mr-2"
-              />
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => onChatClick?.(property)}
+              
+              className="flex-1 flex items-center justify-center gap-2 bg-blue-600 text-white font-medium py-3 rounded-2xl hover:bg-blue-700 shadow-lg shadow-blue-200 transition-all"
+            >
+              <MessageCircle size={18} />
               Chat
-            </button>
+            </motion.button>
           </div>
         </div>
       </div>

@@ -195,17 +195,29 @@ const adminRootRequest = (path, method = "get", data) => {
 };
 
 export const adminModerationApi = {
-  getPendingUsers: () => adminRootRequest("/admin/pending-users"),
-  getPendingOwners: () => adminRootRequest("/admin/pending-owner"),
+  getPendingUsers: () => adminRootRequest("/pending-users"),
+  getPendingOwners: () => adminRootRequest("/pending-owner"),
   approveUserPremium: (userId) =>
-    adminRootRequest(`/admin/approveUserPremium/${userId}`, "post"),
+    adminRootRequest(`/approveUserPremium/${userId}`, "post"),
   rejectUserPremium: (userId) =>
-    adminRootRequest(`/admin/rejectUserPremium/${userId}`, "post"),
+    adminRootRequest(`/rejectUserPremium/${userId}`, "post"),
   approveOwnerPremium: (ownerId) =>
-    adminRootRequest(`/admin/approveOwnerPremium/${ownerId}`, "post"),
+    adminRootRequest(`/approveOwnerPremium/${ownerId}`, "post"),
   rejectOwnerPremium: (ownerId) =>
-    adminRootRequest(`/admin/rejectOwnerPremium/${ownerId}`, "post"),
+    adminRootRequest(`/rejectOwnerPremium/${ownerId}`, "post"),
   getOwnerProperties: (ownerId) => rootApi.get(`/admin/owner/${ownerId}/properties`),
+};
+
+export const chatApi = {
+  sendMessage: (payload) => api.post("/chat/send", payload),
+  acceptChat: (payload) => api.post("/chat/accept", payload),
+  rejectChat: (payload) => api.post("/chat/reject", payload),
+  sendTyping: (payload) => api.post("/chat/typing", payload),
+  updateStatus: (payload) => api.post("/chat/status", payload),
+  getHistory: (roomId) => api.get(`/chat/history/${roomId}`),
+  getPendingChats: (ownerId) => api.get(`/chat/pending/${ownerId}`),
+  getAcceptedChats: (ownerId) => api.get(`/chat/accepted/${ownerId}`),
+  getRejectedChats: (ownerId) => api.get(`/chat/rejected/${ownerId}`),
 };
 
 export default api;
