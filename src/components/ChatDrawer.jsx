@@ -112,8 +112,16 @@ const getOwnerIdFromProperty = (property) => {
 
 const getOwnerNameFromProperty = (property, fallbackOwnerId) => {
   return (
+    property?.ownerFullName ||
     property?.ownerName ||
+    property?.propertyOwnerName ||
+    property?.propertyOwnerFullName ||
+    property?.owner?.fullName ||
+    property?.owner?.name ||
     property?._raw?.ownerName ||
+    property?._raw?.ownerFullName ||
+    property?._raw?.propertyOwnerName ||
+    property?._raw?.propertyOwnerFullName ||
     property?._raw?.owner?.name ||
     property?._raw?.owner?.fullName ||
     "Owner"
@@ -153,6 +161,7 @@ const ChatDrawer = ({
   const [activeRoom, setActiveRoom] = useState(null);
   const [draft, setDraft] = useState("");
   const [error, setError] = useState("");
+  const [shouldRender, setShouldRender] = useState(false);
   const typingTimeoutRef = useRef(null);
   const typingSentRef = useRef(false);
   const bottomRef = useRef(null);
@@ -235,6 +244,15 @@ const ChatDrawer = ({
   useEffect(() => {
     refreshMembers();
   }, [refreshMembers]);
+
+  useEffect(() => {
+    if (isOpen) {
+      setShouldRender(true);
+      return;
+    }
+    const t = setTimeout(() => setShouldRender(false), 220);
+    return () => clearTimeout(t);
+  }, [isOpen]);
 
   useEffect(() => {
     const autoCreateRequest = async () => {
@@ -456,6 +474,14 @@ const ChatDrawer = ({
     () => members.filter((m) => m.status === "PENDING").length,
     [members]
   );
+  const acceptedCount = useMemo(
+    () => members.filter((m) => m.status === "ACCEPTED").length,
+    [members]
+  );
+  const rejectedCount = useMemo(
+    () => members.filter((m) => m.status === "REJECTED").length,
+    [members]
+  );
 
   const handleDraftChange = useCallback(
     (e) => {
@@ -534,37 +560,95 @@ const ChatDrawer = ({
 
   const otherDisplayName = activeRoom?.name || (isOwner ? "User" : "Owner");
 
-  if (!isOpen) return null;
+  if (!shouldRender) return null;
 
   return (
     <div className="fixed inset-0 z-[80] pointer-events-none">
       <div
-        className="absolute inset-0 bg-black/20 pointer-events-auto"
+        className={`absolute inset-0 pointer-events-auto transition-opacity duration-200 ${
+          isOpen ? "bg-black/35 opacity-100" : "bg-black/0 opacity-0"
+        }`}
         onClick={onClose}
       />
-      <aside className="absolute right-0 top-0 h-full w-full sm:w-[430px] bg-white shadow-2xl border-l border-slate-200 pointer-events-auto flex flex-col">
-        <div className="flex items-center justify-between px-4 py-3 border-b">
-          <div className="flex items-center gap-2">
-            <MessageCircle size={18} />
-            <p className="font-semibold">Messages</p>
-            <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">
-              {members.length}
-            </span>
-            {isOwner && pendingCount > 0 && (
-              <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">
-                Pending {pendingCount}
-              </span>
-            )}
+      <aside
+        className={`absolute right-0 top-0 h-full w-full sm:w-[440px] bg-white shadow-2xl border-l border-slate-200 pointer-events-auto flex flex-col transition-transform duration-200 ease-out ${
+          isOpen ? "translate-x-0" : "translate-x-full"
+        }`}
+        role="dialog"
+        aria-label="Chat drawer"
+      >
+        <div className="px-4 py-3 border-b border-slate-200 bg-white/95 backdrop-blur">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="relative">
+                <div className="w-9 h-9 rounded-2xl bg-gradient-to-br from-fuchsia-500 via-rose-500 to-amber-400 flex items-center justify-center shadow-sm">
+                  <MessageCircle size={18} className="text-white" />
+                </div>
+                {members.length > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-slate-900 text-white text-[11px] rounded-full h-5 min-w-[20px] px-1 flex items-center justify-center border-2 border-white">
+                    {members.length}
+                  </span>
+                )}
+              </div>
+              <div className="min-w-0">
+                <p className="font-extrabold tracking-tight text-slate-900 leading-none">
+                  Messages
+                </p>
+                <p className="text-[11px] text-slate-500 mt-1">
+                  {isOwner ? "Owner inbox" : "Your chats"}
+                </p>
+              </div>
+            </div>
+
+            <button
+              onClick={onClose}
+              className="w-9 h-9 rounded-full hover:bg-slate-100 active:bg-slate-200 flex items-center justify-center text-slate-600"
+              aria-label="Close chat"
+            >
+              <X size={18} />
+            </button>
           </div>
-          <button onClick={onClose} className="text-slate-500 hover:text-slate-800">
-            <X size={18} />
-          </button>
+
+          {isOwner && (
+            <div className="mt-3 flex items-center gap-2 overflow-x-auto pb-0.5">
+              <div className="shrink-0 flex items-center gap-2">
+                <div className="w-9 h-9 rounded-full bg-amber-100 text-amber-800 flex items-center justify-center text-xs font-extrabold border border-amber-200">
+                  {pendingCount}
+                </div>
+                <span className="text-xs font-semibold text-slate-700">
+                  Pending
+                </span>
+              </div>
+
+              <div className="w-px h-6 bg-slate-200 shrink-0" />
+
+              <div className="shrink-0 flex items-center gap-2">
+                <div className="w-9 h-9 rounded-full bg-emerald-100 text-emerald-800 flex items-center justify-center text-xs font-extrabold border border-emerald-200">
+                  {acceptedCount}
+                </div>
+                <span className="text-xs font-semibold text-slate-700">
+                  Accepted
+                </span>
+              </div>
+
+              <div className="w-px h-6 bg-slate-200 shrink-0" />
+
+              <div className="shrink-0 flex items-center gap-2">
+                <div className="w-9 h-9 rounded-full bg-rose-100 text-rose-800 flex items-center justify-center text-xs font-extrabold border border-rose-200">
+                  {rejectedCount}
+                </div>
+                <span className="text-xs font-semibold text-slate-700">
+                  Rejected
+                </span>
+              </div>
+            </div>
+          )}
         </div>
 
         {error && <p className="px-4 py-2 text-sm text-red-600">{error}</p>}
 
         <div className="grid grid-cols-5 min-h-0 flex-1">
-          <div className="col-span-2 border-r overflow-y-auto">
+          <div className="col-span-2 border-r border-slate-200 overflow-y-auto bg-slate-50/60">
             {loading || startingChat ? (
               <p className="p-3 text-sm text-slate-500">Loading chats...</p>
             ) : members.length === 0 ? (
@@ -574,20 +658,45 @@ const ChatDrawer = ({
                 <button
                   key={item.roomId}
                   onClick={() => setActiveRoom(item)}
-                  className={`w-full text-left p-3 border-b hover:bg-slate-50 transition ${
-                    activeRoom?.roomId === item.roomId ? "bg-slate-50" : ""
+                  className={`w-full text-left px-3 py-3 border-b border-slate-200/70 hover:bg-white/80 transition ${
+                    activeRoom?.roomId === item.roomId ? "bg-white" : ""
                   }`}
                 >
-                  <div className="flex items-start gap-3">
-                    <div className="w-9 h-9 rounded-full bg-blue-50 text-blue-700 flex items-center justify-center font-bold text-sm shrink-0 border border-blue-100">
-                      {getInitials(item.name)}
+                  <div className="flex items-center gap-3">
+                    <div className="relative shrink-0">
+                      <div className="w-10 h-10 rounded-full bg-white border border-slate-200 flex items-center justify-center font-extrabold text-[13px] text-slate-800 shadow-sm">
+                        {getInitials(item.name)}
+                      </div>
+                      <span
+                        className={`absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full border-2 border-slate-50 ${
+                          item.status === "ACCEPTED"
+                            ? "bg-emerald-500"
+                            : item.status === "REJECTED"
+                            ? "bg-rose-500"
+                            : "bg-amber-500"
+                        }`}
+                        title={formatChatStatus(item.status)}
+                      />
                     </div>
+
                     <div className="min-w-0 flex-1">
-                      <p className="text-sm font-semibold truncate">{item.name}</p>
-                      <p className="text-xs text-slate-500 truncate">
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="text-sm font-extrabold text-slate-900 truncate">
+                          {item.name}
+                        </p>
+                      </div>
+                      <p className="text-[12px] text-slate-500 truncate">
                         {item.propertyTitle}
                       </p>
-                      <p className="text-[11px] mt-1 text-blue-600">
+                      <p
+                        className={`text-[11px] mt-1 font-semibold ${
+                          item.status === "ACCEPTED"
+                            ? "text-emerald-700"
+                            : item.status === "REJECTED"
+                            ? "text-rose-700"
+                            : "text-amber-700"
+                        }`}
+                      >
                         {formatChatStatus(item.status)}
                       </p>
                     </div>
@@ -599,28 +708,30 @@ const ChatDrawer = ({
 
           <div className="col-span-3 flex flex-col min-h-0">
             {!activeRoom ? (
-              <div className="h-full flex items-center justify-center text-slate-500 text-sm px-4 text-center">
-                Select a chat member to open conversation
+              <div className="h-full flex items-center justify-center text-slate-600 text-sm px-4 text-center bg-[radial-gradient(circle_at_top,_rgba(99,102,241,0.10),_transparent_55%)]">
+                Select a chat to start messaging
               </div>
             ) : (
               <>
-                <div className="px-3 py-2 border-b">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <p className="font-semibold text-sm truncate">
-                        {isOwner ? "Chat with " : "Chat with "}
-                        {otherDisplayName}
-                      </p>
-                      <p className="text-xs text-slate-500 truncate">
-                        {activeRoom.propertyTitle}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-2 shrink-0">
-                      <div className="w-8 h-8 rounded-full bg-slate-100 text-slate-700 flex items-center justify-center font-bold text-xs border border-slate-200">
-                        {getInitials(myFullName)}
-                      </div>
-                      <div className="w-8 h-8 rounded-full bg-blue-50 text-blue-700 flex items-center justify-center font-bold text-xs border border-blue-100">
+                <div className="px-3 py-2.5 border-b border-slate-200 bg-white">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="w-10 h-10 rounded-full bg-slate-900 text-white flex items-center justify-center font-extrabold text-[13px] shadow-sm">
                         {getInitials(otherDisplayName)}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="font-extrabold text-sm text-slate-900 truncate">
+                          {otherDisplayName}
+                        </p>
+                        <p className="text-[12px] text-slate-500 truncate">
+                          {activeRoom.propertyTitle}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 shrink-0">
+                      <div className="w-9 h-9 rounded-full bg-slate-100 text-slate-700 flex items-center justify-center font-extrabold text-[12px] border border-slate-200">
+                        {getInitials(myFullName)}
                       </div>
                     </div>
                   </div>
@@ -637,9 +748,16 @@ const ChatDrawer = ({
                       : false;
 
                     return (
-                      <div className="text-[11px] text-slate-500 mt-1 space-y-0.5">
+                      <div className="text-[11px] text-slate-500 mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5">
                         {activeRoom.status === "ACCEPTED" && (
-                          <p>{socketConnected ? "Live" : "Connecting..."}</p>
+                          <p className="inline-flex items-center gap-1">
+                            <span
+                              className={`w-1.5 h-1.5 rounded-full ${
+                                socketConnected ? "bg-emerald-500" : "bg-amber-500"
+                              }`}
+                            />
+                            {socketConnected ? "Live" : "Connecting..."}
+                          </p>
                         )}
                         {typeof otherOnline === "boolean" && (
                           <p>{otherOnline ? "Online" : "Offline"}</p>
@@ -651,60 +769,77 @@ const ChatDrawer = ({
                 </div>
 
                 {isOwner && activeRoom.status === "PENDING" && (
-                  <div className="px-3 py-2 border-b flex gap-2">
+                  <div className="px-3 py-2 border-b border-slate-200 flex gap-2 bg-slate-50">
                     <button
                       onClick={() => handleOwnerDecision(true)}
-                      className="px-3 py-1.5 text-xs bg-green-600 text-white rounded"
+                      className="px-3 py-1.5 text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white rounded-full shadow-sm"
                     >
                       Accept
                     </button>
                     <button
                       onClick={() => handleOwnerDecision(false)}
-                      className="px-3 py-1.5 text-xs bg-red-600 text-white rounded"
+                      className="px-3 py-1.5 text-xs font-bold bg-rose-600 hover:bg-rose-700 text-white rounded-full shadow-sm"
                     >
                       Reject
                     </button>
                   </div>
                 )}
 
-                <div className="flex-1 overflow-y-auto p-3 space-y-2 bg-slate-50">
+                <div className="flex-1 overflow-y-auto p-3 space-y-2 bg-[radial-gradient(circle_at_top,_rgba(236,72,153,0.10),_transparent_55%)]">
                   {messages.length === 0 ? (
-                    <p className="text-xs text-slate-500">
-                      {activeRoom.status === "PENDING"
-                        ? "Waiting for owner acceptance"
-                        : "No messages yet"}
-                    </p>
+                    <div className="text-xs text-slate-500">
+                      <div className="inline-flex items-center gap-2 bg-white/80 border border-slate-200 rounded-2xl px-3 py-2 shadow-sm">
+                        <span className="w-2 h-2 rounded-full bg-slate-300" />
+                        <span>
+                          {activeRoom.status === "PENDING"
+                            ? "Waiting for owner acceptance"
+                            : "No messages yet"}
+                        </span>
+                      </div>
+                    </div>
                   ) : (
                     messages.map((message) => {
                       const mine =
                         String(message.senderRole).toUpperCase() ===
                         (isOwner ? "PROPERTY_OWNER" : "USER");
+                      const role = String(message.senderRole || "").toUpperCase();
+                      const senderName =
+                        role === "PROPERTY_OWNER" ? (isOwner ? myFullName : otherDisplayName) : (isOwner ? otherDisplayName : myFullName);
                       return (
-                        <div
-                          key={message.id}
-                          className={`max-w-[85%] px-3 py-2 rounded-2xl text-sm shadow-sm ${
-                            mine
-                              ? "ml-auto bg-blue-600 text-white"
-                              : "bg-white border border-slate-200 text-slate-700"
-                          }`}
-                        >
-                          <div
-                            className={`text-[11px] font-semibold mb-1 ${
-                              mine ? "text-blue-100/90" : "text-slate-400"
-                            }`}
-                          >
-                            {mine ? myFullName : otherDisplayName}
-                          </div>
-                          {message.text}
-                          {message.createdAt && (
-                            <div
-                              className={`text-[10px] mt-1 opacity-70 ${
-                                mine ? "text-blue-100" : "text-slate-500"
-                              }`}
-                            >
-                              {formatTime(message.createdAt)}
+                        <div key={message.id} className="flex items-end gap-2">
+                          {!mine && (
+                            <div className="w-7 h-7 rounded-full bg-white border border-slate-200 flex items-center justify-center text-[11px] font-extrabold text-slate-800 shadow-sm">
+                              {getInitials(otherDisplayName)}
                             </div>
                           )}
+
+                          <div
+                            className={`max-w-[88%] px-3 py-2.5 text-sm shadow-sm ${
+                              mine
+                                ? "ml-auto bg-gradient-to-br from-fuchsia-600 via-rose-600 to-amber-500 text-white rounded-3xl rounded-br-lg"
+                                : "bg-white/95 border border-slate-200 text-slate-800 rounded-3xl rounded-bl-lg"
+                            }`}
+                          >
+                            <div
+                              className={`text-[10px] font-bold mb-1 ${
+                                mine ? "text-white/90" : "text-slate-500"
+                              }`}
+                            >
+                              {senderName}
+                            </div>
+                            <div className="leading-snug whitespace-pre-wrap break-words">
+                              {message.text}
+                            </div>
+                            {message.createdAt && (
+                              <div
+                                className={`text-[10px] mt-1 ${
+                                  mine ? "text-white/80" : "text-slate-500"
+                                }`}
+                              >
+                                {formatTime(message.createdAt)}
+                              </div>
+                            )}
+                          </div>
                         </div>
                       );
                     })
@@ -712,37 +847,49 @@ const ChatDrawer = ({
                   <div ref={bottomRef} />
                 </div>
 
-                <div className="p-3 border-t flex gap-2">
-                  <input
-                    value={draft}
-                    onChange={handleDraftChange}
-                    placeholder={
-                      activeRoom.status === "ACCEPTED"
-                        ? "Type a message..."
-                        : activeRoom.status === "REJECTED"
-                        ? "Chat rejected"
-                        : "Waiting for owner acceptance"
-                    }
-                    disabled={activeRoom.status !== "ACCEPTED"}
-                    onBlur={() => {
-                      if (typingTimeoutRef.current) {
-                        clearTimeout(typingTimeoutRef.current);
-                        typingTimeoutRef.current = null;
-                      }
-                      if (typingSentRef.current) {
-                        sendTyping(false);
-                        typingSentRef.current = false;
-                      }
-                    }}
-                    className="flex-1 px-3 py-2 border rounded-lg text-sm disabled:bg-slate-100"
-                  />
-                  <button
-                    onClick={handleSend}
-                    disabled={activeRoom.status !== "ACCEPTED" || !draft.trim()}
-                    className="px-3 py-2 bg-blue-600 text-white rounded-lg disabled:bg-slate-300"
-                  >
-                    <Send size={16} />
-                  </button>
+                <div className="p-3 border-t border-slate-200 bg-white">
+                  <div className="flex items-end gap-2">
+                    <div
+                      className={`flex-1 rounded-3xl border shadow-sm px-4 py-2 ${
+                        activeRoom.status === "ACCEPTED"
+                          ? "border-slate-200 bg-white"
+                          : "border-slate-200 bg-slate-50"
+                      }`}
+                    >
+                      <input
+                        value={draft}
+                        onChange={handleDraftChange}
+                        placeholder={
+                          activeRoom.status === "ACCEPTED"
+                            ? "Message..."
+                            : activeRoom.status === "REJECTED"
+                            ? "Chat rejected"
+                            : "Waiting for owner acceptance"
+                        }
+                        disabled={activeRoom.status !== "ACCEPTED"}
+                        onBlur={() => {
+                          if (typingTimeoutRef.current) {
+                            clearTimeout(typingTimeoutRef.current);
+                            typingTimeoutRef.current = null;
+                          }
+                          if (typingSentRef.current) {
+                            sendTyping(false);
+                            typingSentRef.current = false;
+                          }
+                        }}
+                        className="w-full bg-transparent outline-none text-sm disabled:text-slate-500"
+                      />
+                    </div>
+
+                    <button
+                      onClick={handleSend}
+                      disabled={activeRoom.status !== "ACCEPTED" || !draft.trim()}
+                      className="w-11 h-11 rounded-full bg-slate-900 hover:bg-slate-800 text-white flex items-center justify-center shadow-sm disabled:bg-slate-300"
+                      aria-label="Send message"
+                    >
+                      <Send size={16} />
+                    </button>
+                  </div>
                 </div>
               </>
             )}

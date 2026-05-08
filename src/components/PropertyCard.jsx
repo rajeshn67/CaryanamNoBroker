@@ -531,8 +531,11 @@ import {
 const PropertyCard = ({
   property,
   premiumStatus,
+  approvalStatus,
+  onChatClick,
 }) => {
   const navigate = useNavigate();
+  const effectivePremiumStatus = premiumStatus ?? approvalStatus ?? null;
 
   // IMAGE FALLBACK
   const imageSrc =
@@ -582,29 +585,29 @@ const PropertyCard = ({
           />
 
           {/* PREMIUM STATUS */}
-          {premiumStatus && (
+          {effectivePremiumStatus && (
             <div
               className={`absolute top-4 right-4 px-3 py-1 text-xs font-bold rounded-lg shadow-md
               ${
-                premiumStatus ===
+                effectivePremiumStatus ===
                 "APPROVED"
                   ? "bg-green-500 text-white"
                   : ""
               }
               ${
-                premiumStatus ===
+                effectivePremiumStatus ===
                 "PENDING"
                   ? "bg-yellow-400 text-black"
                   : ""
               }
               ${
-                premiumStatus ===
+                effectivePremiumStatus ===
                 "REJECTED"
                   ? "bg-red-500 text-white"
                   : ""
               }`}
             >
-              {premiumStatus}
+              {effectivePremiumStatus}
             </div>
           )}
 
@@ -663,14 +666,14 @@ const PropertyCard = ({
             <button
               onClick={() => {
                 if (
-                  premiumStatus ===
+                  effectivePremiumStatus ===
                   "APPROVED"
                 ) {
                   navigate(
                     `/property/${property.id}`
                   );
                 } else if (
-                  premiumStatus ===
+                  effectivePremiumStatus ===
                   "PENDING"
                 ) {
                   alert(
@@ -691,7 +694,10 @@ const PropertyCard = ({
               Details
             </button>
 
-            <button className="flex-1 bg-blue-600 text-white py-3 rounded-xl">
+            <button
+              onClick={() => onChatClick?.(property)}
+              className="flex-1 bg-blue-600 text-white py-3 rounded-xl"
+            >
               <MessageCircle
                 size={18}
                 className="inline mr-2"
