@@ -1,11 +1,491 @@
 
-import { useEffect, useState } from "react";
+// import { useEffect, useState } from "react";
+// import { motion } from "framer-motion";
+// import Navbar from "../components/Navbar";
+// import Filter from "../components/Filter";
+// import PropertyList from "../components/PropertyList";
+ 
+// import ChatDrawer from "../components/ChatDrawer"; 
+// import {
+//   propertyApi,
+//   STATIC_BASE_URL,
+// } from "../services/api";
+
+// import { getUserIdFromToken } from "../utlis/authSync";
+
+// const BrowseProperties = () => {
+
+//   const [tempFilters, setTempFilters] = useState({
+//     type: "All",
+//     city: "",
+//     address: "",
+//     minPrice: "",
+//     maxPrice: "",
+//      pgType: "",
+//   });
+
+//   const [properties, setProperties] = useState([]);
+
+//   const [addressOptions, setAddressOptions] = useState([]);
+
+//   const [loading, setLoading] = useState(true);
+
+//   const [error, setError] = useState("");
+//   const [chatOpen, setChatOpen] = useState(false);
+//   const [chatCount, setChatCount] = useState(0);
+//   const [selectedPropertyForChat, setSelectedPropertyForChat] = useState(null);
+//   const currentUserId = getUserIdFromToken();
+
+//   // =========================================
+//   // TYPE MAPPER
+//   // =========================================
+//   const mapUiTypeToBackend = (uiType) => {
+
+//     if (
+//       !uiType ||
+//       uiType === "All" ||
+//       uiType === "ALL"
+//     ) {
+//       return null;
+//     }
+
+//     const type = uiType.toUpperCase();
+
+//     if (type === "APARTMENT")
+//       return "APARTMENT";
+
+//     if (type === "INDEPENDENT_HOUSE")
+//       return "INDEPENDENT_HOUSE";
+
+//     if (type === "STANDALONE_BUILDING")
+//       return "STANDALONE_BUILDING";
+
+//     return null;
+//   };
+
+//   // =========================================
+//   // IMAGE PARSER
+//   // =========================================
+//   const parseImages = (imgString) => {
+
+//     if (!imgString) return [];
+
+//     try {
+//       return imgString
+//         .replace(/^\[|\]$/g, "")
+//         .split(",")
+//         .map((img) => img.trim())
+//         .filter(Boolean);
+
+//     } catch {
+//       return [];
+//     }
+//   };
+
+//   // =========================================
+//   // BACKEND → UI
+//   // =========================================
+//   const mapBackendToUi = (dto) => {
+
+//     const images = parseImages(
+//       dto?.doctypeImages
+//     );
+
+//     const imagePath = images?.[0];
+
+//     const imageUrl = imagePath
+//       ? `${STATIC_BASE_URL}/${String(
+//           imagePath
+//         ).replace(/^\/+/, "")}`
+//       : "/no-image.png";
+
+//     return {
+
+//       id:
+//         dto?.id ||
+//         dto?.propertyId,
+
+//       title:
+//         dto?.title ||
+//         "Untitled Property",
+
+//       location:
+//         `${dto?.city || ""} ${
+//           dto?.address || ""
+//         }`.trim(),
+
+//       type:
+//         dto?.propertyType ||
+//         "N/A",
+
+//       price:
+//         Number(dto?.price || 0),
+
+//       phone:
+//         dto?.mobileNumber ||
+//         dto?.mobile ||
+//         dto?.contactNumber ||
+//         "Not Available",
+
+//       details: `
+//         ${dto?.bhkType || ""}
+//         ·
+//         ${dto?.carpetArea || ""}
+//       `,
+
+//       image: imageUrl,
+
+//       _raw: dto,
+//     };
+//   };
+
+//   // =========================================
+//   // FETCH ALL PROPERTIES
+//   // =========================================
+//   const fetchAll = async () => {
+
+//     setLoading(true);
+
+//     setError("");
+
+//     try {
+
+//       const res =
+//         await propertyApi.getAll();
+
+//       console.log(
+//         "ALL PROPERTIES API:",
+//         res.data
+//       );
+
+//       const list = Array.isArray(res?.data)
+//         ? res.data
+//         : res?.data?.data || [];
+
+//       console.log(
+//         "FINAL LIST:",
+//         list
+//       );
+
+//       setProperties(
+//         list.map(mapBackendToUi)
+//       );
+
+//     } catch (e) {
+
+//       console.error(e);
+
+//       setError(
+//         "Failed to load properties"
+//       );
+
+//       setProperties([]);
+
+//     } finally {
+
+//       setLoading(false);
+//     }
+//   };
+
+//   // =========================================
+//   // FETCH ADDRESSES BY CITY
+//   // =========================================
+//   const fetchAddressesByCity = async (city) => {
+
+//     try {
+
+//       const userId =
+//         getUserIdFromToken();
+
+//       if (!userId || !city) {
+//         setAddressOptions([]);
+//         return;
+//       }
+
+//       const payload = {
+//       city,
+//       fetchAddressOnly: true,
+//     };
+
+//       const res =
+//         await propertyApi.filter(
+//           payload,
+//           userId
+//         );
+
+//       console.log(
+//         "CITY ADDRESS API:",
+//         res.data
+//       );
+
+//       const list = Array.isArray(res?.data)
+//         ? res.data
+//         : res?.data?.data || [];
+
+//       setAddressOptions(list);
+
+//     } catch (err) {
+
+//       console.error(err);
+
+//       setAddressOptions([]);
+//     }
+//   };
+
+//   // =========================================
+//   // FILTER PROPERTIES
+//   // =========================================
+//   const applyBackendFilter = async (
+//     filters
+//   ) => {
+
+//     setLoading(true);
+
+//     setError("");
+
+//     try {
+
+//       const userId =
+//         getUserIdFromToken();
+
+//       if (!userId) {
+//         setError(
+//           "User not logged in"
+//         );
+//         return;
+//       }
+
+//       const payload = {
+
+//         propertyType:
+//           mapUiTypeToBackend(
+//             filters.type
+//           ),
+
+//         city:
+//           filters.city === ""
+//             ? null
+//             : filters.city,
+
+//         address:
+//           filters.address === ""
+//             ? null
+//             : filters.address,
+
+//         minPrice:
+//           filters.minPrice === ""
+//             ? null
+//             : Number(
+//                 filters.minPrice
+//               ),
+
+//         maxPrice:
+//           filters.maxPrice === ""
+//             ? null
+//             : Number(
+//                 filters.maxPrice
+//               ),
+
+//           pgType:
+//   filters.pgType === ""
+//     ? null
+//     : filters.pgType,
+//       };
+
+//       // REMOVE EMPTY FIELDS
+//       if (!payload.propertyType)
+//         delete payload.propertyType;
+
+//       if (!payload.city)
+//         delete payload.city;
+
+//       if (!payload.address)
+//         delete payload.address;
+
+//       if (
+//         !payload.minPrice ||
+//         Number.isNaN(payload.minPrice)
+//       ) {
+//         delete payload.minPrice;
+//       }
+
+//       if (
+//         !payload.maxPrice ||
+//         Number.isNaN(payload.maxPrice)
+//       ) {
+//         delete payload.maxPrice;
+//       }
+
+//       console.log(
+//         "FILTER PAYLOAD:",
+//         payload
+//       );
+
+//       // NO FILTERS
+//       if (
+//         Object.keys(payload).length === 0
+//       ) {
+//         return fetchAll();
+//       }
+
+//       const res =
+//         await propertyApi.filter(
+//           payload,
+//           userId
+//         );
+
+//       console.log(
+//         "FILTER API:",
+//         res.data
+//       );
+
+//       const list = Array.isArray(res?.data)
+//         ? res.data
+//         : res?.data?.data || [];
+
+//       setProperties(
+//         list.map(mapBackendToUi)
+//       );
+
+//     } catch (e) {
+
+//       console.error(e);
+
+//       setError(
+//         e?.message ||
+//         "Failed to filter properties"
+//       );
+
+//     } finally {
+
+//       setLoading(false);
+//     }
+//   };
+
+//   // =========================================
+//   // INITIAL LOAD
+//   // =========================================
+//   useEffect(() => {
+//     fetchAll();
+//   }, []);
+
+//   // =========================================
+//   // UI
+//   // =========================================
+//   return (
+//     <div className="bg-[#F5F7FA] min-h-screen">
+
+//       <Navbar onOpenChat={() => setChatOpen(true)} chatCount={chatCount} />
+
+//       <motion.div
+//         initial={{
+//           opacity: 0,
+//           y: 20,
+//         }}
+//         animate={{
+//           opacity: 1,
+//           y: 0,
+//         }}
+//         className="max-w-7xl mx-auto px-6 py-6"
+//       >
+
+//         <h1 className="text-3xl font-semibold">
+//           Browse Properties
+//         </h1>
+
+//         <p className="text-gray-500 mb-6">
+//           Find your dream home without
+//           any brokerage
+//         </p>
+
+//         {/* FILTER */}
+//         <Filter
+//           tempFilters={tempFilters}
+//           setTempFilters={setTempFilters}
+//           addressOptions={addressOptions}
+//           fetchAddressesByCity={fetchAddressesByCity}
+
+//           applyFilters={() => {
+//             applyBackendFilter(
+//               tempFilters
+//             );
+//           }}
+
+//           clearFilters={() => {
+
+//             const reset = {
+//               type: "All",
+//               city: "",
+//               address: "",
+//               minPrice: "",
+//               maxPrice: "",
+//             };
+
+//             setTempFilters(reset);
+
+//             setAddressOptions([]);
+
+//             fetchAll();
+//           }}
+//         />
+
+//         {/* PROPERTY LIST */}
+//         <div className="mt-8">
+
+//           {loading && (
+//             <p className="text-gray-600 font-medium">
+//               Loading properties...
+//             </p>
+//           )}
+
+//           {error && (
+//             <p className="text-red-600 font-medium">
+//               {error}
+//             </p>
+//           )}
+
+//           <PropertyList
+//             properties={properties}
+//             onChatClick={(property) => {
+//               setSelectedPropertyForChat(property);
+//               setChatOpen(true);
+//             }}
+//           />
+
+//         </div>
+//       </motion.div>
+
+//       <ChatDrawer
+//         isOpen={chatOpen}
+//         onClose={() => {
+//           setChatOpen(false);
+//           setSelectedPropertyForChat(null);
+//         }}
+//         currentRole="USER"
+//         currentUserId={currentUserId}
+//         selectedProperty={selectedPropertyForChat}
+//         onCountChange={setChatCount}
+//       />
+//     </div>
+//   );
+// };
+
+// export default BrowseProperties;
+
+// ✅ FULL UPDATED BrowseProperties.jsx
+
+import {
+  useEffect,
+  useState,
+} from "react";
+
 import { motion } from "framer-motion";
+
 import Navbar from "../components/Navbar";
 import Filter from "../components/Filter";
 import PropertyList from "../components/PropertyList";
- 
-import ChatDrawer from "../components/ChatDrawer"; 
+import ChatDrawer from "../components/ChatDrawer";
+
 import {
   propertyApi,
   STATIC_BASE_URL,
@@ -14,33 +494,101 @@ import {
 import { getUserIdFromToken } from "../utlis/authSync";
 
 const BrowseProperties = () => {
+  const [tempFilters, setTempFilters] =
+    useState({
+      type: "All",
+      city: "",
+      address: "",
+      minPrice: "",
+      maxPrice: "",
+      pgType: "",
+    });
 
-  const [tempFilters, setTempFilters] = useState({
-    type: "All",
-    city: "",
-    address: "",
-    minPrice: "",
-    maxPrice: "",
-     pgType: "",
-  });
+  const [properties, setProperties] =
+    useState([]);
 
-  const [properties, setProperties] = useState([]);
+  const [addressOptions, setAddressOptions] =
+    useState([]);
 
-  const [addressOptions, setAddressOptions] = useState([]);
+  const [loading, setLoading] =
+    useState(true);
 
-  const [loading, setLoading] = useState(true);
+  const [error, setError] =
+    useState("");
 
-  const [error, setError] = useState("");
-  const [chatOpen, setChatOpen] = useState(false);
-  const [chatCount, setChatCount] = useState(0);
-  const [selectedPropertyForChat, setSelectedPropertyForChat] = useState(null);
-  const currentUserId = getUserIdFromToken();
+  // ✅ PREMIUM STATUS
+  const [premiumStatus, setPremiumStatus] =
+    useState("");
+
+  const [chatOpen, setChatOpen] =
+    useState(false);
+
+  const [chatCount, setChatCount] =
+    useState(0);
+
+  const [
+    selectedPropertyForChat,
+    setSelectedPropertyForChat,
+  ] = useState(null);
+
+  const currentUserId =
+    getUserIdFromToken();
+
+  // =========================================
+  // FETCH USER PREMIUM STATUS
+  // =========================================
+  const fetchPremiumStatus =
+    async () => {
+      try {
+        const token =
+          localStorage.getItem(
+            "userToken"
+          );
+
+        if (!token) return;
+
+        const userId =
+          getUserIdFromToken();
+
+        if (!userId) return;
+
+        const response =
+          await fetch(
+            `http://localhost:8080/api/user/${userId}`,
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            }
+          );
+
+        const result =
+          await response.json();
+
+        console.log(
+          "USER PREMIUM API:",
+          result
+        );
+
+        // ✅ IMPORTANT
+        setPremiumStatus(
+          result?.data
+            ?.premiumStatus || ""
+        );
+      } catch (err) {
+        console.log(
+          "PREMIUM STATUS ERROR:",
+          err
+        );
+      }
+    };
 
   // =========================================
   // TYPE MAPPER
   // =========================================
-  const mapUiTypeToBackend = (uiType) => {
-
+  const mapUiTypeToBackend = (
+    uiType
+  ) => {
     if (
       !uiType ||
       uiType === "All" ||
@@ -49,15 +597,22 @@ const BrowseProperties = () => {
       return null;
     }
 
-    const type = uiType.toUpperCase();
+    const type =
+      uiType.toUpperCase();
 
     if (type === "APARTMENT")
       return "APARTMENT";
 
-    if (type === "INDEPENDENT_HOUSE")
+    if (
+      type ===
+      "INDEPENDENT_HOUSE"
+    )
       return "INDEPENDENT_HOUSE";
 
-    if (type === "STANDALONE_BUILDING")
+    if (
+      type ===
+      "STANDALONE_BUILDING"
+    )
       return "STANDALONE_BUILDING";
 
     return null;
@@ -66,17 +621,19 @@ const BrowseProperties = () => {
   // =========================================
   // IMAGE PARSER
   // =========================================
-  const parseImages = (imgString) => {
-
+  const parseImages = (
+    imgString
+  ) => {
     if (!imgString) return [];
 
     try {
       return imgString
         .replace(/^\[|\]$/g, "")
         .split(",")
-        .map((img) => img.trim())
+        .map((img) =>
+          img.trim()
+        )
         .filter(Boolean);
-
     } catch {
       return [];
     }
@@ -85,22 +642,25 @@ const BrowseProperties = () => {
   // =========================================
   // BACKEND → UI
   // =========================================
-  const mapBackendToUi = (dto) => {
+  const mapBackendToUi = (
+    dto
+  ) => {
+    const images =
+      parseImages(
+        dto?.doctypeImages
+      );
 
-    const images = parseImages(
-      dto?.doctypeImages
-    );
+    const imagePath =
+      images?.[0];
 
-    const imagePath = images?.[0];
-
-    const imageUrl = imagePath
-      ? `${STATIC_BASE_URL}/${String(
-          imagePath
-        ).replace(/^\/+/, "")}`
-      : "/no-image.png";
+    const imageUrl =
+      imagePath
+        ? `${STATIC_BASE_URL}/${String(
+            imagePath
+          ).replace(/^\/+/, "")}`
+        : "/no-image.png";
 
     return {
-
       id:
         dto?.id ||
         dto?.propertyId,
@@ -118,8 +678,9 @@ const BrowseProperties = () => {
         dto?.propertyType ||
         "N/A",
 
-      price:
-        Number(dto?.price || 0),
+      price: Number(
+        dto?.price || 0
+      ),
 
       phone:
         dto?.mobileNumber ||
@@ -143,13 +704,11 @@ const BrowseProperties = () => {
   // FETCH ALL PROPERTIES
   // =========================================
   const fetchAll = async () => {
-
     setLoading(true);
 
     setError("");
 
     try {
-
       const res =
         await propertyApi.getAll();
 
@@ -158,21 +717,19 @@ const BrowseProperties = () => {
         res.data
       );
 
-      const list = Array.isArray(res?.data)
-        ? res.data
-        : res?.data?.data || [];
-
-      console.log(
-        "FINAL LIST:",
-        list
-      );
+      const list =
+        Array.isArray(
+          res?.data
+        )
+          ? res.data
+          : res?.data?.data || [];
 
       setProperties(
-        list.map(mapBackendToUi)
+        list.map(
+          mapBackendToUi
+        )
       );
-
     } catch (e) {
-
       console.error(e);
 
       setError(
@@ -180,9 +737,7 @@ const BrowseProperties = () => {
       );
 
       setProperties([]);
-
     } finally {
-
       setLoading(false);
     }
   };
@@ -190,183 +745,200 @@ const BrowseProperties = () => {
   // =========================================
   // FETCH ADDRESSES BY CITY
   // =========================================
-  const fetchAddressesByCity = async (city) => {
+  const fetchAddressesByCity =
+    async (city) => {
+      try {
+        const userId =
+          getUserIdFromToken();
 
-    try {
+        if (
+          !userId ||
+          !city
+        ) {
+          setAddressOptions(
+            []
+          );
+          return;
+        }
 
-      const userId =
-        getUserIdFromToken();
+        const payload = {
+          city,
+          fetchAddressOnly: true,
+        };
 
-      if (!userId || !city) {
-        setAddressOptions([]);
-        return;
-      }
+        const res =
+          await propertyApi.filter(
+            payload,
+            userId
+          );
 
-      const payload = {
-      city,
-      fetchAddressOnly: true,
-    };
+        const list =
+          Array.isArray(
+            res?.data
+          )
+            ? res.data
+            : res?.data
+                ?.data || [];
 
-      const res =
-        await propertyApi.filter(
-          payload,
-          userId
+        setAddressOptions(
+          list
         );
+      } catch (err) {
+        console.error(err);
 
-      console.log(
-        "CITY ADDRESS API:",
-        res.data
-      );
-
-      const list = Array.isArray(res?.data)
-        ? res.data
-        : res?.data?.data || [];
-
-      setAddressOptions(list);
-
-    } catch (err) {
-
-      console.error(err);
-
-      setAddressOptions([]);
-    }
-  };
+        setAddressOptions(
+          []
+        );
+      }
+    };
 
   // =========================================
   // FILTER PROPERTIES
   // =========================================
-  const applyBackendFilter = async (
-    filters
-  ) => {
+  const applyBackendFilter =
+    async (filters) => {
+      setLoading(true);
 
-    setLoading(true);
+      setError("");
 
-    setError("");
+      try {
+        const userId =
+          getUserIdFromToken();
 
-    try {
+        if (!userId) {
+          setError(
+            "User not logged in"
+          );
+          return;
+        }
 
-      const userId =
-        getUserIdFromToken();
+        const payload = {
+          propertyType:
+            mapUiTypeToBackend(
+              filters.type
+            ),
 
-      if (!userId) {
-        setError(
-          "User not logged in"
-        );
-        return;
-      }
+          city:
+            filters.city ===
+            ""
+              ? null
+              : filters.city,
 
-      const payload = {
+          address:
+            filters.address ===
+            ""
+              ? null
+              : filters.address,
 
-        propertyType:
-          mapUiTypeToBackend(
-            filters.type
-          ),
+          minPrice:
+            filters.minPrice ===
+            ""
+              ? null
+              : Number(
+                  filters.minPrice
+                ),
 
-        city:
-          filters.city === ""
-            ? null
-            : filters.city,
-
-        address:
-          filters.address === ""
-            ? null
-            : filters.address,
-
-        minPrice:
-          filters.minPrice === ""
-            ? null
-            : Number(
-                filters.minPrice
-              ),
-
-        maxPrice:
-          filters.maxPrice === ""
-            ? null
-            : Number(
-                filters.maxPrice
-              ),
+          maxPrice:
+            filters.maxPrice ===
+            ""
+              ? null
+              : Number(
+                  filters.maxPrice
+                ),
 
           pgType:
-  filters.pgType === ""
-    ? null
-    : filters.pgType,
-      };
+            filters.pgType ===
+            ""
+              ? null
+              : filters.pgType,
+        };
 
-      // REMOVE EMPTY FIELDS
-      if (!payload.propertyType)
-        delete payload.propertyType;
+        if (
+          !payload.propertyType
+        )
+          delete payload.propertyType;
 
-      if (!payload.city)
-        delete payload.city;
+        if (!payload.city)
+          delete payload.city;
 
-      if (!payload.address)
-        delete payload.address;
+        if (
+          !payload.address
+        )
+          delete payload.address;
 
-      if (
-        !payload.minPrice ||
-        Number.isNaN(payload.minPrice)
-      ) {
-        delete payload.minPrice;
-      }
+        if (
+          !payload.minPrice ||
+          Number.isNaN(
+            payload.minPrice
+          )
+        ) {
+          delete payload.minPrice;
+        }
 
-      if (
-        !payload.maxPrice ||
-        Number.isNaN(payload.maxPrice)
-      ) {
-        delete payload.maxPrice;
-      }
+        if (
+          !payload.maxPrice ||
+          Number.isNaN(
+            payload.maxPrice
+          )
+        ) {
+          delete payload.maxPrice;
+        }
 
-      console.log(
-        "FILTER PAYLOAD:",
-        payload
-      );
+        if (!payload.pgType) {
+          delete payload.pgType;
+        }
 
-      // NO FILTERS
-      if (
-        Object.keys(payload).length === 0
-      ) {
-        return fetchAll();
-      }
-
-      const res =
-        await propertyApi.filter(
-          payload,
-          userId
+        console.log(
+          "FILTER PAYLOAD:",
+          payload
         );
 
-      console.log(
-        "FILTER API:",
-        res.data
-      );
+        if (
+          Object.keys(payload)
+            .length === 0
+        ) {
+          return fetchAll();
+        }
 
-      const list = Array.isArray(res?.data)
-        ? res.data
-        : res?.data?.data || [];
+        const res =
+          await propertyApi.filter(
+            payload,
+            userId
+          );
 
-      setProperties(
-        list.map(mapBackendToUi)
-      );
+        const list =
+          Array.isArray(
+            res?.data
+          )
+            ? res.data
+            : res?.data
+                ?.data || [];
 
-    } catch (e) {
+        setProperties(
+          list.map(
+            mapBackendToUi
+          )
+        );
+      } catch (e) {
+        console.error(e);
 
-      console.error(e);
-
-      setError(
-        e?.message ||
-        "Failed to filter properties"
-      );
-
-    } finally {
-
-      setLoading(false);
-    }
-  };
+        setError(
+          e?.message ||
+            "Failed to filter properties"
+        );
+      } finally {
+        setLoading(false);
+      }
+    };
 
   // =========================================
   // INITIAL LOAD
   // =========================================
   useEffect(() => {
     fetchAll();
+
+    // ✅ FETCH PREMIUM STATUS
+    fetchPremiumStatus();
   }, []);
 
   // =========================================
@@ -374,8 +946,12 @@ const BrowseProperties = () => {
   // =========================================
   return (
     <div className="bg-[#F5F7FA] min-h-screen">
-
-      <Navbar onOpenChat={() => setChatOpen(true)} chatCount={chatCount} />
+      <Navbar
+        onOpenChat={() =>
+          setChatOpen(true)
+        }
+        chatCount={chatCount}
+      />
 
       <motion.div
         initial={{
@@ -388,42 +964,81 @@ const BrowseProperties = () => {
         }}
         className="max-w-7xl mx-auto px-6 py-6"
       >
-
         <h1 className="text-3xl font-semibold">
           Browse Properties
         </h1>
 
-        <p className="text-gray-500 mb-6">
-          Find your dream home without
-          any brokerage
+        <p className="text-gray-500 mb-3">
+          Find your dream home
+          without any brokerage
         </p>
+
+        {/* ✅ PREMIUM STATUS */}
+        <div className="mb-6">
+          <span
+            className={`px-4 py-2 rounded-xl text-sm font-bold
+            ${
+              premiumStatus ===
+              "APPROVED"
+                ? "bg-green-500 text-white"
+                : ""
+            }
+            ${
+              premiumStatus ===
+              "PENDING"
+                ? "bg-yellow-400 text-black"
+                : ""
+            }
+            ${
+              premiumStatus ===
+              "REJECTED"
+                ? "bg-red-500 text-white"
+                : ""
+            }`}
+          >
+            Premium Status :
+            {" "}
+            {premiumStatus ||
+              "NOT PREMIUM"}
+          </span>
+        </div>
 
         {/* FILTER */}
         <Filter
-          tempFilters={tempFilters}
-          setTempFilters={setTempFilters}
-          addressOptions={addressOptions}
-          fetchAddressesByCity={fetchAddressesByCity}
-
+          tempFilters={
+            tempFilters
+          }
+          setTempFilters={
+            setTempFilters
+          }
+          addressOptions={
+            addressOptions
+          }
+          fetchAddressesByCity={
+            fetchAddressesByCity
+          }
           applyFilters={() => {
             applyBackendFilter(
               tempFilters
             );
           }}
-
           clearFilters={() => {
-
             const reset = {
               type: "All",
               city: "",
               address: "",
               minPrice: "",
               maxPrice: "",
+              pgType: "",
             };
 
-            setTempFilters(reset);
+            setTempFilters(
+              reset
+            );
 
-            setAddressOptions([]);
+            setAddressOptions(
+              []
+            );
 
             fetchAll();
           }}
@@ -431,10 +1046,10 @@ const BrowseProperties = () => {
 
         {/* PROPERTY LIST */}
         <div className="mt-8">
-
           {loading && (
             <p className="text-gray-600 font-medium">
-              Loading properties...
+              Loading
+              properties...
             </p>
           )}
 
@@ -445,13 +1060,27 @@ const BrowseProperties = () => {
           )}
 
           <PropertyList
-            properties={properties}
-            onChatClick={(property) => {
-              setSelectedPropertyForChat(property);
-              setChatOpen(true);
+            properties={
+              properties
+            }
+
+            // ✅ IMPORTANT
+            premiumStatus={
+              premiumStatus
+            }
+
+            onChatClick={(
+              property
+            ) => {
+              setSelectedPropertyForChat(
+                property
+              );
+
+              setChatOpen(
+                true
+              );
             }}
           />
-
         </div>
       </motion.div>
 
@@ -459,12 +1088,21 @@ const BrowseProperties = () => {
         isOpen={chatOpen}
         onClose={() => {
           setChatOpen(false);
-          setSelectedPropertyForChat(null);
+
+          setSelectedPropertyForChat(
+            null
+          );
         }}
         currentRole="USER"
-        currentUserId={currentUserId}
-        selectedProperty={selectedPropertyForChat}
-        onCountChange={setChatCount}
+        currentUserId={
+          currentUserId
+        }
+        selectedProperty={
+          selectedPropertyForChat
+        }
+        onCountChange={
+          setChatCount
+        }
       />
     </div>
   );
