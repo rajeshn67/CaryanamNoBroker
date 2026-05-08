@@ -712,6 +712,12 @@ const handleManualOwnerIdSubmit = () => {
       return false;
     }
 
+    // Validate PG Type if Property Type is PG
+    if (formData.propertyType === "PG" && !formData.pgType) {
+      toast.error("PG Type is required when Property Type is PG");
+      return false;
+    }
+
     // Validate mobile number
     if (formData.mobileNumber.length !== 10 || !/^[6-9]/.test(formData.mobileNumber)) {
       toast.error("Invalid mobile number");
@@ -935,6 +941,12 @@ const handleManualOwnerIdSubmit = () => {
       return;
     }
 
+    // Validate PG Type if Property Type is PG
+    if (formData.propertyType === "PG" && !formData.pgType) {
+      toast.error("PG Type is required when Property Type is PG");
+      return;
+    }
+
     // Validate mobile number
     if (formData.mobileNumber.length !== 10 || !/^[6-9]/.test(formData.mobileNumber)) {
       toast.error("Invalid mobile number");
@@ -1151,8 +1163,8 @@ const handleManualOwnerIdSubmit = () => {
           </div>
 
           <div className="space-y-6">
-            {/* First Row: Property Title, Price, Property Type, PG Type */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+            {/* First Row: Property Title, Price, Property Type, PG Type (conditional) */}
+            <div className={`grid grid-cols-1 ${formData.propertyType === "PG" ? "md:grid-cols-4" : "md:grid-cols-3"} gap-6`}>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Property Title <span className="text-red-500">*</span>
@@ -1190,34 +1202,37 @@ const handleManualOwnerIdSubmit = () => {
                 <select
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
                   value={formData.propertyType}
-                  onChange={(e) =>
-                    setFormData({ ...formData, propertyType: e.target.value })
-                  }
+                  onChange={(e) => {
+                    setFormData({ ...formData, propertyType: e.target.value, pgType: "" });
+                  }}
                 >
                   <option value="">Select property type</option>
                   <option value="APARTMENT">Apartment</option>
                   <option value="INDEPENDENT_HOUSE">Independent House</option>
                   <option value="STANDALONE_BUILDING">Standalone Building</option>
+                  <option value="PG">PG</option>
                 </select>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  PG Type
-                </label>
-                <select
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
-                  value={formData.pgType}
-                  onChange={(e) =>
-                    setFormData({ ...formData, pgType: e.target.value })
-                  }
-                >
-                  <option value="">Select PG type (if applicable)</option>
-                  <option value="GIRLS_ONLY">Girls PG</option>
-                  <option value="BOYS_ONLY">Boys PG</option>
-                  <option value="CO_ED">Co-Ed PG</option>
-                </select>
-              </div>
+              {formData.propertyType === "PG" && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    PG Type <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+                    value={formData.pgType}
+                    onChange={(e) =>
+                      setFormData({ ...formData, pgType: e.target.value })
+                    }
+                  >
+                    <option value="">Select PG type</option>
+                    <option value="GIRLS_ONLY">Girls PG</option>
+                    <option value="BOYS_ONLY">Boys PG</option>
+                    <option value="CO_ED">Co-Ed PG</option>
+                  </select>
+                </div>
+              )}
             </div>
 
             {/* Second Row: City, Location, Apartment Name */}
@@ -1796,50 +1811,73 @@ const handleManualOwnerIdSubmit = () => {
             </div>
 
             <form onSubmit={handleUpdateProperty} className="p-6 space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Property Title <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  value={formData.propertyTitle}
-                  onChange={(e) =>
-                    setFormData({ ...formData, propertyTitle: e.target.value })
-                  }
-                />
-              </div>
+              <div className={`grid grid-cols-1 ${formData.propertyType === "PG" ? "md:grid-cols-4" : "md:grid-cols-3"} gap-4`}>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Property Title <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    value={formData.propertyTitle}
+                    onChange={(e) =>
+                      setFormData({ ...formData, propertyTitle: e.target.value })
+                    }
+                  />
+                </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Price <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  value={formData.price}
-                  onChange={(e) =>
-                    setFormData({ ...formData, price: e.target.value })
-                  }
-                />
-              </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Price <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    value={formData.price}
+                    onChange={(e) =>
+                      setFormData({ ...formData, price: e.target.value })
+                    }
+                  />
+                </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Property Type <span className="text-red-500">*</span>
-                </label>
-                <select
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-                  value={formData.propertyType}
-                  onChange={(e) =>
-                    setFormData({ ...formData, propertyType: e.target.value })
-                  }
-                >
-                  <option value="">Select property type</option>
-                  <option value="APARTMENT">Apartment</option>
-                  <option value="INDEPENDENT_HOUSE">Independent House</option>
-                  <option value="STANDALONE_BUILDING">Standalone Building</option>
-                </select>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Property Type <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                    value={formData.propertyType}
+                    onChange={(e) => {
+                      setFormData({ ...formData, propertyType: e.target.value, pgType: "" });
+                    }}
+                  >
+                    <option value="">Select property type</option>
+                    <option value="APARTMENT">Apartment</option>
+                    <option value="INDEPENDENT_HOUSE">Independent House</option>
+                    <option value="STANDALONE_BUILDING">Standalone Building</option>
+                    <option value="PG">PG</option>
+                  </select>
+                </div>
+
+                {formData.propertyType === "PG" && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      PG Type <span className="text-red-500">*</span>
+                    </label>
+                    <select
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                      value={formData.pgType}
+                      onChange={(e) =>
+                        setFormData({ ...formData, pgType: e.target.value })
+                      }
+                    >
+                      <option value="">Select PG type</option>
+                      <option value="GIRLS_ONLY">Girls PG</option>
+                      <option value="BOYS_ONLY">Boys PG</option>
+                      <option value="CO_ED">Co-Ed PG</option>
+                    </select>
+                  </div>
+                )}
               </div>
 
               <div>
