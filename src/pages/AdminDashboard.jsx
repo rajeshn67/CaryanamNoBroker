@@ -16,6 +16,7 @@ const OWNER_ID_BY_EMAIL_KEY = "ownerIdByEmail";
 const OWNER_APPROVAL_STATUS_KEY = "ownerApprovalStatuses";
 const OWNER_NAME_KEY = "ownerName";
 const OWNER_NAME_BY_EMAIL_KEY = "ownerNameByEmail";
+const PROPERTY_STATE = "Maharashtra";
 
 const readOwnerApprovalStatuses = () => {
   try {
@@ -126,11 +127,11 @@ const CITY_LOCATION_DATA = {
   },
 };
 const CITY_OPTIONS = [
-  { label: "Pune", value: "Pune", state: "Maharashtra", aliases: ["Pune"] },
+  { label: "Pune", value: "Pune", state: PROPERTY_STATE, aliases: ["Pune"] },
   {
     label: "Pimpri-Chinchwad (PCMC)",
     value: "PCMC",
-    state: "Maharashtra",
+    state: PROPERTY_STATE,
     aliases: ["PCMC", "Pimpri-Chinchwad", "Pimpri Chinchwad", "Pimpri"],
   },
 ];
@@ -144,6 +145,7 @@ const getCityOption = (city) =>
     (option) => option.value === city || option.aliases.includes(city)
   );
 const getFallbackCityKey = (city) => CITY_FALLBACK_KEY[city] || city;
+const getStateForCity = (city) => getCityOption(city)?.state || "";
 const FACILITY_OPTIONS = [
   "LANDSCAPE_GARDEN",
   "GATED_COMMUNITY",
@@ -177,6 +179,12 @@ const mergeFacilitiesWithBackendOptions = (facilitiesData = []) => {
   }));
 };
 
+const createFacilitiesPayload = (selectedFacilities) =>
+  FACILITY_OPTIONS.map((facilityName) => ({
+    facilityName,
+    status: selectedFacilities.has(facilityName) ? "ACTIVE" : "INACTIVE",
+  }));
+
 const PropertyOwnerDashboard = () => {
   const [formData, setFormData] = useState({
     propertyTitle: "",
@@ -187,7 +195,7 @@ const PropertyOwnerDashboard = () => {
     location: "",
     city: "",
     address: "",
-    state: "Maharashtra",
+    state: "",
     pincode: "",
     mobileNumber: "",
     description: "",
@@ -390,7 +398,6 @@ const handleManualOwnerIdSubmit = () => {
     setProperties([]);
     fetchProperties();
     fetchOwnerPremiumStatus();
-    fetchFacilities();
     const intervalId = window.setInterval(() => {
       syncOwnerApprovalStatus();
       fetchProperties({ preserveCurrent: true, silent: true });
@@ -541,11 +548,15 @@ const handleManualOwnerIdSubmit = () => {
     }
   };
 
-  const fetchFacilities = async () => {
-    if (!ownerId) return;
+  const fetchFacilities = async (propertyId) => {
+    if (!ownerId || !propertyId) {
+      setFacilities(mergeFacilitiesWithBackendOptions());
+      setSelectedFacilities(new Set());
+      return;
+    }
     try {
       setFacilitiesLoading(true);
-      const response = await ownerApi.getFacilities(ownerId);
+      const response = await ownerApi.getFacilities(ownerId, propertyId);
       // Handle both response structures: direct array or nested under data key
       let facilitiesData = response?.data?.data || response?.data || [];
       // Ensure it's an array
@@ -579,24 +590,10 @@ const handleManualOwnerIdSubmit = () => {
     setSelectedFacilities(newSelected);
   };
 
-  const handleSaveFacilities = async () => {
-    if (!ownerId) return;
-    try {
-      setFacilitiesLoading(true);
-      const facilitiesPayload = FACILITY_OPTIONS.map((facilityName) => ({
-        facilityName,
-        status: selectedFacilities.has(facilityName) ? "ACTIVE" : "INACTIVE",
-      }));
-      await ownerApi.saveFacilities(ownerId, facilitiesPayload);
-      toast.success("Facilities saved successfully");
-      await fetchFacilities();
-    } catch (err) {
-      console.error("Error saving facilities:", err?.message || err);
-      // Silently handle save error - facilities selection is still maintained in UI
-      toast.error("Could not save facilities to server. Your selection is saved locally.");
-    } finally {
-      setFacilitiesLoading(false);
-    }
+  const saveFacilitiesForProperty = async (propertyId) => {
+    if (!ownerId || !propertyId) return;
+    const facilitiesPayload = createFacilitiesPayload(selectedFacilities);
+    await ownerApi.saveFacilities(ownerId, propertyId, facilitiesPayload);
   };
 
   const resolvePropertyApprovalStatus = (property) => {
@@ -894,7 +891,7 @@ const handleManualOwnerIdSubmit = () => {
         location: formData.location,
         city: resolvedCity || formData.city,
         address: formData.address,
-        state: formData.state,
+        state: formData.state || getStateForCity(formData.city) || PROPERTY_STATE,
         pincode: formData.pincode,
         mobileNumber: formData.mobileNumber,
         description: formData.description,
@@ -941,6 +938,16 @@ const handleManualOwnerIdSubmit = () => {
         };
 
         try {
+          setFacilitiesLoading(true);
+          await saveFacilitiesForProperty(propertyId);
+        } catch (facilityErr) {
+          console.error("Error saving facilities:", facilityErr);
+          toast.error(facilityErr?.response?.data?.message || "Property added, but facilities were not saved");
+        } finally {
+          setFacilitiesLoading(false);
+        }
+
+        try {
           await uploadPreparedImages(uploadedImages);
           const responseMessage =
             propertyResponse?.data?.message || "Property added successfully!";
@@ -980,7 +987,7 @@ const handleManualOwnerIdSubmit = () => {
           location: "",
           city: "",
           address: "",
-          state: "Maharashtra",
+          state: "",
           pincode: "",
           mobileNumber: "",
           description: "",
@@ -988,6 +995,8 @@ const handleManualOwnerIdSubmit = () => {
           furnishing: "",
           carpetArea: "",
         });
+        setFacilities(mergeFacilitiesWithBackendOptions());
+        setSelectedFacilities(new Set());
         clearSelectedImages();
 
         await fetchProperties({ preserveCurrent: true });
@@ -1026,6 +1035,7 @@ const handleManualOwnerIdSubmit = () => {
 
   // Handle edit property
   const handleEditProperty = (property) => {
+    const propertyId = property.id || property.propertyId;
     setEditingProperty(property);
     setFormData({
       propertyTitle: property.title || "",
@@ -1036,7 +1046,7 @@ const handleManualOwnerIdSubmit = () => {
       location: property.location || "",
       city: property.city || "",
       address: property.address || "",
-      state: property.state || "Maharashtra",
+      state: property.state || PROPERTY_STATE,
       pincode: property.pincode || "",
       mobileNumber: property.mobileNumber || "",
       description: property.description || "",
@@ -1049,6 +1059,7 @@ const handleManualOwnerIdSubmit = () => {
     setAreaOptions(property.location && !fallbackAreas.includes(property.location)
       ? [property.location, ...fallbackAreas]
       : fallbackAreas);
+    fetchFacilities(propertyId);
     setShowEditModal(true);
   };
 
@@ -1089,7 +1100,7 @@ const handleManualOwnerIdSubmit = () => {
         location: formData.location,
         city: resolvedCity || formData.city,
         address: formData.address,
-        state: formData.state,
+        state: formData.state || getStateForCity(formData.city) || PROPERTY_STATE,
         pincode: formData.pincode,
         mobileNumber: formData.mobileNumber,
         description: formData.description,
@@ -1099,7 +1110,9 @@ const handleManualOwnerIdSubmit = () => {
         apartmentName: formData.apartmentName,
       };
 
-      const response = await ownerApi.updateProperty(editingProperty.id, propertyData);
+      const editingPropertyId = editingProperty.id || editingProperty.propertyId;
+      const response = await ownerApi.updateProperty(editingPropertyId, propertyData);
+      await saveFacilitiesForProperty(editingPropertyId);
       toast.success(response?.data?.message || "Property updated successfully");
       setShowEditModal(false);
       setEditingProperty(null);
@@ -1125,7 +1138,7 @@ const handleManualOwnerIdSubmit = () => {
       location: "",
       city: "",
       address: "",
-      state: "Maharashtra",
+      state: "",
       pincode: "",
       mobileNumber: "",
       description: "",
@@ -1133,6 +1146,8 @@ const handleManualOwnerIdSubmit = () => {
       furnishing: "",
       carpetArea: "",
     });
+    setFacilities(mergeFacilitiesWithBackendOptions());
+    setSelectedFacilities(new Set());
   };
 
   const handlePremiumDone = async () => {
@@ -1183,7 +1198,7 @@ const handleManualOwnerIdSubmit = () => {
             />
           </svg>
           <h1 className="text-blue-600 font-bold text-xl">
-            No Brokar
+            Caryanam Brokar
           </h1>
         </div>
 
@@ -1284,8 +1299,8 @@ const handleManualOwnerIdSubmit = () => {
           </div>
 
           <div className="space-y-6">
-            {/* First Row: Property Title, Price, Property Type */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* First Row: Property Title, Price, Property Type, PG Type */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Property Title <span className="text-red-500">*</span>
@@ -1331,6 +1346,24 @@ const handleManualOwnerIdSubmit = () => {
                   <option value="APARTMENT">Apartment</option>
                   <option value="INDEPENDENT_HOUSE">Independent House</option>
                   <option value="STANDALONE_BUILDING">Standalone Building</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  PG Type
+                </label>
+                <select
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+                  value={formData.pgType}
+                  onChange={(e) =>
+                    setFormData({ ...formData, pgType: e.target.value })
+                  }
+                >
+                  <option value="">Select PG type</option>
+                  <option value="GIRLS_ONLY">Girls PG</option>
+                  <option value="BOYS_ONLY">Boys PG</option>
+                  <option value="CO_ED">Co-Ed PG</option>
                 </select>
               </div>
             </div>
@@ -1632,14 +1665,9 @@ const handleManualOwnerIdSubmit = () => {
                       Facilities
                     </h3>
                   </div>
-                  <button
-                    type="button"
-                    onClick={handleSaveFacilities}
-                    disabled={facilitiesLoading}
-                    className="px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 text-sm font-medium"
-                  >
-                    {facilitiesLoading ? "Saving..." : "Save"}
-                  </button>
+                  <span className="text-sm text-gray-500">
+                    Saved after preview
+                  </span>
                 </div>
 
                 {facilitiesLoading && facilities.length === 0 ? (
@@ -1661,8 +1689,9 @@ const handleManualOwnerIdSubmit = () => {
                           type="checkbox"
                           checked={selectedFacilities.has(facility.facilityName)}
                           onChange={() => handleFacilityToggle(facility.facilityName)}
-                          className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+                          className="sr-only peer"
                         />
+                        <span className="w-4 h-4 rounded-full border border-gray-400 bg-white flex-shrink-0 peer-checked:border-blue-600 peer-checked:bg-blue-600 peer-focus:ring-2 peer-focus:ring-blue-500 peer-focus:ring-offset-1" />
                         <span className="text-sm text-gray-700">
                           {formatFacilityName(facility.facilityName)}
                         </span>
@@ -1905,6 +1934,29 @@ const handleManualOwnerIdSubmit = () => {
               </div>
 
               <div className="mt-6">
+                <h3 className="font-semibold text-gray-800 mb-3">Selected Facilities</h3>
+                {Array.from(selectedFacilities).length === 0 ? (
+                  <p className="text-sm text-gray-500">No facilities selected</p>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                    {FACILITY_OPTIONS.filter((facilityName) =>
+                      selectedFacilities.has(facilityName)
+                    ).map((facilityName) => (
+                      <div
+                        key={facilityName}
+                        className="flex items-center gap-2 p-3 border border-gray-200 rounded-lg bg-gray-50"
+                      >
+                        <span className="w-4 h-4 rounded-full border border-blue-600 bg-blue-600 flex-shrink-0" />
+                        <span className="text-sm text-gray-700">
+                          {formatFacilityName(facilityName)}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className="mt-6">
                 <h3 className="font-semibold text-gray-800 mb-3">Selected Images</h3>
                 <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
                   {imagePreviews
@@ -1972,7 +2024,7 @@ const handleManualOwnerIdSubmit = () => {
             </div>
 
             <form onSubmit={handleUpdateProperty} className="p-6 space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Property Title <span className="text-red-500">*</span>
@@ -2016,6 +2068,24 @@ const handleManualOwnerIdSubmit = () => {
                     <option value="APARTMENT">Apartment</option>
                     <option value="INDEPENDENT_HOUSE">Independent House</option>
                     <option value="STANDALONE_BUILDING">Standalone Building</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    PG Type
+                  </label>
+                  <select
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                    value={formData.pgType}
+                    onChange={(e) =>
+                      setFormData({ ...formData, pgType: e.target.value })
+                    }
+                  >
+                    <option value="">Select PG type</option>
+                    <option value="GIRLS_ONLY">Girls PG</option>
+                    <option value="BOYS_ONLY">Boys PG</option>
+                    <option value="CO_ED">Co-Ed PG</option>
                   </select>
                 </div>
               </div>
@@ -2083,6 +2153,7 @@ const handleManualOwnerIdSubmit = () => {
                 <input
                   type="text"
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50"
+                  placeholder="Auto-filled from city"
                   value={formData.state}
                   readOnly
                 />
@@ -2181,6 +2252,36 @@ const handleManualOwnerIdSubmit = () => {
                       setFormData({ ...formData, carpetArea: e.target.value })
                     }
                   />
+                </div>
+              </div>
+
+              <div className="bg-gray-50 rounded-xl p-5">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold text-gray-800">
+                    Facilities
+                  </h3>
+                  {facilitiesLoading && (
+                    <span className="text-sm text-gray-500">Loading...</span>
+                  )}
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                  {facilities.map((facility) => (
+                    <label
+                      key={facility.facilityName}
+                      className="flex items-center gap-2 p-3 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={selectedFacilities.has(facility.facilityName)}
+                        onChange={() => handleFacilityToggle(facility.facilityName)}
+                        className="sr-only peer"
+                      />
+                      <span className="w-4 h-4 rounded-full border border-gray-400 bg-white flex-shrink-0 peer-checked:border-blue-600 peer-checked:bg-blue-600 peer-focus:ring-2 peer-focus:ring-blue-500 peer-focus:ring-offset-1" />
+                      <span className="text-sm text-gray-700">
+                        {formatFacilityName(facility.facilityName)}
+                      </span>
+                    </label>
+                  ))}
                 </div>
               </div>
 
