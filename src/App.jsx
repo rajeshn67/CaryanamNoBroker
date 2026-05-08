@@ -47,10 +47,6 @@
 //           }
 //         />
 
-//         {/* Static Interested Users demo page */}
-//         <Route path="/interested-users" element={<InterestedUsers />} />
-//         <Route path="/admin/interested-users" element={<InterestedUsers />} />
-
 //         <Route
 //           path="/owner"
 //           element={
@@ -66,17 +62,12 @@
 // }
 
 // export default App;
-
-
-
-
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 
 import BrowseProperties from "./pages/BrowseProperties";
 import PropertyDetails from "./pages/PropertyDetails";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminDashboardMain from "./pages/AdminDashboardMain";
-import InterestedUsers from "./pages/InterestedUsers";
 import Auth from "./pages/Auth";
 import ProtectedRoute from "./routes/ProtectedRoute";
 import BuyPremium from "./pages/BuyPremium";
@@ -119,6 +110,7 @@ function App() {
     </ProtectedRoute>
   }
 />
+
         {/* ADMIN PROTECTED */}
         <Route
           path="/admin"
@@ -128,10 +120,6 @@ function App() {
             </ProtectedRoute>
           }
         />
-
-        {/* Static Interested Users demo page */}
-        <Route path="/interested-users" element={<InterestedUsers />} />
-        <Route path="/admin/interested-users" element={<InterestedUsers />} />
 
         <Route
           path="/owner"
