@@ -5,8 +5,7 @@ import Navbar from "../components/Navbar";
 import Filter from "../components/Filter";
 import PropertyList from "../components/PropertyList";
  
-import ChatDrawer from "../components/ChatDrawer";
- 
+import ChatDrawer from "../components/ChatDrawer"; 
 import {
   propertyApi,
   STATIC_BASE_URL,
