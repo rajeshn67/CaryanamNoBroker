@@ -150,6 +150,9 @@ const PropertyOwnerDashboard = () => {
   const [ownerSessionMessage, setOwnerSessionMessage] = useState("");
   const [manualOwnerId, setManualOwnerId] = useState("");
   const [showManualIdInput, setShowManualIdInput] = useState(false);
+
+  const [chatOpen, setChatOpen] = useState(false);
+  const [chatCount, setChatCount] = useState(0);
  
   
 
