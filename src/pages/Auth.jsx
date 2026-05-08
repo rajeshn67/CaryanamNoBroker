@@ -354,13 +354,19 @@
 //     </div>
 //   );
 // }
-
 import { useState, useEffect } from "react";
 import { authApi } from "../services/api";
 import { jwtDecode } from "jwt-decode";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Home, Search, Eye, EyeOff } from "lucide-react";
+import {
+  Home,
+  Search,
+  Eye,
+  EyeOff,
+  Landmark,
+  BadgeCheck,
+} from "lucide-react";
 
 export default function Auth() {
   const OWNER_ID_BY_EMAIL_KEY = "ownerIdByEmail";
@@ -373,7 +379,7 @@ export default function Auth() {
     mobileNumber: "",
     email: "",
     password: "",
-    role: "",
+    role: "USER",
   });
 
   useEffect(() => {
@@ -434,8 +440,9 @@ export default function Auth() {
   const handleChange = (e) => {
     let value = e.target.value;
 
-    if (e.target.name === "email") value = value.toLowerCase();
-    if (e.target.name === "role") value = value.toUpperCase();
+    if (e.target.name === "email") {
+      value = value.toLowerCase();
+    }
 
     setFormData({
       ...formData,
@@ -443,29 +450,48 @@ export default function Auth() {
     });
   };
 
+  const handleRoleChange = (role) => {
+    setFormData({
+      ...formData,
+      role,
+    });
+  };
+
   const validate = () => {
     if (!isLogin) {
-      if (!formData.fullName.trim()) return "Full name is required";
+      if (!formData.fullName.trim()) {
+        return "Full name is required";
+      }
 
-      if (!/^[A-Za-z ]+$/.test(formData.fullName))
+      if (!/^[A-Za-z ]+$/.test(formData.fullName)) {
         return "Only letters allowed";
+      }
 
-      if (!/^\d{10}$/.test(formData.mobileNumber))
+      if (!/^\d{10}$/.test(formData.mobileNumber)) {
         return "Mobile must be 10 digits";
-
-      if (!formData.role) return "Please select a role";
+      }
     }
 
-    if (!formData.email) return "Email required";
+    if (!formData.email) {
+      return "Email required";
+    }
 
-    if (!/^[A-Za-z0-9._%+-]+@gmail\.com$/.test(formData.email))
+    if (!/^[A-Za-z0-9._%+-]+@gmail\.com$/.test(formData.email)) {
       return "Only Gmail allowed";
+    }
 
-    if (!formData.password || formData.password.length < 6)
+    if (!formData.password || formData.password.length < 6) {
       return "Password min 6 characters";
+    }
 
-    if (!isLogin && !/^(?=.*[A-Z])(?=.*[!@#$%^&*(),.?":{}|<>])(?=\S+$).{8,}$/.test(formData.password))
-      return "Password must be 8+ characters with one uppercase letter, one special character, and no spaces";
+    if (
+      !isLogin &&
+      !/^(?=.*[A-Z])(?=.*[!@#$%^&*(),.?":{}|<>])(?=\S+$).{8,}$/.test(
+        formData.password
+      )
+    ) {
+      return "Password must contain uppercase & special character";
+    }
 
     return null;
   };
@@ -518,7 +544,7 @@ export default function Auth() {
         mobileNumber: "",
         email: savedEmail,
         password: savedPassword,
-        role: "",
+        role: "USER",
       });
     } catch (err) {
       alert(err.response?.data?.message || "Registration Failed");
@@ -587,15 +613,16 @@ export default function Auth() {
     }
   };
 
-  function handleSubmit(e) {
+  const handleSubmit = (e) => {
     e.preventDefault();
     isLogin ? handleLogin() : handleRegister();
-  }
+  };
 
   const waveLines = Array.from({ length: 4 });
 
   return (
     <div className="min-h-screen flex flex-col lg:flex-row items-center justify-center px-6 lg:px-24 bg-gradient-to-r from-[#1c1c1c] via-[#2a2a2a] to-[#3a2b2b] relative overflow-hidden">
+      {/* Animated Background */}
       {waveLines.map((_, i) => (
         <motion.div
           key={i}
@@ -621,6 +648,7 @@ export default function Auth() {
         />
       ))}
 
+      {/* Left Section */}
       <div className="hidden lg:flex flex-col items-center justify-center flex-1 z-10">
         <motion.div
           animate={{
@@ -651,6 +679,7 @@ export default function Auth() {
         </p>
       </div>
 
+      {/* Auth Card */}
       <motion.div
         initial={{ scale: 0.92, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
@@ -664,6 +693,35 @@ export default function Auth() {
         <form className="space-y-4" onSubmit={handleSubmit}>
           {!isLogin && (
             <>
+              {/* Role Toggle */}
+              <div className="flex bg-[#1f1f1f] rounded-2xl p-1 border border-[#ff7f50]/20">
+                <button
+                  type="button"
+                  onClick={() => handleRoleChange("PROPERTY_OWNER")}
+                  className={`w-1/2 py-3 rounded-2xl font-semibold transition-all flex items-center justify-center gap-2 ${
+                    formData.role === "PROPERTY_OWNER"
+                      ? "bg-[#ff7f50] text-white shadow-lg"
+                      : "text-gray-300"
+                  }`}
+                >
+                  <Landmark className="w-5 h-5" />
+                  Property Owner
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleRoleChange("USER")}
+                  className={`w-1/2 py-3 rounded-2xl font-semibold transition-all flex items-center justify-center gap-2 ${
+                    formData.role === "USER"
+                      ? "bg-[#ff7f50] text-white shadow-lg"
+                      : "text-gray-300"
+                  }`}
+                >
+                  <BadgeCheck className="w-5 h-5" />
+                  User
+                </button>
+              </div>
+
               <input
                 name="fullName"
                 value={formData.fullName}
@@ -715,21 +773,8 @@ export default function Auth() {
             </button>
           </div>
 
-          {!isLogin && (
-            <select
-              name="role"
-              onChange={handleChange}
-              value={formData.role}
-              className="w-full p-4 rounded-2xl bg-white text-black border border-[#ff7f50]/20"
-            >
-              <option value="">Select Role</option>
-              <option value="PROPERTY_OWNER">PROPERTY OWNER</option>
-              <option value="USER">USER</option>
-            </select>
-          )}
-
           <button className="w-full bg-[#ff7f50] text-white py-4 rounded-2xl font-bold text-lg shadow-lg hover:scale-[1.02] transition-all duration-300">
-            {isLogin ? "SIGN IN" : "SIGN UP"}
+            {isLogin ? "Login" : "Sign Up"}
           </button>
         </form>
 
@@ -742,7 +787,7 @@ export default function Auth() {
             onClick={() => setIsLogin(!isLogin)}
             className="text-[#ff7f50] ml-2 cursor-pointer font-bold hover:text-[#ff9f80]"
           >
-            {isLogin ? "Sign up" : "Sign in"}
+            {isLogin ? "Sign Up" : "Login"}
           </span>
         </p>
       </motion.div>
