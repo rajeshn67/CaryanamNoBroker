@@ -951,7 +951,6 @@
 // export default PropertyCard;
 
 
-
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import {
@@ -969,7 +968,11 @@ const PropertyCard = ({
   onChatClick,
 }) => {
   const navigate = useNavigate();
-  const effectivePremiumStatus = premiumStatus ?? approvalStatus ?? null;
+
+  const effectivePremiumStatus =
+    premiumStatus ??
+    approvalStatus ??
+    null;
 
   // IMAGE FALLBACK
   const imageSrc =
@@ -978,55 +981,70 @@ const PropertyCard = ({
       ? property.image
       : "/no-image.png";
 
-  // ✅ IMAGE CLICK
+  // IMAGE CLICK
   const handleImageClick = () => {
     navigate(`/property/${property.id}`, {
       state: {
         previewOnly:
-          premiumStatus !== "APPROVED",
+          premiumStatus !==
+          "APPROVED",
       },
     });
   };
 
-  // ✅ DETAILS CLICK
+  // DETAILS CLICK
   const handleDetailsClick = () => {
-    // APPROVED
-    if (premiumStatus === "APPROVED") {
+    if (
+      premiumStatus ===
+      "APPROVED"
+    ) {
       navigate(
         `/property/${property.id}`
       );
       return;
     }
 
-    // PENDING
-    if (premiumStatus === "PENDING") {
+    if (
+      premiumStatus ===
+      "PENDING"
+    ) {
       alert(
         "Your premium request is pending approval"
       );
       return;
     }
 
-    // NOT PREMIUM
     navigate("/buy-premium");
   };
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 40 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
-      whileHover={{ y: -10 }}
+      initial={{
+        opacity: 0,
+        y: 40,
+      }}
+      animate={{
+        opacity: 1,
+        y: 0,
+      }}
+      transition={{
+        duration: 0.5,
+      }}
+      whileHover={{
+        y: -10,
+      }}
       className="group relative bg-white rounded-3xl shadow-sm hover:shadow-2xl hover:shadow-blue-500/10 overflow-hidden border border-gray-100 transition-all duration-300"
     >
       <div className="relative z-10 m-[2px] bg-white rounded-[22px] overflow-hidden">
-        
         {/* IMAGE */}
         <div
           className="relative overflow-hidden cursor-pointer"
           onClick={handleImageClick}
         >
           <motion.img
-            whileHover={{ scale: 1.12 }}
+            whileHover={{
+              scale: 1.12,
+            }}
             transition={{
               duration: 0.7,
               ease: "easeOut",
@@ -1074,9 +1092,11 @@ const PropertyCard = ({
             </div>
           )}
 
-          {/* TYPE */}
-          <div className="absolute top-4 left-4 bg-white/70 text-blue-700 text-[10px] font-bold px-3 py-1.5 rounded-lg">
-            {property.type}
+          {/* PROPERTY TYPE */}
+          <div className="absolute top-4 left-4 bg-white/80 backdrop-blur-sm text-blue-700 text-[10px] font-bold px-3 py-1.5 rounded-lg shadow-sm border border-white/50">
+            {property.propertyType ||
+              property.type ||
+              "PROPERTY"}
           </div>
 
           {/* PRICE */}
@@ -1090,47 +1110,77 @@ const PropertyCard = ({
 
         {/* CONTENT */}
         <div className="p-6">
+          {/* TITLE */}
           <h2 className="text-xl font-bold text-slate-800 truncate">
-            {property.title}
+            {property.title ||
+              "Untitled Property"}
           </h2>
 
           <div className="mt-4 space-y-2">
+            {/* LOCATION */}
             <div className="flex items-center text-slate-500 text-sm">
               <MapPin
                 size={16}
-                className="mr-2 text-blue-500"
+                className="mr-2 text-blue-500 flex-shrink-0"
               />
+
               <span className="truncate">
-                {property.location}
+                {property.location ||
+                  property.address ||
+                  property.city ||
+                  "Location Not Available"}
               </span>
             </div>
 
+            {/* PHONE */}
             <div className="flex items-center text-slate-500 text-sm">
               <Phone
                 size={16}
-                className="mr-2 text-green-500"
+                className="mr-2 text-green-500 flex-shrink-0"
               />
+
               <span>
-                {property.phone}
+                {property.phone ||
+                  "Not Available"}
               </span>
             </div>
 
-            <div className="flex items-start text-slate-400 text-xs mt-2 italic">
+            {/* BHK TYPE */}
+            <div className="flex items-center text-slate-500 text-sm">
+              <Info
+                size={16}
+                className="mr-2 text-slate-400 flex-shrink-0"
+              />
+
+              <span>
+                {property.bhkType ||
+                  property.bhk ||
+                  "BHK Not Available"}
+              </span>
+            </div>
+
+            {/* DETAILS */}
+            {/* <div className="flex items-start text-slate-400 text-xs mt-2 italic">
               <Info
                 size={14}
-                className="mr-2 mt-0.5"
+                className="mr-2 mt-0.5 flex-shrink-0"
               />
-              {property.details}
-            </div>
+
+              <span className="line-clamp-2">
+                {property.details ||
+                  "No details available"}
+              </span>
+            </div> */}
           </div>
 
           {/* BUTTONS */}
           <div className="flex gap-3 mt-6">
+            {/* DETAILS BUTTON */}
             <button
               onClick={
                 handleDetailsClick
               }
-              className="flex-1 bg-slate-100 py-3 rounded-xl font-semibold hover:bg-slate-200 transition"
+              className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 py-3 rounded-xl font-medium transition-all duration-200"
             >
               <Eye
                 size={18}
@@ -1139,9 +1189,12 @@ const PropertyCard = ({
               Details
             </button>
 
+            {/* CHAT BUTTON */}
             <button
-              onClick={() => onChatClick?.(property)}
-              className="flex-1 bg-blue-600 text-white py-3 rounded-xl"
+              onClick={() =>
+                onChatClick?.(property)
+              }
+              className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-medium transition-all duration-200"
             >
               <MessageCircle
                 size={18}

@@ -472,7 +472,649 @@
 
 // export default BrowseProperties;
 
-// ✅ FULL UPDATED BrowseProperties.jsx
+// // ✅ FULL UPDATED BrowseProperties.jsx
+
+// import {
+//   useEffect,
+//   useState,
+// } from "react";
+
+// import { motion } from "framer-motion";
+
+// import Navbar from "../components/Navbar";
+// import Filter from "../components/Filter";
+// import PropertyList from "../components/PropertyList";
+// import ChatDrawer from "../components/ChatDrawer";
+
+// import {
+//   propertyApi,
+//   STATIC_BASE_URL,
+// } from "../services/api";
+
+// import { getUserIdFromToken } from "../utlis/authSync";
+
+// const BrowseProperties = () => {
+//   const [tempFilters, setTempFilters] =
+//     useState({
+//       type: "All",
+//       city: "",
+//       address: "",
+//       minPrice: "",
+//       maxPrice: "",
+//       pgType: "",
+//     });
+
+//   const [properties, setProperties] =
+//     useState([]);
+
+//   const [addressOptions, setAddressOptions] =
+//     useState([]);
+
+//   const [loading, setLoading] =
+//     useState(true);
+
+//   const [error, setError] =
+//     useState("");
+
+//   // ✅ PREMIUM STATUS
+//   const [premiumStatus, setPremiumStatus] =
+//     useState("");
+
+//   const [chatOpen, setChatOpen] =
+//     useState(false);
+
+//   const [chatCount, setChatCount] =
+//     useState(0);
+
+//   const [
+//     selectedPropertyForChat,
+//     setSelectedPropertyForChat,
+//   ] = useState(null);
+
+//   const currentUserId =
+//     getUserIdFromToken();
+
+//   // =========================================
+//   // FETCH USER PREMIUM STATUS
+//   // =========================================
+//   const fetchPremiumStatus =
+//     async () => {
+//       try {
+//         const token =
+//           localStorage.getItem(
+//             "userToken"
+//           );
+
+//         if (!token) return;
+
+//         const userId =
+//           getUserIdFromToken();
+
+//         if (!userId) return;
+
+//         const response =
+//           await fetch(
+//             `http://localhost:8080/api/user/${userId}`,
+//             {
+//               headers: {
+//                 Authorization: `Bearer ${token}`,
+//               },
+//             }
+//           );
+
+//         const result =
+//           await response.json();
+
+//         console.log(
+//           "USER PREMIUM API:",
+//           result
+//         );
+
+//         // ✅ IMPORTANT
+//         setPremiumStatus(
+//           result?.data
+//             ?.premiumStatus || ""
+//         );
+//       } catch (err) {
+//         console.log(
+//           "PREMIUM STATUS ERROR:",
+//           err
+//         );
+//       }
+//     };
+
+//   // =========================================
+//   // TYPE MAPPER
+//   // =========================================
+//   const mapUiTypeToBackend = (
+//     uiType
+//   ) => {
+//     if (
+//       !uiType ||
+//       uiType === "All" ||
+//       uiType === "ALL"
+//     ) {
+//       return null;
+//     }
+
+//     const type =
+//       uiType.toUpperCase();
+
+//     if (type === "APARTMENT")
+//       return "APARTMENT";
+
+//     if (
+//       type ===
+//       "INDEPENDENT_HOUSE"
+//     )
+//       return "INDEPENDENT_HOUSE";
+
+//     if (
+//       type ===
+//       "STANDALONE_BUILDING"
+//     )
+//       return "STANDALONE_BUILDING";
+
+//     return null;
+//   };
+
+//   // =========================================
+//   // IMAGE PARSER
+//   // =========================================
+//   const parseImages = (
+//     imgString
+//   ) => {
+//     if (!imgString) return [];
+
+//     try {
+//       return imgString
+//         .replace(/^\[|\]$/g, "")
+//         .split(",")
+//         .map((img) =>
+//           img.trim()
+//         )
+//         .filter(Boolean);
+//     } catch {
+//       return [];
+//     }
+//   };
+
+//   // =========================================
+//   // BACKEND → UI
+//   // =========================================
+//   const mapBackendToUi = (
+//     dto
+//   ) => {
+//     const images =
+//       parseImages(
+//         dto?.doctypeImages
+//       );
+
+//     const imagePath =
+//       images?.[0];
+
+//     const imageUrl =
+//       imagePath
+//         ? `${STATIC_BASE_URL}/${String(
+//             imagePath
+//           ).replace(/^\/+/, "")}`
+//         : "/no-image.png";
+
+//     return {
+//       id:
+//         dto?.id ||
+//         dto?.propertyId,
+
+//       title:
+//         dto?.title ||
+//         "Untitled Property",
+
+//       location:
+//         `${dto?.city || ""} ${
+//           dto?.address || ""
+//         }`.trim(),
+
+//       type:
+//         dto?.propertyType ||
+//         "N/A",
+
+//       price: Number(
+//         dto?.price || 0
+//       ),
+
+//       phone:
+//         dto?.mobileNumber ||
+//         dto?.mobile ||
+//         dto?.contactNumber ||
+//         "Not Available",
+
+//       details: `
+//         ${dto?.bhkType || ""}
+//         ·
+//         ${dto?.carpetArea || ""}
+//       `,
+
+//       image: imageUrl,
+
+//       _raw: dto,
+//     };
+//   };
+
+//   // =========================================
+//   // FETCH ALL PROPERTIES
+//   // =========================================
+//   const fetchAll = async () => {
+//     setLoading(true);
+
+//     setError("");
+
+//     try {
+//       const res =
+//         await propertyApi.getAll();
+
+//       console.log(
+//         "ALL PROPERTIES API:",
+//         res.data
+//       );
+
+//       const list =
+//         Array.isArray(
+//           res?.data
+//         )
+//           ? res.data
+//           : res?.data?.data || [];
+
+//       setProperties(
+//         list.map(
+//           mapBackendToUi
+//         )
+//       );
+//     } catch (e) {
+//       console.error(e);
+
+//       setError(
+//         "Failed to load properties"
+//       );
+
+//       setProperties([]);
+//     } finally {
+//       setLoading(false);
+//     }
+//   };
+
+//   // =========================================
+//   // FETCH ADDRESSES BY CITY
+//   // =========================================
+//   const fetchAddressesByCity =
+//     async (city) => {
+//       try {
+//         const userId =
+//           getUserIdFromToken();
+
+//         if (
+//           !userId ||
+//           !city
+//         ) {
+//           setAddressOptions(
+//             []
+//           );
+//           return;
+//         }
+
+//         const payload = {
+//           city,
+//           fetchAddressOnly: true,
+//         };
+
+//         const res =
+//           await propertyApi.filter(
+//             payload,
+//             userId
+//           );
+
+//         const list =
+//           Array.isArray(
+//             res?.data
+//           )
+//             ? res.data
+//             : res?.data
+//                 ?.data || [];
+
+//         setAddressOptions(
+//           list
+//         );
+//       } catch (err) {
+//         console.error(err);
+
+//         setAddressOptions(
+//           []
+//         );
+//       }
+//     };
+
+//   // =========================================
+//   // FILTER PROPERTIES
+//   // =========================================
+//   const applyBackendFilter =
+//     async (filters) => {
+//       setLoading(true);
+
+//       setError("");
+
+//       try {
+//         const userId =
+//           getUserIdFromToken();
+
+//         if (!userId) {
+//           setError(
+//             "User not logged in"
+//           );
+//           return;
+//         }
+
+//         const payload = {
+//           propertyType:
+//             mapUiTypeToBackend(
+//               filters.type
+//             ),
+
+//           city:
+//             filters.city ===
+//             ""
+//               ? null
+//               : filters.city,
+
+//           address:
+//             filters.address ===
+//             ""
+//               ? null
+//               : filters.address,
+
+//           minPrice:
+//             filters.minPrice ===
+//             ""
+//               ? null
+//               : Number(
+//                   filters.minPrice
+//                 ),
+
+//           maxPrice:
+//             filters.maxPrice ===
+//             ""
+//               ? null
+//               : Number(
+//                   filters.maxPrice
+//                 ),
+
+//           pgType:
+//             filters.pgType ===
+//             ""
+//               ? null
+//               : filters.pgType,
+//         };
+
+//         if (
+//           !payload.propertyType
+//         )
+//           delete payload.propertyType;
+
+//         if (!payload.city)
+//           delete payload.city;
+
+//         if (
+//           !payload.address
+//         )
+//           delete payload.address;
+
+//         if (
+//           !payload.minPrice ||
+//           Number.isNaN(
+//             payload.minPrice
+//           )
+//         ) {
+//           delete payload.minPrice;
+//         }
+
+//         if (
+//           !payload.maxPrice ||
+//           Number.isNaN(
+//             payload.maxPrice
+//           )
+//         ) {
+//           delete payload.maxPrice;
+//         }
+
+//         if (!payload.pgType) {
+//           delete payload.pgType;
+//         }
+
+//         console.log(
+//           "FILTER PAYLOAD:",
+//           payload
+//         );
+
+//         if (
+//           Object.keys(payload)
+//             .length === 0
+//         ) {
+//           return fetchAll();
+//         }
+
+//         const res =
+//           await propertyApi.filter(
+//             payload,
+//             userId
+//           );
+
+//         const list =
+//           Array.isArray(
+//             res?.data
+//           )
+//             ? res.data
+//             : res?.data
+//                 ?.data || [];
+
+//         setProperties(
+//           list.map(
+//             mapBackendToUi
+//           )
+//         );
+//       } catch (e) {
+//         console.error(e);
+
+//         setError(
+//           e?.message ||
+//             "Failed to filter properties"
+//         );
+//       } finally {
+//         setLoading(false);
+//       }
+//     };
+
+//   // =========================================
+//   // INITIAL LOAD
+//   // =========================================
+//   useEffect(() => {
+//     fetchAll();
+
+//     // ✅ FETCH PREMIUM STATUS
+//     fetchPremiumStatus();
+//   }, []);
+
+//   // =========================================
+//   // UI
+//   // =========================================
+//   return (
+//     <div className="bg-[#F5F7FA] min-h-screen">
+//       <Navbar
+//         onOpenChat={() =>
+//           setChatOpen(true)
+//         }
+//         chatCount={chatCount}
+//       />
+
+//       <motion.div
+//         initial={{
+//           opacity: 0,
+//           y: 20,
+//         }}
+//         animate={{
+//           opacity: 1,
+//           y: 0,
+//         }}
+//         className="max-w-7xl mx-auto px-6 py-6"
+//       >
+//         <h1 className="text-3xl font-semibold">
+//           Browse Properties
+//         </h1>
+
+//         <p className="text-gray-500 mb-3">
+//           Find your dream home
+//           without any brokerage
+//         </p>
+
+//         {/* ✅ PREMIUM STATUS */}
+//         <div className="mb-6">
+//           <span
+//             className={`px-4 py-2 rounded-xl text-sm font-bold
+//             ${
+//               premiumStatus ===
+//               "APPROVED"
+//                 ? "bg-green-500 text-white"
+//                 : ""
+//             }
+//             ${
+//               premiumStatus ===
+//               "PENDING"
+//                 ? "bg-yellow-400 text-black"
+//                 : ""
+//             }
+//             ${
+//               premiumStatus ===
+//               "REJECTED"
+//                 ? "bg-red-500 text-white"
+//                 : ""
+//             }`}
+//           >
+//             Premium Status :
+//             {" "}
+//             {premiumStatus ||
+//               "NOT PREMIUM"}
+//           </span>
+//         </div>
+
+//         {/* FILTER */}
+//         <Filter
+//           tempFilters={
+//             tempFilters
+//           }
+//           setTempFilters={
+//             setTempFilters
+//           }
+//           addressOptions={
+//             addressOptions
+//           }
+//           fetchAddressesByCity={
+//             fetchAddressesByCity
+//           }
+//           applyFilters={() => {
+//             applyBackendFilter(
+//               tempFilters
+//             );
+//           }}
+//           clearFilters={() => {
+//             const reset = {
+//               type: "All",
+//               city: "",
+//               address: "",
+//               minPrice: "",
+//               maxPrice: "",
+//               pgType: "",
+//             };
+
+//             setTempFilters(
+//               reset
+//             );
+
+//             setAddressOptions(
+//               []
+//             );
+
+//             fetchAll();
+//           }}
+//         />
+
+//         {/* PROPERTY LIST */}
+//         <div className="mt-8">
+//           {loading && (
+//             <p className="text-gray-600 font-medium">
+//               Loading
+//               properties...
+//             </p>
+//           )}
+
+//           {error && (
+//             <p className="text-red-600 font-medium">
+//               {error}
+//             </p>
+//           )}
+
+//           <PropertyList
+//             properties={
+//               properties
+//             }
+
+//             // ✅ IMPORTANT
+//             premiumStatus={
+//               premiumStatus
+//             }
+
+//             onChatClick={(
+//               property
+//             ) => {
+//               setSelectedPropertyForChat(
+//                 property
+//               );
+
+//               setChatOpen(
+//                 true
+//               );
+//             }}
+//           />
+//         </div>
+//       </motion.div>
+
+//       <ChatDrawer
+//         isOpen={chatOpen}
+//         onClose={() => {
+//           setChatOpen(false);
+
+//           setSelectedPropertyForChat(
+//             null
+//           );
+//         }}
+//         currentRole="USER"
+//         currentUserId={
+//           currentUserId
+//         }
+//         selectedProperty={
+//           selectedPropertyForChat
+//         }
+//         onCountChange={
+//           setChatCount
+//         }
+//       />
+//     </div>
+//   );
+// };
+
+// export default BrowseProperties;
+
+
+
+
+
+
 
 import {
   useEffect,
@@ -516,7 +1158,6 @@ const BrowseProperties = () => {
   const [error, setError] =
     useState("");
 
-  // ✅ PREMIUM STATUS
   const [premiumStatus, setPremiumStatus] =
     useState("");
 
@@ -570,7 +1211,6 @@ const BrowseProperties = () => {
           result
         );
 
-        // ✅ IMPORTANT
         setPremiumStatus(
           result?.data
             ?.premiumStatus || ""
@@ -669,14 +1309,32 @@ const BrowseProperties = () => {
         dto?.title ||
         "Untitled Property",
 
+      propertyType:
+        dto?.propertyType ||
+        dto?.type ||
+        "PROPERTY",
+
+      type:
+        dto?.propertyType ||
+        dto?.type ||
+        "PROPERTY",
+
       location:
+        dto?.location ||
         `${dto?.city || ""} ${
           dto?.address || ""
         }`.trim(),
 
-      type:
-        dto?.propertyType ||
-        "N/A",
+      city:
+        dto?.city || "",
+
+      address:
+        dto?.address || "",
+
+      bhkType:
+        dto?.bhkType ||
+        dto?.bhk ||
+        "",
 
       price: Number(
         dto?.price || 0
@@ -688,11 +1346,9 @@ const BrowseProperties = () => {
         dto?.contactNumber ||
         "Not Available",
 
-      details: `
-        ${dto?.bhkType || ""}
-        ·
-        ${dto?.carpetArea || ""}
-      `,
+      details:
+        dto?.description ||
+        "No details available",
 
       image: imageUrl,
 
@@ -705,7 +1361,6 @@ const BrowseProperties = () => {
   // =========================================
   const fetchAll = async () => {
     setLoading(true);
-
     setError("");
 
     try {
@@ -798,7 +1453,6 @@ const BrowseProperties = () => {
   const applyBackendFilter =
     async (filters) => {
       setLoading(true);
-
       setError("");
 
       try {
@@ -819,36 +1473,31 @@ const BrowseProperties = () => {
             ),
 
           city:
-            filters.city ===
-            ""
+            filters.city === ""
               ? null
               : filters.city,
 
           address:
-            filters.address ===
-            ""
+            filters.address === ""
               ? null
               : filters.address,
 
           minPrice:
-            filters.minPrice ===
-            ""
+            filters.minPrice === ""
               ? null
               : Number(
                   filters.minPrice
                 ),
 
           maxPrice:
-            filters.maxPrice ===
-            ""
+            filters.maxPrice === ""
               ? null
               : Number(
                   filters.maxPrice
                 ),
 
           pgType:
-            filters.pgType ===
-            ""
+            filters.pgType === ""
               ? null
               : filters.pgType,
         };
@@ -936,14 +1585,9 @@ const BrowseProperties = () => {
   // =========================================
   useEffect(() => {
     fetchAll();
-
-    // ✅ FETCH PREMIUM STATUS
     fetchPremiumStatus();
   }, []);
 
-  // =========================================
-  // UI
-  // =========================================
   return (
     <div className="bg-[#F5F7FA] min-h-screen">
       <Navbar
@@ -973,37 +1617,6 @@ const BrowseProperties = () => {
           without any brokerage
         </p>
 
-        {/* ✅ PREMIUM STATUS */}
-        <div className="mb-6">
-          <span
-            className={`px-4 py-2 rounded-xl text-sm font-bold
-            ${
-              premiumStatus ===
-              "APPROVED"
-                ? "bg-green-500 text-white"
-                : ""
-            }
-            ${
-              premiumStatus ===
-              "PENDING"
-                ? "bg-yellow-400 text-black"
-                : ""
-            }
-            ${
-              premiumStatus ===
-              "REJECTED"
-                ? "bg-red-500 text-white"
-                : ""
-            }`}
-          >
-            Premium Status :
-            {" "}
-            {premiumStatus ||
-              "NOT PREMIUM"}
-          </span>
-        </div>
-
-        {/* FILTER */}
         <Filter
           tempFilters={
             tempFilters
@@ -1044,7 +1657,6 @@ const BrowseProperties = () => {
           }}
         />
 
-        {/* PROPERTY LIST */}
         <div className="mt-8">
           {loading && (
             <p className="text-gray-600 font-medium">
@@ -1063,12 +1675,9 @@ const BrowseProperties = () => {
             properties={
               properties
             }
-
-            // ✅ IMPORTANT
             premiumStatus={
               premiumStatus
             }
-
             onChatClick={(
               property
             ) => {
@@ -1088,7 +1697,6 @@ const BrowseProperties = () => {
         isOpen={chatOpen}
         onClose={() => {
           setChatOpen(false);
-
           setSelectedPropertyForChat(
             null
           );
