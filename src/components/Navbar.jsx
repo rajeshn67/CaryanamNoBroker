@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { LogOut, MessageCircle } from "lucide-react";
 
-const Navbar = ({ onOpenChat, chatCount = 0 }) => {
+const Navbar = ({ onOpenChat, chatCount = 0, userName = "" }) => {
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -81,6 +81,12 @@ const Navbar = ({ onOpenChat, chatCount = 0 }) => {
               <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" />
             </svg>
           </button>
+        )}
+
+        {userName && (
+          <span className="text-gray-700 font-semibold">
+            {userName}
+          </span>
         )}
 
         {typeof onOpenChat === "function" && (
