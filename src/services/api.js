@@ -141,7 +141,8 @@ export const ownerApi = {
   deleteProperty: (id) => api.delete(`/owner/deletePropertyById/${id}`),
   uploadPropertyImages: (propertyId, formData) =>
     uploadApi.post(`/owner/uploadPropertyImagesByPropertyId/${propertyId}`, formData),
-  buyPremium: (ownerId) => api.post(`/owner/buyPremiumByOwner/${ownerId}`),
+  buyPremium: (ownerId, propertyId) =>
+    api.post(`/owner/buyPremiumByOwner/${ownerId}`, null, { params: propertyId ? { propertyId } : {} }),
   saveFacilities: (ownerId, propertyId, facilities) =>
     api.post(`/owner/save-facilities`, { ownerId, propertyId, facilities }),
   getFacilities: (ownerId, propertyId) =>
@@ -210,6 +211,11 @@ export const adminModerationApi = {
   rejectOwnerPremium: (ownerId) =>
     adminRootRequest(`/rejectOwnerPremium/${ownerId}`, "post"),
   getOwnerProperties: (ownerId) => rootApi.get(`/admin/owner/${ownerId}/properties`),
+  getPropertyById: (propertyId) => api.get(`/admin/getPropertyById/${propertyId}`),
+  approveProperty: (propertyId) =>
+    rootApi.post(`/admin/approveProperty/${propertyId}`),
+  rejectProperty: (propertyId) =>
+    rootApi.post(`/admin/rejectProperty/${propertyId}`),
 };
 
 export const chatApi = {

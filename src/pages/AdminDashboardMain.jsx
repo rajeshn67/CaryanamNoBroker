@@ -36,8 +36,6 @@ const AdminDashboardMain = () => {
   const [pendingOwners, setPendingOwners] = useState([]);
   const [loading, setLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState("");
-  const [ownerProperties, setOwnerProperties] = useState(null);
-  const [ownerPropertiesLoading, setOwnerPropertiesLoading] = useState("");
 
   const logout = () => {
     localStorage.removeItem("adminToken");
@@ -77,19 +75,27 @@ const AdminDashboardMain = () => {
       if (type === "user") {
         if (approve) await adminModerationApi.approveUserPremium(id);
         else await adminModerationApi.rejectUserPremium(id);
+      } else if (type === "property") {
+        // Use property title from the existing data
+        const propertyTitle = owner?.title || "property";
+
+        if (approve) {
+          await adminModerationApi.approveProperty(id);
+          toast.success(`Property "${propertyTitle}" approved successfully`);
+        } else {
+          await adminModerationApi.rejectProperty(id);
+          toast.success(`Property "${propertyTitle}" rejected successfully`);
+        }
       } else {
-        // For owners, check if they already have APPROVED in their status
+        // Fallback to owner-level approval (old behavior)
         const ownerData = pendingOwners.find(o => (o?.ownerId ?? o?.id) === id);
         const currentStatus = String(ownerData?.premiumStatus || "").toUpperCase();
         const isAlreadyApproved = currentStatus.includes("APPROVED");
 
         if (isAlreadyApproved) {
-          // Owner is already approved, just update localStorage and show success
-          // This handles the case where owner adds a second property after being approved
           writeOwnerApprovalStatus(owner || id, "APPROVED");
           toast.success("Owner is already premium - no additional approval needed");
         } else {
-          // Normal approval/reject flow
           if (approve) {
             await adminModerationApi.approveOwnerPremium(id);
             writeOwnerApprovalStatus(owner || id, "APPROVED");
@@ -97,44 +103,21 @@ const AdminDashboardMain = () => {
             await adminModerationApi.rejectOwnerPremium(id);
             writeOwnerApprovalStatus(owner || id, "REJECTED");
           }
-          toast.success(`Request ${approve ? "approved" : "rejected"} successfully`);
+          const propertyTitle = owner?.title || "property";
+          toast.success(`Property "${propertyTitle}" ${approve ? "approved" : "rejected"} successfully`);
         }
       }
       await loadPendingData();
     } catch (error) {
-      // If backend rejects because status is not exactly "PENDING", handle it gracefully
       if (error?.response?.data?.message?.includes("already approved")) {
         writeOwnerApprovalStatus(owner || id, "APPROVED");
-        toast.success("Owner is already premium - no additional approval needed");
+        toast.success("Already approved - no additional action needed");
         await loadPendingData();
       } else {
         toast.error(error?.response?.data?.message || "Action failed");
       }
     } finally {
       setActionLoading("");
-    }
-  };
-
-  const handleViewOwnerProperties = async (owner) => {
-    const ownerId = owner?.ownerId ?? owner?.id;
-    if (!ownerId) {
-      toast.error("Owner id is missing");
-      return;
-    }
-
-    setOwnerPropertiesLoading(String(ownerId));
-    try {
-      const response = await adminModerationApi.getOwnerProperties(ownerId);
-      setOwnerProperties({
-        ownerId,
-        ownerName: response?.data?.ownerName || owner?.fullName || "Property Owner",
-        totalProperties: response?.data?.totalProperties ?? 0,
-        properties: Array.isArray(response?.data?.properties) ? response.data.properties : [],
-      });
-    } catch (error) {
-      toast.error(error?.response?.data?.message || "Failed to load owner properties");
-    } finally {
-      setOwnerPropertiesLoading("");
     }
   };
 
@@ -204,41 +187,70 @@ const AdminDashboardMain = () => {
 
             <div className="bg-white rounded-xl shadow-sm p-6">
               <h3 className="text-xl font-semibold mb-4 text-gray-800">
-                Pending Property Owners ({pendingOwners.length})
+                Pending Property Approvals ({pendingOwners.length})
               </h3>
+              <p className="text-sm text-gray-500 mb-4">
+                Properties awaiting payment verification and admin approval
+              </p>
               {pendingOwners.length === 0 ? (
-                <p className="text-gray-500">No pending owners</p>
+                <p className="text-gray-500">No pending property approvals</p>
               ) : (
                 <div className="space-y-3">
-                  {pendingOwners.map((owner) => {
-                    const id = owner?.ownerId ?? owner?.id;
-                    const keyPrefix = `owner-${id}`;
+                  {pendingOwners.map((item) => {
+                    const ownerId = item?.ownerId ?? item?.id;
+                    const propertyId = item?.propertyId;
+                    const keyPrefix = `property-${propertyId}`;
                     return (
-                      <div key={keyPrefix} className="border rounded-lg p-3">
-                        <p className="font-medium text-gray-800">{owner?.fullName || "Unnamed Owner"}</p>
-                        <p className="text-sm text-gray-500">{owner?.email || "-"}</p>
-                        <p className="text-sm text-gray-500">{owner?.mobileNumber || "-"}</p>
+                      <div key={keyPrefix} className="border rounded-lg p-4 bg-gray-50">
+                        <div className="flex justify-between items-start mb-3">
+                          <div>
+                            <p className="font-semibold text-gray-800">{item?.title || "Untitled Property"}</p>
+                            <p className="text-xs text-gray-500 mt-1">Property ID: {propertyId || "-"}</p>
+                          </div>
+                          <span className={`px-2 py-1 text-xs font-medium rounded ${
+                            item?.paymentStatus?.toUpperCase() === 'APPROVED' ? 'bg-green-100 text-green-800' :
+                            item?.paymentStatus?.toUpperCase() === 'REJECTED' ? 'bg-red-100 text-red-800' :
+                            'bg-yellow-100 text-yellow-800'
+                          }`}>
+                            {item?.paymentStatus?.toUpperCase() || "PENDING"}
+                          </span>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-2 text-sm text-gray-600 mb-3">
+                          <div>
+                            <span className="font-medium">Owner:</span> {item?.fullName || "-"}
+                          </div>
+                          <div>
+                            <span className="font-medium">Email:</span> {item?.email || "-"}
+                          </div>
+                          <div>
+                            <span className="font-medium">City:</span> {item?.city || "-"}
+                          </div>
+                          <div>
+                            <span className="font-medium">Location:</span> {item?.location || "-"}
+                          </div>
+                          <div>
+                            <span className="font-medium">Type:</span> {item?.propertyType || "-"}
+                          </div>
+                          <div>
+                            <span className="font-medium">Price:</span> {item?.price ? `Rs. ${Number(item.price).toLocaleString()}` : "-"}
+                          </div>
+                        </div>
+
                         <div className="flex gap-2 mt-3">
                           <button
-                            onClick={() => handleViewOwnerProperties(owner)}
-                            disabled={ownerPropertiesLoading === String(id)}
-                            className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 disabled:bg-gray-400"
-                          >
-                            {ownerPropertiesLoading === String(id) ? "Loading..." : "Properties"}
-                          </button>
-                          <button
-                            onClick={() => handleDecision({ id, type: "owner", approve: true, owner })}
+                            onClick={() => handleDecision({ id: propertyId, type: "property", approve: true, owner: item })}
                             disabled={actionLoading === `${keyPrefix}-approve`}
-                            className="px-3 py-1.5 text-sm bg-green-600 text-white rounded hover:bg-green-700 disabled:bg-gray-400"
+                            className="flex-1 px-3 py-2 text-sm bg-green-600 text-white rounded hover:bg-green-700 disabled:bg-gray-400 font-medium"
                           >
-                            Approve
+                            {actionLoading === `${keyPrefix}-approve` ? "Approving..." : "Approve"}
                           </button>
                           <button
-                            onClick={() => handleDecision({ id, type: "owner", approve: false, owner })}
+                            onClick={() => handleDecision({ id: propertyId, type: "property", approve: false, owner: item })}
                             disabled={actionLoading === `${keyPrefix}-reject`}
-                            className="px-3 py-1.5 text-sm bg-red-600 text-white rounded hover:bg-red-700 disabled:bg-gray-400"
+                            className="flex-1 px-3 py-2 text-sm bg-red-600 text-white rounded hover:bg-red-700 disabled:bg-gray-400 font-medium"
                           >
-                            Reject
+                            {actionLoading === `${keyPrefix}-reject` ? "Rejecting..." : "Reject"}
                           </button>
                         </div>
                       </div>
@@ -250,61 +262,8 @@ const AdminDashboardMain = () => {
           </div>
         )}
       </div>
-      {ownerProperties && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 px-4">
-          <div className="bg-white rounded-xl shadow-xl max-w-4xl w-full max-h-[85vh] overflow-y-auto">
-            <div className="flex items-center justify-between p-5 border-b">
-              <div>
-                <h3 className="text-xl font-semibold text-gray-800">
-                  {ownerProperties.ownerName}
-                </h3>
-                <p className="text-sm text-gray-500">
-                  {ownerProperties.totalProperties} properties listed
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setOwnerProperties(null)}
-                className="px-3 py-2 rounded-md border border-gray-300 hover:bg-gray-50"
-              >
-                Close
-              </button>
-            </div>
 
-            {ownerProperties.properties.length === 0 ? (
-              <div className="p-5 text-gray-500">No properties found for this owner.</div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="min-w-full text-sm">
-                  <thead className="bg-gray-50 text-gray-600">
-                    <tr>
-                      <th className="text-left p-3 font-semibold">Title</th>
-                      <th className="text-left p-3 font-semibold">City</th>
-                      <th className="text-left p-3 font-semibold">Location</th>
-                      <th className="text-left p-3 font-semibold">Price</th>
-                      <th className="text-left p-3 font-semibold">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {ownerProperties.properties.map((property) => (
-                      <tr key={property.id} className="border-t">
-                        <td className="p-3 font-medium text-gray-800">{property.title || "-"}</td>
-                        <td className="p-3 text-gray-600">{property.city || "-"}</td>
-                        <td className="p-3 text-gray-600">{property.location || "-"}</td>
-                        <td className="p-3 text-gray-600">
-                          {property.price ? `Rs. ${Number(property.price).toLocaleString()}` : "-"}
-                        </td>
-                        <td className="p-3 text-gray-600">{property.status || "-"}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-      <ToastContainer position="top-right" autoClose={2500} />
+      <ToastContainer position="top-right" autoClose={3000} />
     </div>
   );
 };
