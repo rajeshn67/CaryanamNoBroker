@@ -398,16 +398,10 @@ const handleManualOwnerIdSubmit = () => {
     setProperties([]);
     fetchProperties();
     fetchOwnerPremiumStatus();
-    const intervalId = window.setInterval(() => {
-      syncOwnerApprovalStatus();
-      fetchProperties({ preserveCurrent: true, silent: true });
-      fetchOwnerPremiumStatus({ silent: true });
-    }, 10000);
 
     window.addEventListener("storage", syncOwnerApprovalStatus);
 
     return () => {
-      window.clearInterval(intervalId);
       window.removeEventListener("storage", syncOwnerApprovalStatus);
     };
   }, [ownerId]);

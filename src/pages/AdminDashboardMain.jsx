@@ -68,11 +68,6 @@ const AdminDashboardMain = () => {
 
   useEffect(() => {
     loadPendingData();
-    const intervalId = window.setInterval(() => {
-      loadPendingData({ silent: true });
-    }, 10000);
-
-    return () => window.clearInterval(intervalId);
   }, []);
 
   const handleDecision = async ({ id, type, approve, owner }) => {
