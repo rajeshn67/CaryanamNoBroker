@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { adminModerationApi } from "../services/api";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { LogOut } from "lucide-react";
 
 const OWNER_APPROVAL_STATUS_KEY = "ownerApprovalStatuses";
 
@@ -149,8 +150,9 @@ const AdminDashboardMain = () => {
         <div className="flex items-center gap-3">
           <button
             onClick={logout}
-            className="px-3 py-2 rounded-md border border-red-500 text-red-600 hover:bg-red-50"
+            className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-semibold rounded-xl shadow-lg hover:shadow-red-200 transition-all duration-300 active:scale-95"
           >
+            <LogOut size={18} />
             Logout
           </button>
         </div>

@@ -5,7 +5,7 @@ import { ownerApi } from "../services/api";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import OwnerPremiumQrImage from "../assets/QR.jpeg";
-import { MessageCircle } from "lucide-react";
+import { LogOut, MessageCircle } from "lucide-react";
 import ChatDrawer from "../components/ChatDrawer";
 
 const IMAGE_FALLBACK =
@@ -831,35 +831,65 @@ const handleManualOwnerIdSubmit = () => {
     }
   };
 
+  const getApiErrorMessage = (error, fallback) => {
+    const payload = error?.response?.data;
+    if (typeof payload?.message === "string" && payload.message.trim()) {
+      return payload.message;
+    }
+    if (payload?.data && typeof payload.data === "object") {
+      const firstValidationMessage = Object.values(payload.data).find(Boolean);
+      if (firstValidationMessage) return firstValidationMessage;
+    }
+    return error?.message || fallback;
+  };
+
+  const getPropertyValidationError = ({ requireImages = false } = {}) => {
+    const title = formData.propertyTitle.trim();
+    const city = (resolvedCity || formData.city).trim();
+    const state = formData.state.trim();
+    const pincode = formData.pincode.trim();
+    const mobileNumber = formData.mobileNumber.trim();
+    const knownPincode =
+      CITY_LOCATION_DATA[getFallbackCityKey(formData.city)]?.[formData.location] || "";
+
+    if (!title) return "Title is required";
+    if (/\d/.test(title)) return "Title should not contain numbers";
+    if (!formData.price) return "Price is required";
+    if (!Number.isFinite(Number(formData.price))) return "Price must be a valid number";
+    if (Number(formData.price) <= 0) return "Price must be greater than 0";
+    if (!formData.location.trim()) return "Location is required";
+    if (!formData.address.trim()) return "Address is required";
+    if (!city) return "City is required";
+    if (!/^[A-Za-z ]+$/.test(city)) return "City must contain only letters";
+    if (!state) return "State is required";
+    if (!/^[A-Za-z ]+$/.test(state)) return "State must contain only letters";
+    if (!pincode) return "Pincode is required";
+    if (!/^\d{6}$/.test(pincode)) return "Pincode must be 6 digits";
+    if (knownPincode && knownPincode !== pincode) {
+      return "Pincode does not match selected area";
+    }
+    if (!formData.description.trim()) return "Description is required";
+    if (!formData.propertyType) return "Property type is required";
+    if (!formData.bhkType) return "BHK type is required";
+    if (!formData.furnishing) return "Furnishing is required";
+    if (!String(formData.carpetArea).trim()) return "Carpet area is required";
+    if (!mobileNumber) return "Mobile number is required";
+    if (!/^\d{10}$/.test(mobileNumber)) return "Mobile number must be 10 digits";
+    if (!formData.apartmentName.trim()) return "Apartment name is required";
+
+    if (requireImages) {
+      const uploadedImages = images.filter((img) => img !== undefined);
+      if (uploadedImages.length === 0) return "At least one image is required";
+      if (!images[0]) return "Door image is required and will be used as the cover photo";
+    }
+
+    return "";
+  };
+
   const validateBeforeUpload = () => {
-    // Validate form
-    if (!formData.propertyTitle || !formData.price || !formData.propertyType ||
-        !formData.location || !formData.city || !formData.address ||
-        !formData.state || !formData.pincode || !formData.mobileNumber ||
-        !formData.description || !formData.bhkType || !formData.furnishing ||
-        !formData.apartmentName || !formData.carpetArea) {
-      toast.error("All fields are required");
-      return false;
-    }
-
-    // Validate mobile number
-    if (formData.mobileNumber.length !== 10 || !/^[6-9]/.test(formData.mobileNumber)) {
-      toast.error("Invalid mobile number");
-      return false;
-    }
-    if (!/^[1-9][0-9]{5}$/.test(formData.pincode)) {
-      toast.error("Invalid pincode");
-      return false;
-    }
-
-    // Validate images
-    const uploadedImages = images.filter(img => img !== undefined);
-    if (uploadedImages.length === 0) {
-      toast.error("At least one image is required");
-      return false;
-    }
-    if (!images[0]) {
-      toast.error("Door image is required and will be used as the cover photo");
+    const validationError = getPropertyValidationError({ requireImages: true });
+    if (validationError) {
+      toast.error(validationError);
       return false;
     }
 
@@ -1003,13 +1033,10 @@ const handleManualOwnerIdSubmit = () => {
       }
     } catch (err) {
       console.error("Error adding property:", err);
-      const msg = err?.response?.data?.message;
-      if (msg) {
-        toast.error(msg);
-      } else if (createdPropertyId) {
+      if (createdPropertyId) {
         toast.error("Property added, but something failed after creation");
       } else {
-        toast.error("Failed to add property");
+        toast.error(getApiErrorMessage(err, "Failed to add property"));
       }
     } finally {
       setLoading(false);
@@ -1069,23 +1096,9 @@ const handleManualOwnerIdSubmit = () => {
 
     if (!editingProperty) return;
 
-    // Validate form
-    if (!formData.propertyTitle || !formData.price || !formData.propertyType ||
-        !formData.location || !formData.city || !formData.address ||
-        !formData.state || !formData.pincode || !formData.mobileNumber ||
-        !formData.description || !formData.bhkType || !formData.furnishing ||
-        !formData.apartmentName || !formData.carpetArea) {
-      toast.error("All fields are required");
-      return;
-    }
-
-    // Validate mobile number
-    if (formData.mobileNumber.length !== 10 || !/^[6-9]/.test(formData.mobileNumber)) {
-      toast.error("Invalid mobile number");
-      return;
-    }
-    if (!/^[1-9][0-9]{5}$/.test(formData.pincode)) {
-      toast.error("Invalid pincode");
+    const validationError = getPropertyValidationError();
+    if (validationError) {
+      toast.error(validationError);
       return;
     }
 
@@ -1119,7 +1132,7 @@ const handleManualOwnerIdSubmit = () => {
       await fetchProperties({ preserveCurrent: true });
     } catch (err) {
       console.error("Error updating property:", err);
-      toast.error(err.response?.data?.message || "Failed to update property");
+      toast.error(getApiErrorMessage(err, "Failed to update property"));
     } finally {
       setLoading(false);
     }
@@ -1220,7 +1233,8 @@ const handleManualOwnerIdSubmit = () => {
           </button>
           <button 
           onClick={handleLogout}
-          className="px-4 py-2 rounded-lg bg-red-600 text-white font-medium hover:bg-red-700 transition-colors">
+          className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-semibold rounded-xl shadow-lg hover:shadow-red-200 transition-all duration-300 active:scale-95">
+            <LogOut size={18} />
             Logout
           </button>
         </div>
