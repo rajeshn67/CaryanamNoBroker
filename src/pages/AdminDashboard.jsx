@@ -436,10 +436,6 @@ const PropertyOwnerDashboard = () => {
 
   const [ownerPremiumStatus, setOwnerPremiumStatus] = useState("NONE");
 
-  const [selectedPropertyDetails, setSelectedPropertyDetails] = useState(null);
-
-  const [showPropertyDetailsModal, setShowPropertyDetailsModal] = useState(false);
-
   const [ownerApprovalStatus, setOwnerApprovalStatus] = useState("");
 
   const [ownerDisplayName, setOwnerDisplayName] = useState(getOwnerDisplayNameFromStorage);
@@ -635,20 +631,6 @@ const handleManualOwnerIdSubmit = () => {
   };
 
 
-
-
-  const fetchPropertyDetailsFromDatabase = async (propertyId) => {
-    if (!ownerId) return;
-
-    try {
-      const response = await ownerApi.getPropertyById(propertyId);
-      const propertyData = response?.data?.data || response?.data;
-      setSelectedPropertyDetails(propertyData);
-      setShowPropertyDetailsModal(true);
-    } catch (error) {
-      toast.error(error?.response?.data?.message || "Failed to fetch property details from database");
-    }
-  };
 
 
   const imageLabels = [
@@ -3696,55 +3678,6 @@ const handleManualOwnerIdSubmit = () => {
 
                     <div className="flex gap-3">
 
-                      <button
-
-                        onClick={() => fetchPropertyDetailsFromDatabase(property.id)}
-
-                        className="text-gray-500 hover:text-gray-700"
-
-                        title="View Details"
-
-                      >
-
-                        <svg
-
-                          className="w-5 h-5"
-
-                          fill="none"
-
-                          stroke="currentColor"
-
-                          viewBox="0 0 24 24"
-
-                        >
-
-                          <path
-
-                            strokeLinecap="round"
-
-                            strokeLinejoin="round"
-
-                            strokeWidth={2}
-
-                            d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-
-                          />
-
-                          <path
-
-                            strokeLinecap="round"
-
-                            strokeLinejoin="round"
-
-                            strokeWidth={2}
-
-                            d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-
-                          />
-
-                        </svg>
-
-                      </button>
 
                       <button
 
@@ -3938,105 +3871,6 @@ const handleManualOwnerIdSubmit = () => {
 
         </div>
 
-      )}
-
-
-
-      {showPropertyDetailsModal && selectedPropertyDetails && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 px-4">
-          <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between p-5 border-b">
-              <div>
-                <h3 className="text-xl font-semibold text-gray-800">
-                  Property Details (ID: {selectedPropertyDetails.id})
-                </h3>
-                <p className="text-sm text-gray-500">
-                  Fetched from database
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setShowPropertyDetailsModal(false)}
-                className="px-3 py-2 rounded-md border border-gray-300 hover:bg-gray-50"
-              >
-                Close
-              </button>
-            </div>
-
-            <div className="p-5 space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm font-medium text-gray-600">Title</label>
-                  <p className="text-gray-800">{selectedPropertyDetails.title || "-"}</p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-600">Property Type</label>
-                  <p className="text-gray-800">{selectedPropertyDetails.propertyType || "-"}</p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-600">City</label>
-                  <p className="text-gray-800">{selectedPropertyDetails.city || "-"}</p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-600">Location</label>
-                  <p className="text-gray-800">{selectedPropertyDetails.location || "-"}</p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-600">Price</label>
-                  <p className="text-gray-800">
-                    {selectedPropertyDetails.price ? `Rs. ${Number(selectedPropertyDetails.price).toLocaleString()}` : "-"}
-                  </p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-600">Payment Status</label>
-                  <span className={`inline-block px-2 py-1 text-xs font-medium rounded ${
-                    selectedPropertyDetails.paymentStatus?.toUpperCase() === 'APPROVED' ? 'bg-green-100 text-green-800' :
-                    selectedPropertyDetails.paymentStatus?.toUpperCase() === 'REJECTED' ? 'bg-red-100 text-red-800' :
-                    'bg-yellow-100 text-yellow-800'
-                  }`}>
-                    {selectedPropertyDetails.paymentStatus?.toUpperCase() || "-"}
-                  </span>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-600">BHK Type</label>
-                  <p className="text-gray-800">{selectedPropertyDetails.bhkType || "-"}</p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-600">Furnishing</label>
-                  <p className="text-gray-800">{selectedPropertyDetails.furnishing || "-"}</p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-600">Carpet Area</label>
-                  <p className="text-gray-800">{selectedPropertyDetails.carpetArea || "-"} sq.ft</p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-600">State</label>
-                  <p className="text-gray-800">{selectedPropertyDetails.state || "-"}</p>
-                </div>
-                <div className="col-span-2">
-                  <label className="text-sm font-medium text-gray-600">Address</label>
-                  <p className="text-gray-800">{selectedPropertyDetails.address || "-"}</p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-600">Pincode</label>
-                  <p className="text-gray-800">{selectedPropertyDetails.pincode || "-"}</p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-600">Mobile Number</label>
-                  <p className="text-gray-800">{selectedPropertyDetails.mobileNumber || "-"}</p>
-                </div>
-                <div className="col-span-2">
-                  <label className="text-sm font-medium text-gray-600">Description</label>
-                  <p className="text-gray-800">{selectedPropertyDetails.description || "-"}</p>
-                </div>
-                <div className="col-span-2">
-                  <label className="text-sm font-medium text-gray-600">Apartment Name</label>
-                  <p className="text-gray-800">{selectedPropertyDetails.apartmentName || "-"}</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
       )}
 
 

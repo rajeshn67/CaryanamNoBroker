@@ -1111,16 +1111,12 @@
 // export default BrowseProperties;
 
 
-
-
-
-
-
 import {
   useEffect,
   useState,
 } from "react";
 
+import { jwtDecode } from "jwt-decode";
 import { motion } from "framer-motion";
 
 import Navbar from "../components/Navbar";
@@ -1134,6 +1130,35 @@ import {
 } from "../services/api";
 
 import { getUserIdFromToken } from "../utlis/authSync";
+
+const USER_NAME_KEY = "userName";
+const USER_NAME_BY_EMAIL_KEY = "userNameByEmail";
+
+const getUserNameFromStorage = () => {
+  const userName = String(localStorage.getItem(USER_NAME_KEY) || "").trim();
+  return userName || "User";
+};
+
+const rememberUserName = (decoded) => {
+  const userName = String(decoded?.fullName || decoded?.name || "").trim();
+  if (!userName) return null;
+
+  localStorage.setItem(USER_NAME_KEY, userName);
+
+  const userEmail = String(decoded?.sub || "").toLowerCase().trim();
+  if (userEmail) {
+    let userNameMap = {};
+    try {
+      userNameMap = JSON.parse(localStorage.getItem(USER_NAME_BY_EMAIL_KEY) || "{}");
+    } catch {
+      userNameMap = {};
+    }
+    userNameMap[userEmail] = userName;
+    localStorage.setItem(USER_NAME_BY_EMAIL_KEY, JSON.stringify(userNameMap));
+  }
+
+  return userName;
+};
 
 const BrowseProperties = () => {
   const [tempFilters, setTempFilters] =
@@ -1171,6 +1196,8 @@ const BrowseProperties = () => {
     selectedPropertyForChat,
     setSelectedPropertyForChat,
   ] = useState(null);
+
+  const [userName, setUserName] = useState(getUserNameFromStorage);
 
   const currentUserId =
     getUserIdFromToken();
@@ -1581,6 +1608,21 @@ const BrowseProperties = () => {
     };
 
   // =========================================
+  // DECODE TOKEN AND SET USER NAME
+  // =========================================
+  useEffect(() => {
+    const token = localStorage.getItem("userToken");
+    if (!token) return;
+
+    try {
+      const decoded = jwtDecode(token);
+      setUserName(rememberUserName(decoded) || getUserNameFromStorage());
+    } catch {
+      console.log("Error decoding token for user name");
+    }
+  }, []);
+
+  // =========================================
   // INITIAL LOAD
   // =========================================
   useEffect(() => {
@@ -1591,6 +1633,7 @@ const BrowseProperties = () => {
   return (
     <div className="bg-[#F5F7FA] min-h-screen">
       <Navbar
+        userName={userName}
         onOpenChat={() =>
           setChatOpen(true)
         }
