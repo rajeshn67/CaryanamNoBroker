@@ -518,6 +518,440 @@
 
 
 
+// import { motion } from "framer-motion";
+// import { useNavigate } from "react-router-dom";
+// import {
+//   MapPin,
+//   Phone,
+//   Info,
+//   MessageCircle,
+//   Eye,
+// } from "lucide-react";
+
+// const PropertyCard = ({
+//   property,
+//   premiumStatus,
+// }) => {
+//   const navigate = useNavigate();
+
+//   // IMAGE FALLBACK
+//   const imageSrc =
+//     property.image &&
+//     property.image.trim() !== ""
+//       ? property.image
+//       : "/no-image.png";
+
+//   return (
+//     <motion.div
+//       initial={{ opacity: 0, y: 40 }}
+//       animate={{ opacity: 1, y: 0 }}
+//       transition={{ duration: 0.5 }}
+//       whileHover={{ y: -10 }}
+//       className="group relative bg-white rounded-3xl shadow-sm hover:shadow-2xl hover:shadow-blue-500/10 overflow-hidden border border-gray-100 transition-all duration-300"
+//     >
+//       <div className="relative z-10 m-[2px] bg-white rounded-[22px] overflow-hidden">
+//         {/* IMAGE */}
+//         <div
+//           className="relative overflow-hidden cursor-pointer"
+//           onClick={() =>
+//             navigate(
+//               `/property/${property.id}`
+//             )
+//           }
+//         >
+//           <motion.img
+//             whileHover={{ scale: 1.12 }}
+//             transition={{
+//               duration: 0.7,
+//               ease: "easeOut",
+//             }}
+//             src={imageSrc}
+//             className="h-60 w-full object-cover"
+//             alt={property.title}
+//             loading="lazy"
+//             onError={(e) => {
+//               if (
+//                 !e.currentTarget.src.includes(
+//                   "no-image.png"
+//                 )
+//               ) {
+//                 e.currentTarget.src =
+//                   "/no-image.png";
+//               }
+//             }}
+//           />
+
+//           {/* PREMIUM STATUS */}
+//           {premiumStatus && (
+//             <div
+//               className={`absolute top-4 right-4 px-3 py-1 text-xs font-bold rounded-lg shadow-md
+//               ${
+//                 premiumStatus ===
+//                 "APPROVED"
+//                   ? "bg-green-500 text-white"
+//                   : ""
+//               }
+//               ${
+//                 premiumStatus ===
+//                 "PENDING"
+//                   ? "bg-yellow-400 text-black"
+//                   : ""
+//               }
+//               ${
+//                 premiumStatus ===
+//                 "REJECTED"
+//                   ? "bg-red-500 text-white"
+//                   : ""
+//               }`}
+//             >
+//               {premiumStatus}
+//             </div>
+//           )}
+
+//           {/* TYPE */}
+//           <div className="absolute top-4 left-4 bg-white/70 text-blue-700 text-[10px] font-bold px-3 py-1.5 rounded-lg">
+//             {property.type}
+//           </div>
+
+//           {/* PRICE */}
+//           <div className="absolute bottom-4 left-4 bg-gray-900/80 text-white px-3 py-1 rounded-lg font-semibold">
+//             ₹
+//             {Number(
+//               property.price || 0
+//             ).toLocaleString()}
+//           </div>
+//         </div>
+
+//         {/* CONTENT */}
+//         <div className="p-6">
+//           <h2 className="text-xl font-bold text-slate-800 truncate">
+//             {property.title}
+//           </h2>
+
+//           <div className="mt-4 space-y-2">
+//             <div className="flex items-center text-slate-500 text-sm">
+//               <MapPin
+//                 size={16}
+//                 className="mr-2 text-blue-500"
+//               />
+//               <span className="truncate">
+//                 {property.location}
+//               </span>
+//             </div>
+
+//             <div className="flex items-center text-slate-500 text-sm">
+//               <Phone
+//                 size={16}
+//                 className="mr-2 text-green-500"
+//               />
+//               <span>
+//                 {property.phone}
+//               </span>
+//             </div>
+
+//             <div className="flex items-start text-slate-400 text-xs mt-2 italic">
+//               <Info
+//                 size={14}
+//                 className="mr-2 mt-0.5"
+//               />
+//               {property.details}
+//             </div>
+//           </div>
+
+//           {/* BUTTONS */}
+//           <div className="flex gap-3 mt-6">
+//             <button
+//               onClick={() => {
+//                 if (
+//                   premiumStatus ===
+//                   "APPROVED"
+//                 ) {
+//                   navigate(
+//                     `/property/${property.id}`
+//                   );
+//                 } else if (
+//                   premiumStatus ===
+//                   "PENDING"
+//                 ) {
+//                   alert(
+//                     "Your premium request is pending"
+//                   );
+//                 } else {
+//                   navigate(
+//                     "/buy-premium"
+//                   );
+//                 }
+//               }}
+//               className="flex-1 bg-slate-100 py-3 rounded-xl"
+//             >
+//               <Eye
+//                 size={18}
+//                 className="inline mr-2"
+//               />
+//               Details
+//             </button>
+
+//             <button className="flex-1 bg-blue-600 text-white py-3 rounded-xl">
+//               <MessageCircle
+//                 size={18}
+//                 className="inline mr-2"
+//               />
+//               Chat
+//             </button>
+//           </div>
+//         </div>
+//       </div>
+//     </motion.div>
+//   );
+// };
+
+// export default PropertyCard;
+
+
+
+
+// // ✅ PropertyCard.jsx FULL UPDATED
+
+// import { motion } from "framer-motion";
+// import { useNavigate } from "react-router-dom";
+
+// import {
+//   MapPin,
+//   Phone,
+//   Info,
+//   MessageCircle,
+//   Eye,
+// } from "lucide-react";
+
+// const PropertyCard = ({
+//   property,
+//   premiumStatus,
+// }) => {
+//   const navigate = useNavigate();
+
+//   const imageSrc =
+//     property.image &&
+//     property.image.trim() !== ""
+//       ? property.image
+//       : "/no-image.png";
+
+//   // ✅ DETAILS BUTTON
+//   const handleDetailsClick = () => {
+//     console.log(
+//       "PREMIUM STATUS:",
+//       premiumStatus
+//     );
+
+//     // ✅ APPROVED
+//     if (
+//       premiumStatus ===
+//       "APPROVED"
+//     ) {
+//       navigate(
+//         `/property/${property.id}`
+//       );
+
+//       return;
+//     }
+
+//     // ✅ PENDING
+//     if (
+//       premiumStatus ===
+//       "PENDING"
+//     ) {
+//       alert(
+//         "Your premium request is pending approval"
+//       );
+
+//       return;
+//     }
+
+//     // ✅ REJECTED
+//     if (
+//       premiumStatus ===
+//       "REJECTED"
+//     ) {
+//       alert(
+//         "Your premium request was rejected"
+//       );
+
+//       navigate("/buy-premium");
+
+//       return;
+//     }
+
+//     // ✅ NOT PREMIUM
+//     navigate("/buy-premium");
+//   };
+
+//   return (
+//     <motion.div
+//       initial={{
+//         opacity: 0,
+//         y: 40,
+//       }}
+//       animate={{
+//         opacity: 1,
+//         y: 0,
+//       }}
+//       transition={{
+//         duration: 0.5,
+//       }}
+//       whileHover={{
+//         y: -10,
+//       }}
+//       className="group relative bg-white rounded-3xl shadow-sm hover:shadow-2xl hover:shadow-blue-500/10 overflow-hidden border border-gray-100 transition-all duration-300"
+//     >
+//       <div className="relative z-10 m-[2px] bg-white rounded-[22px] overflow-hidden">
+//         {/* IMAGE */}
+//         <div
+//           className="relative overflow-hidden cursor-pointer"
+//           onClick={
+//             handleDetailsClick
+//           }
+//         >
+//           <motion.img
+//             whileHover={{
+//               scale: 1.12,
+//             }}
+//             transition={{
+//               duration: 0.7,
+//               ease: "easeOut",
+//             }}
+//             src={imageSrc}
+//             className="h-60 w-full object-cover"
+//             alt={property.title}
+//             loading="lazy"
+//             onError={(e) => {
+//               if (
+//                 !e.currentTarget.src.includes(
+//                   "no-image.png"
+//                 )
+//               ) {
+//                 e.currentTarget.src =
+//                   "/no-image.png";
+//               }
+//             }}
+//           />
+
+//           {/* STATUS */}
+//           {premiumStatus && (
+//             <div
+//               className={`absolute top-4 right-4 px-3 py-1 text-xs font-bold rounded-lg shadow-md
+              
+//               ${
+//                 premiumStatus ===
+//                 "APPROVED"
+//                   ? "bg-green-500 text-white"
+//                   : ""
+//               }
+
+//               ${
+//                 premiumStatus ===
+//                 "PENDING"
+//                   ? "bg-yellow-400 text-black"
+//                   : ""
+//               }
+
+//               ${
+//                 premiumStatus ===
+//                 "REJECTED"
+//                   ? "bg-red-500 text-white"
+//                   : ""
+//               }`}
+//             >
+//               {premiumStatus}
+//             </div>
+//           )}
+
+//           {/* TYPE */}
+//           <div className="absolute top-4 left-4 bg-white/70 text-blue-700 text-[10px] font-bold px-3 py-1.5 rounded-lg">
+//             {property.type}
+//           </div>
+
+//           {/* PRICE */}
+//           <div className="absolute bottom-4 left-4 bg-gray-900/80 text-white px-3 py-1 rounded-lg font-semibold">
+//             ₹
+//             {Number(
+//               property.price || 0
+//             ).toLocaleString()}
+//           </div>
+//         </div>
+
+//         {/* CONTENT */}
+//         <div className="p-6">
+//           <h2 className="text-xl font-bold text-slate-800 truncate">
+//             {property.title}
+//           </h2>
+
+//           <div className="mt-4 space-y-2">
+//             <div className="flex items-center text-slate-500 text-sm">
+//               <MapPin
+//                 size={16}
+//                 className="mr-2 text-blue-500"
+//               />
+
+//               <span className="truncate">
+//                 {property.location}
+//               </span>
+//             </div>
+
+//             <div className="flex items-center text-slate-500 text-sm">
+//               <Phone
+//                 size={16}
+//                 className="mr-2 text-green-500"
+//               />
+
+//               <span>
+//                 {property.phone}
+//               </span>
+//             </div>
+
+//             <div className="flex items-start text-slate-400 text-xs mt-2 italic">
+//               <Info
+//                 size={14}
+//                 className="mr-2 mt-0.5"
+//               />
+
+//               {property.details}
+//             </div>
+//           </div>
+
+//           {/* BUTTONS */}
+//           <div className="flex gap-3 mt-6">
+//             <button
+//               onClick={
+//                 handleDetailsClick
+//               }
+//               className="flex-1 bg-slate-100 py-3 rounded-xl"
+//             >
+//               <Eye
+//                 size={18}
+//                 className="inline mr-2"
+//               />
+
+//               Details
+//             </button>
+
+//             <button className="flex-1 bg-blue-600 text-white py-3 rounded-xl">
+//               <MessageCircle
+//                 size={18}
+//                 className="inline mr-2"
+//               />
+
+//               Chat
+//             </button>
+//           </div>
+//         </div>
+//       </div>
+//     </motion.div>
+//   );
+// };
+
+// export default PropertyCard;
+
+
+
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import {
@@ -544,6 +978,38 @@ const PropertyCard = ({
       ? property.image
       : "/no-image.png";
 
+  // ✅ IMAGE CLICK
+  const handleImageClick = () => {
+    navigate(`/property/${property.id}`, {
+      state: {
+        previewOnly:
+          premiumStatus !== "APPROVED",
+      },
+    });
+  };
+
+  // ✅ DETAILS CLICK
+  const handleDetailsClick = () => {
+    // APPROVED
+    if (premiumStatus === "APPROVED") {
+      navigate(
+        `/property/${property.id}`
+      );
+      return;
+    }
+
+    // PENDING
+    if (premiumStatus === "PENDING") {
+      alert(
+        "Your premium request is pending approval"
+      );
+      return;
+    }
+
+    // NOT PREMIUM
+    navigate("/buy-premium");
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 40 }}
@@ -553,14 +1019,11 @@ const PropertyCard = ({
       className="group relative bg-white rounded-3xl shadow-sm hover:shadow-2xl hover:shadow-blue-500/10 overflow-hidden border border-gray-100 transition-all duration-300"
     >
       <div className="relative z-10 m-[2px] bg-white rounded-[22px] overflow-hidden">
+        
         {/* IMAGE */}
         <div
           className="relative overflow-hidden cursor-pointer"
-          onClick={() =>
-            navigate(
-              `/property/${property.id}`
-            )
-          }
+          onClick={handleImageClick}
         >
           <motion.img
             whileHover={{ scale: 1.12 }}
@@ -664,28 +1127,10 @@ const PropertyCard = ({
           {/* BUTTONS */}
           <div className="flex gap-3 mt-6">
             <button
-              onClick={() => {
-                if (
-                  effectivePremiumStatus ===
-                  "APPROVED"
-                ) {
-                  navigate(
-                    `/property/${property.id}`
-                  );
-                } else if (
-                  effectivePremiumStatus ===
-                  "PENDING"
-                ) {
-                  alert(
-                    "Your premium request is pending"
-                  );
-                } else {
-                  navigate(
-                    "/buy-premium"
-                  );
-                }
-              }}
-              className="flex-1 bg-slate-100 py-3 rounded-xl"
+              onClick={
+                handleDetailsClick
+              }
+              className="flex-1 bg-slate-100 py-3 rounded-xl font-semibold hover:bg-slate-200 transition"
             >
               <Eye
                 size={18}
