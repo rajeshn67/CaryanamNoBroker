@@ -8,9 +8,10 @@ import {
   ArrowRight,
   Menu,
   X,
+  ArrowUp,
 } from "lucide-react";
 import img1 from "../assets/img1.jpg";
-import img2 from "../assets/img2.webp";
+import img2 from "../assets/img2.jpg";
 import img3 from "../assets/img3.jpg";
 import img4 from "../assets/img4.jpg";
 
@@ -20,6 +21,7 @@ const Home = () => {
   const navigate = useNavigate();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [showScrollTop, setShowScrollTop] = useState(false);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -28,6 +30,19 @@ const Home = () => {
 
     return () => clearInterval(interval);
   }, []);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setShowScrollTop(window.scrollY > 400);
+    };
+
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
 
   const features = [
     {
@@ -71,7 +86,7 @@ const Home = () => {
           </div>
           
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center gap-8">
+          <div className="hidden md:flex items-center gap-12 flex-grow justify-center">
             <a
               href="#home"
               className="text-slate-700 font-semibold hover:text-[#ff7f50] transition-colors"
@@ -415,6 +430,21 @@ const Home = () => {
           </div>
         </div>
       </footer>
+
+      {/* Scroll to Top Button */}
+      <AnimatePresence>
+        {showScrollTop && (
+          <motion.button
+            initial={{ opacity: 0, scale: 0 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0 }}
+            onClick={scrollToTop}
+            className="fixed bottom-8 right-8 w-12 h-12 bg-slate-800 text-white rounded-full shadow-lg hover:shadow-xl hover:shadow-slate-800/40 flex items-center justify-center z-50 transition-all duration-300 hover:scale-110"
+          >
+            <ArrowUp size={20} />
+          </motion.button>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

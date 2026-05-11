@@ -2451,9 +2451,7 @@ const handleManualOwnerIdSubmit = () => {
 
 
   return (
-
-    <div className="bg-[#F5F7FA] min-h-screen">
-
+    <div className="min-h-screen bg-[#F5F7FA] flex flex-col">
       {/* Header */}
 
       <div className="flex justify-between items-center px-6 py-4 bg-white shadow-sm">
@@ -2546,7 +2544,7 @@ const handleManualOwnerIdSubmit = () => {
 
 
 
-      <div className="max-w-7xl mx-auto px-6 py-8">
+      <div className="max-w-7xl mx-auto px-6 py-8 flex-grow">
 
         <div>
 
@@ -4720,6 +4718,65 @@ const handleManualOwnerIdSubmit = () => {
 
 
       <ToastContainer position="top-right" autoClose={3000} />
+
+      {/* Footer */}
+      <footer className="bg-slate-900 text-white py-12 px-4 md:px-6">
+        <div className="max-w-7xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
+            <div>
+              <div className="flex items-center gap-2 mb-4">
+                <div className="w-10 h-10 bg-gradient-to-br from-[#ff7f50] to-[#ff9f80] rounded-xl flex items-center justify-center">
+                  <span className="text-white font-bold text-lg">C</span>
+                </div>
+                <span className="text-2xl font-black">Caryanam</span>
+              </div>
+              <p className="text-slate-400 text-sm">
+                India's first no-brokerage platform connecting property owners
+                directly with tenants.
+              </p>
+            </div>
+            <div>
+              <h4 className="font-bold mb-4">Quick Links</h4>
+              <ul className="space-y-2 text-slate-400 text-sm">
+                <li>
+                  <a href="/home" className="hover:text-white transition-colors">
+                    Home
+                  </a>
+                </li>
+                <li>
+                  <a href="/browse" className="hover:text-white transition-colors">
+                    Browse Properties
+                  </a>
+                </li>
+                <li>
+                  <a href="/login" className="hover:text-white transition-colors">
+                    About Us
+                  </a>
+                </li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="font-bold mb-4">Locations</h4>
+              <ul className="space-y-2 text-slate-400 text-sm">
+                <li>Pune</li>
+                <li>PCMC</li>
+                <li>Mumbai</li>
+                <li>Coming Soon</li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="font-bold mb-4">Contact</h4>
+              <ul className="space-y-2 text-slate-400 text-sm">
+                <li>support@caryanam.com</li>
+                <li>+91 98765 43210</li>
+              </ul>
+            </div>
+          </div>
+          <div className="border-t border-slate-800 pt-8 text-center text-slate-400 text-sm">
+            <p>© 2024 Caryanam. All rights reserved.</p>
+          </div>
+        </div>
+      </footer>
 
     </div>
 
