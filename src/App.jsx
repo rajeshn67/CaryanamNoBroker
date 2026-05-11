@@ -8,7 +8,7 @@ import Auth from "./pages/Auth";
 import ProtectedRoute from "./routes/ProtectedRoute";
 import BuyPremium from "./pages/BuyPremium";
 import Home from "./pages/Home";
-
+import ForgotPassword from "./pages/ForgotPassword";
 function App() {
   return (
     <BrowserRouter>
@@ -49,6 +49,9 @@ function App() {
             </ProtectedRoute>
           }
         />
+
+<Route path="/forgot-password" element={<ForgotPassword />} />
+
 
         <Route
           path="/owner"
