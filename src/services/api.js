@@ -434,14 +434,14 @@ export const authApi = {
   registerUser: (data) => api.post("/auth/register/user", data),
   registerAdmin: (data) => api.post("/auth/register/admin", data),
   registerOwner: (data) => api.post("/auth/register/POwner", data),
-   forgotPassword: (data) =>
-    api.post("/auth/forgot-password", data),
-
-  verifyOtp: (data) =>
-    api.post("/auth/verify-otp", data),
-
-  resetPassword: (data) =>
-    api.post("/auth/reset-password", data),
+   forgotPassword: (data) => api.post("/auth/forgot-password", data),
+  verifyOtp: (data) => api.post("/auth/verify-otp", data),
+  resetPassword: (data) =>api.post("/auth/reset-password", data),
+   sendRegisterOtp: (data) =>
+    api.post("/auth/send-email-otp", data),
+ 
+  verifyRegisterOtp: (data) =>
+    api.post("/auth/verify-email-otp", data),
 };
 
 const adminRootRequest = (path, method = "get", data) => {
