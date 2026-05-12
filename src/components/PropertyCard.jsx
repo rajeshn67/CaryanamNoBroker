@@ -951,6 +951,268 @@
 // export default PropertyCard;
 
 
+// import { motion } from "framer-motion";
+// import { useNavigate } from "react-router-dom";
+// import {
+//   MapPin,
+//   Phone,
+//   Info,
+//   MessageCircle,
+//   Eye,
+// } from "lucide-react";
+
+// const PropertyCard = ({
+//   property,
+//   premiumStatus,
+//   approvalStatus,
+//   onChatClick,
+// }) => {
+//   const navigate = useNavigate();
+
+//   const effectivePremiumStatus =
+//     premiumStatus ??
+//     approvalStatus ??
+//     null;
+
+//   // IMAGE FALLBACK
+//   const imageSrc =
+//     property.image &&
+//     property.image.trim() !== ""
+//       ? property.image
+//       : "/no-image.png";
+
+//   // IMAGE CLICK
+//   const handleImageClick = () => {
+//     navigate(`/property/${property.id}`, {
+//       state: {
+//         previewOnly:
+//           premiumStatus !==
+//           "APPROVED",
+//       },
+//     });
+//   };
+
+//   // DETAILS CLICK
+//   const handleDetailsClick = () => {
+//     if (
+//       premiumStatus ===
+//       "APPROVED"
+//     ) {
+//       navigate(
+//         `/property/${property.id}`
+//       );
+//       return;
+//     }
+
+//     if (
+//       premiumStatus ===
+//       "PENDING"
+//     ) {
+//       alert(
+//         "Your premium request is pending approval"
+//       );
+//       return;
+//     }
+
+//     navigate("/buy-premium");
+//   };
+
+//   return (
+//     <motion.div
+//       initial={{
+//         opacity: 0,
+//         y: 40,
+//       }}
+//       animate={{
+//         opacity: 1,
+//         y: 0,
+//       }}
+//       transition={{
+//         duration: 0.5,
+//       }}
+//       whileHover={{
+//         y: -10,
+//       }}
+//       className="group relative bg-white rounded-3xl shadow-sm hover:shadow-2xl hover:shadow-blue-500/10 overflow-hidden border border-gray-100 transition-all duration-300"
+//     >
+//       <div className="relative z-10 m-[2px] bg-white rounded-[22px] overflow-hidden">
+//         {/* IMAGE */}
+//         <div
+//           className="relative overflow-hidden cursor-pointer"
+//           onClick={handleImageClick}
+//         >
+//           <motion.img
+//             whileHover={{
+//               scale: 1.12,
+//             }}
+//             transition={{
+//               duration: 0.7,
+//               ease: "easeOut",
+//             }}
+//             src={imageSrc}
+//             className="h-60 w-full object-cover"
+//             alt={property.title}
+//             loading="lazy"
+//             onError={(e) => {
+//               if (
+//                 !e.currentTarget.src.includes(
+//                   "no-image.png"
+//                 )
+//               ) {
+//                 e.currentTarget.src =
+//                   "/no-image.png";
+//               }
+//             }}
+//           />
+
+//           {/* PREMIUM STATUS */}
+//           {effectivePremiumStatus && (
+//             <div
+//               className={`absolute top-4 right-4 px-3 py-1 text-xs font-bold rounded-lg shadow-md
+//               ${
+//                 effectivePremiumStatus ===
+//                 "APPROVED"
+//                   ? "bg-green-500 text-white"
+//                   : ""
+//               }
+//               ${
+//                 effectivePremiumStatus ===
+//                 "PENDING"
+//                   ? "bg-yellow-400 text-black"
+//                   : ""
+//               }
+//               ${
+//                 effectivePremiumStatus ===
+//                 "REJECTED"
+//                   ? "bg-red-500 text-white"
+//                   : ""
+//               }`}
+//             >
+//               {effectivePremiumStatus}
+//             </div>
+//           )}
+
+//           {/* PROPERTY TYPE */}
+//           <div className="absolute top-4 left-4 bg-white/80 backdrop-blur-sm text-blue-700 text-[10px] font-bold px-3 py-1.5 rounded-lg shadow-sm border border-white/50">
+//             {property.propertyType ||
+//               property.type ||
+//               "PROPERTY"}
+//           </div>
+
+//           {/* PRICE */}
+//           <div className="absolute bottom-4 left-4 bg-gray-900/80 text-white px-3 py-1 rounded-lg font-semibold">
+//             ₹
+//             {Number(
+//               property.price || 0
+//             ).toLocaleString()}
+//           </div>
+//         </div>
+
+//         {/* CONTENT */}
+//         <div className="p-6">
+//           {/* TITLE */}
+//           <h2 className="text-xl font-bold text-slate-800 truncate">
+//             {property.title ||
+//               "Untitled Property"}
+//           </h2>
+
+//           <div className="mt-4 space-y-2">
+//             {/* LOCATION */}
+//             <div className="flex items-center text-slate-500 text-sm">
+//               <MapPin
+//                 size={16}
+//                 className="mr-2 text-blue-500 flex-shrink-0"
+//               />
+
+//               <span className="truncate">
+//                 {property.location ||
+//                   property.address ||
+//                   property.city ||
+//                   "Location Not Available"}
+//               </span>
+//             </div>
+
+//             {/* PHONE */}
+//             <div className="flex items-center text-slate-500 text-sm">
+//               <Phone
+//                 size={16}
+//                 className="mr-2 text-green-500 flex-shrink-0"
+//               />
+
+//               <span>
+//                 {property.phone ||
+//                   "Not Available"}
+//               </span>
+//             </div>
+
+//             {/* BHK TYPE */}
+//             <div className="flex items-center text-slate-500 text-sm">
+//               <Info
+//                 size={16}
+//                 className="mr-2 text-slate-400 flex-shrink-0"
+//               />
+
+//               <span>
+//                 {property.bhkType ||
+//                   property.bhk ||
+//                   "BHK Not Available"}
+//               </span>
+//             </div>
+
+//             {/* DETAILS */}
+//             {/* <div className="flex items-start text-slate-400 text-xs mt-2 italic">
+//               <Info
+//                 size={14}
+//                 className="mr-2 mt-0.5 flex-shrink-0"
+//               />
+
+//               <span className="line-clamp-2">
+//                 {property.details ||
+//                   "No details available"}
+//               </span>
+//             </div> */}
+//           </div>
+
+//           {/* BUTTONS */}
+//           <div className="flex gap-3 mt-6">
+//             {/* DETAILS BUTTON */}
+//             <button
+//               onClick={
+//                 handleDetailsClick
+//               }
+//               className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 py-3 rounded-xl font-medium transition-all duration-200"
+//             >
+//               <Eye
+//                 size={18}
+//                 className="inline mr-2"
+//               />
+//               Details
+//             </button>
+
+//             {/* CHAT BUTTON */}
+//             <button
+//               onClick={() =>
+//                 onChatClick?.(property)
+//               }
+//               className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-medium transition-all duration-200"
+//             >
+//               <MessageCircle
+//                 size={18}
+//                 className="inline mr-2"
+//               />
+//               Chat
+//             </button>
+//           </div>
+//         </div>
+//       </div>
+//     </motion.div>
+//   );
+// };
+
+// export default PropertyCard;
+
+
+
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import {
@@ -1033,7 +1295,7 @@ const PropertyCard = ({
       whileHover={{
         y: -10,
       }}
-      className="group relative bg-white rounded-3xl shadow-sm hover:shadow-2xl hover:shadow-blue-500/10 overflow-hidden border border-gray-100 transition-all duration-300"
+      className="group relative bg-white rounded-3xl shadow-[0_10px_40px_rgba(0,0,0,0.08)] hover:shadow-[0_20px_60px_rgba(249,115,22,0.18)] overflow-hidden border border-[#E5E7EB] transition-all duration-300"
     >
       <div className="relative z-10 m-[2px] bg-white rounded-[22px] overflow-hidden">
         {/* IMAGE */}
@@ -1072,7 +1334,7 @@ const PropertyCard = ({
               ${
                 effectivePremiumStatus ===
                 "APPROVED"
-                  ? "bg-green-500 text-white"
+                  ? "bg-gradient-to-r from-[#F97316] to-[#EA580C] text-white"
                   : ""
               }
               ${
@@ -1093,14 +1355,14 @@ const PropertyCard = ({
           )}
 
           {/* PROPERTY TYPE */}
-          <div className="absolute top-4 left-4 bg-white/80 backdrop-blur-sm text-blue-700 text-[10px] font-bold px-3 py-1.5 rounded-lg shadow-sm border border-white/50">
+          <div className="absolute top-4 left-4 bg-gradient-to-r from-[#F97316] to-[#EA580C] backdrop-blur-sm text-white text-[10px] font-bold px-3 py-1.5 rounded-lg shadow-lg">
             {property.propertyType ||
               property.type ||
               "PROPERTY"}
           </div>
 
           {/* PRICE */}
-          <div className="absolute bottom-4 left-4 bg-gray-900/80 text-white px-3 py-1 rounded-lg font-semibold">
+          <div className="absolute bottom-4 left-4 bg-[#020617]/85 text-white px-4 py-2 rounded-xl font-bold shadow-xl border border-[#1E293B]">
             ₹
             {Number(
               property.price || 0
@@ -1109,22 +1371,22 @@ const PropertyCard = ({
         </div>
 
         {/* CONTENT */}
-        <div className="p-6">
+        <div className="p-6 bg-[#FFFFFF]">
           {/* TITLE */}
-          <h2 className="text-xl font-bold text-slate-800 truncate">
+          <h2 className="text-xl font-black text-[#111827] truncate">
             {property.title ||
               "Untitled Property"}
           </h2>
 
-          <div className="mt-4 space-y-2">
+          <div className="mt-4 space-y-3">
             {/* LOCATION */}
-            <div className="flex items-center text-slate-500 text-sm">
+            <div className="flex items-center text-[#6B7280] text-sm">
               <MapPin
                 size={16}
-                className="mr-2 text-blue-500 flex-shrink-0"
+                className="mr-2 text-[#F97316] flex-shrink-0"
               />
 
-              <span className="truncate">
+              <span className="truncate font-medium">
                 {property.location ||
                   property.address ||
                   property.city ||
@@ -1133,44 +1395,31 @@ const PropertyCard = ({
             </div>
 
             {/* PHONE */}
-            <div className="flex items-center text-slate-500 text-sm">
+            <div className="flex items-center text-[#6B7280] text-sm">
               <Phone
                 size={16}
-                className="mr-2 text-green-500 flex-shrink-0"
+                className="mr-2 text-[#F97316] flex-shrink-0"
               />
 
-              <span>
+              <span className="font-medium">
                 {property.phone ||
                   "Not Available"}
               </span>
             </div>
 
             {/* BHK TYPE */}
-            <div className="flex items-center text-slate-500 text-sm">
+            <div className="flex items-center text-[#6B7280] text-sm">
               <Info
                 size={16}
-                className="mr-2 text-slate-400 flex-shrink-0"
+                className="mr-2 text-[#F97316] flex-shrink-0"
               />
 
-              <span>
+              <span className="font-medium">
                 {property.bhkType ||
                   property.bhk ||
                   "BHK Not Available"}
               </span>
             </div>
-
-            {/* DETAILS */}
-            {/* <div className="flex items-start text-slate-400 text-xs mt-2 italic">
-              <Info
-                size={14}
-                className="mr-2 mt-0.5 flex-shrink-0"
-              />
-
-              <span className="line-clamp-2">
-                {property.details ||
-                  "No details available"}
-              </span>
-            </div> */}
           </div>
 
           {/* BUTTONS */}
@@ -1180,7 +1429,7 @@ const PropertyCard = ({
               onClick={
                 handleDetailsClick
               }
-              className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 py-3 rounded-xl font-medium transition-all duration-200"
+              className="flex-1 bg-[#F8FAFC] hover:bg-[#E2E8F0] border border-[#E2E8F0] text-[#111827] py-3 rounded-xl font-semibold transition-all duration-200"
             >
               <Eye
                 size={18}
@@ -1194,7 +1443,7 @@ const PropertyCard = ({
               onClick={() =>
                 onChatClick?.(property)
               }
-              className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-medium transition-all duration-200"
+              className="flex-1 bg-gradient-to-r from-[#F97316] to-[#EA580C] hover:opacity-95 text-white py-3 rounded-xl font-semibold transition-all duration-200 shadow-[0_10px_25px_rgba(249,115,22,0.35)]"
             >
               <MessageCircle
                 size={18}
