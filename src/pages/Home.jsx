@@ -267,10 +267,7 @@ const Home = () => {
               <p className="mb-6 text-[17px] font-extrabold text-[#f06d31] md:text-[19px]">
                 Your Trusted Partner In Every Property Deal.
               </p>
-              <p className="mb-8 max-w-[590px] font-serif text-[16px] leading-relaxed text-[#1e2f3c] md:text-[18px]">
-                Connect directly with property owners. Save thousands on brokerage fees.
-                Browse verified listings across Pune and PCMC.
-              </p>
+              
               <div className="flex flex-col gap-4 sm:flex-row">
                 <button
                   onClick={() => navigate("/login")}
