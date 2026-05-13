@@ -1774,7 +1774,7 @@ const handleManualOwnerIdSubmit = () => {
 
       const uploadedImages = images.filter((img) => img !== undefined);
 
-      if (uploadedImages.length === 0) return "At least one image is required";
+      if (uploadedImages.length < 4) return "Minimum 4 images are required";
 
       if (!images[0]) return "Door image is required and will be used as the cover photo";
 
@@ -3246,7 +3246,7 @@ const handleManualOwnerIdSubmit = () => {
 
                 <label className="text-sm font-medium text-gray-700">
 
-                  Property Images <span className="text-red-500">(Door image required)</span>
+                  Property Images <span className="text-red-500">(Minimum 4 images required, Door image mandatory)</span>
 
                 </label>
 
