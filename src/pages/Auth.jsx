@@ -2516,38 +2516,53 @@ const [otp, setOtp] = useState("");
 };
 
   const validate = () => {
-  if (!formData.email.trim()) {
-    return "Email is required";
-  }
-
-  if (!/^[A-Za-z0-9._%+-]+@gmail\.com$/.test(formData.email)) {
-    return "Only Gmail addresses are allowed";
-  }
-
-  if (!formData.password.trim()) {
-    return "Password is required";
-  }
-
   if (!isLogin) {
     if (!formData.fullName.trim()) {
-      return "Full Name is required";
+      return "Please enter full name";
     }
 
     if (!/^[A-Za-z ]+$/.test(formData.fullName)) {
-      return "Only letters allowed in name";
+      return "Full name should contain only letters";
     }
 
-    if (!/^\d{10}$/.test(formData.mobileNumber)) {
+    if (!formData.mobileNumber.trim()) {
+      return "Please enter mobile number";
+    }
+
+    if (!/^\d+$/.test(formData.mobileNumber)) {
+      return "Mobile number should contain only digits";
+    }
+
+    if (formData.mobileNumber.length !== 10) {
       return "Mobile number must be 10 digits";
+    }
+
+    if (!formData.email.trim()) {
+      return "Please enter email";
+    }
+
+    if (!/^[A-Za-z0-9._%+-]+@gmail\.com$/.test(formData.email)) {
+      return "Only Gmail addresses are allowed";
+    }
+
+    if (!formData.password.trim()) {
+      return "Please enter password";
     }
 
     if (formData.password.length < 6) {
       return "Password must be at least 6 characters";
     }
 
-    // OTP validation
     if (!emailVerified) {
       return "Please verify email first";
+    }
+  } else {
+    if (!formData.email.trim()) {
+      return "Please enter email";
+    }
+
+    if (!formData.password.trim()) {
+      return "Please enter password";
     }
   }
 
