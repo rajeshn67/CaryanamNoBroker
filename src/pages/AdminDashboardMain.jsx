@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { adminModerationApi } from "../services/api";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { LogOut } from "lucide-react";
+import { Building2, Clock, LogOut, ShieldCheck, Users } from "lucide-react";
 
 const OWNER_APPROVAL_STATUS_KEY = "ownerApprovalStatuses";
 
@@ -122,13 +122,21 @@ const AdminDashboardMain = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#F5F7FA] flex flex-col">
-      <div className="flex justify-between items-center px-6 py-4 bg-white shadow-sm">
-        <h1 className="text-blue-600 font-bold text-xl">Admin Panel</h1>
+    <div className="min-h-screen bg-[#f7f0e8] flex flex-col">
+      <div className="flex justify-between items-center px-6 py-4 bg-black/90 backdrop-blur-md border-b border-white/10 shadow-[0_10px_30px_rgba(0,0,0,0.3)]">
+        <div className="flex items-center gap-3">
+          <div className="flex h-11 w-11 items-center justify-center rounded-[18px] bg-[#ff7438] text-white shadow-[0_14px_30px_rgba(255,116,56,0.24)]">
+            <ShieldCheck size={22} />
+          </div>
+          <div>
+            <h1 className="text-xl font-black text-white">Caryanam <span className="text-[#ff7438]">Broker</span></h1>
+            
+          </div>
+        </div>
         <div className="flex items-center gap-3">
           <button
             onClick={logout}
-            className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-semibold rounded-xl shadow-lg hover:shadow-red-200 transition-all duration-300 active:scale-95"
+            className="flex items-center gap-2 px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-xl shadow-[0_12px_24px_rgba(220,38,38,0.28)] transition-all duration-300 active:scale-95"
           >
             <LogOut size={18} />
             Logout
@@ -136,44 +144,72 @@ const AdminDashboardMain = () => {
         </div>
       </div>
 
-      <div className="max-w-6xl mx-auto p-6 flex-grow">
-        <div className="mb-6">
-          <h2 className="text-3xl font-bold text-gray-800">Admin Dashboard</h2>
-          <p className="text-gray-500 mt-1">Approve or reject premium requests</p>
+      <div className="w-full max-w-7xl mx-auto p-6 flex-grow">
+        <div className="mb-8 rounded-[24px] border-2 border-[#d8c2a8] bg-[#fff7ed] p-6 shadow-[0_25px_80px_rgba(0,0,0,0.18)]">
+          <div className="flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
+            <div>
+              <p className="text-sm font-semibold uppercase tracking-[0.08em] text-[#f97316]">Moderation center</p>
+              <h2 className="mt-2 text-3xl font-black text-[#1a1a1a]">Admin Dashboard</h2>
+              <p className="text-[#7d6c5c] mt-1">Approve or reject premium users and property requests.</p>
+            </div>
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+              <div className="rounded-2xl border border-[#d9c7b2] bg-[#f7f0e8] px-4 py-3">
+                <div className="flex items-center gap-2 text-[#7d6c5c]">
+                  <Users size={17} />
+                  <span className="text-xs font-semibold uppercase">Users</span>
+                </div>
+                <p className="mt-1 text-2xl font-black text-[#1a1a1a]">{pendingUsers.length}</p>
+              </div>
+              <div className="rounded-2xl border border-[#d9c7b2] bg-[#f7f0e8] px-4 py-3">
+                <div className="flex items-center gap-2 text-[#7d6c5c]">
+                  <Building2 size={17} />
+                  <span className="text-xs font-semibold uppercase">Properties</span>
+                </div>
+                <p className="mt-1 text-2xl font-black text-[#1a1a1a]">{pendingOwners.length}</p>
+              </div>
+              <div className="col-span-2 rounded-2xl border border-[#d9c7b2] bg-[#1a1a1a] px-4 py-3 text-white sm:col-span-1">
+                <div className="flex items-center gap-2 text-[#ffbf8a]">
+                  <Clock size={17} />
+                  <span className="text-xs font-semibold uppercase">Pending</span>
+                </div>
+                <p className="mt-1 text-2xl font-black">{pendingUsers.length + pendingOwners.length}</p>
+              </div>
+            </div>
+          </div>
         </div>
 
         {loading ? (
-          <div className="bg-white rounded-xl shadow-sm p-6 text-gray-600">Loading pending requests...</div>
+          <div className="rounded-[24px] border-2 border-[#d8c2a8] bg-[#fff7ed] p-6 text-[#7d6c5c] shadow-[0_25px_80px_rgba(0,0,0,0.12)]">Loading pending requests...</div>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="bg-white rounded-xl shadow-sm p-6">
-              <h3 className="text-xl font-semibold mb-4 text-gray-800">
+            <div className="rounded-[24px] border-2 border-[#d8c2a8] bg-[#fff7ed] p-6 shadow-[0_25px_80px_rgba(0,0,0,0.16)]">
+              <h3 className="text-xl font-bold mb-4 text-[#1a1a1a]">
                 Pending Users ({pendingUsers.length})
               </h3>
               {pendingUsers.length === 0 ? (
-                <p className="text-gray-500">No pending users</p>
+                <p className="text-[#7d6c5c]">No pending users</p>
               ) : (
                 <div className="space-y-3">
                   {pendingUsers.map((user) => {
                     const id = user?.userId ?? user?.id;
                     const keyPrefix = `user-${id}`;
                     return (
-                      <div key={keyPrefix} className="border rounded-lg p-3">
-                        <p className="font-medium text-gray-800">{user?.fullName || "Unnamed User"}</p>
-                        <p className="text-sm text-gray-500">{user?.email || "-"}</p>
-                        <p className="text-sm text-gray-500">{user?.mobileNumber || "-"}</p>
+                      <div key={keyPrefix} className="rounded-2xl border border-[#d9c7b2] bg-[#f9f3ed] p-4">
+                        <p className="font-semibold text-[#1a1a1a]">{user?.fullName || "Unnamed User"}</p>
+                        <p className="text-sm text-[#7d6c5c]">{user?.email || "-"}</p>
+                        <p className="text-sm text-[#7d6c5c]">{user?.mobileNumber || "-"}</p>
                         <div className="flex gap-2 mt-3">
                           <button
                             onClick={() => handleDecision({ id, type: "user", approve: true })}
                             disabled={actionLoading === `${keyPrefix}-approve`}
-                            className="px-3 py-1.5 text-sm bg-green-600 text-white rounded hover:bg-green-700 disabled:bg-gray-400"
+                            className="px-4 py-2 text-sm bg-[#198754] text-white rounded-xl hover:bg-[#157347] disabled:bg-[#c9af91] font-semibold transition-colors"
                           >
                             Approve
                           </button>
                           <button
                             onClick={() => handleDecision({ id, type: "user", approve: false })}
                             disabled={actionLoading === `${keyPrefix}-reject`}
-                            className="px-3 py-1.5 text-sm bg-red-600 text-white rounded hover:bg-red-700 disabled:bg-gray-400"
+                            className="px-4 py-2 text-sm bg-[#dc3545] text-white rounded-xl hover:bg-[#bb2d3b] disabled:bg-[#c9af91] font-semibold transition-colors"
                           >
                             Reject
                           </button>
@@ -185,29 +221,28 @@ const AdminDashboardMain = () => {
               )}
             </div>
 
-            <div className="bg-white rounded-xl shadow-sm p-6">
-              <h3 className="text-xl font-semibold mb-4 text-gray-800">
+            <div className="rounded-[24px] border-2 border-[#d8c2a8] bg-[#fff7ed] p-6 shadow-[0_25px_80px_rgba(0,0,0,0.16)]">
+              <h3 className="text-xl font-bold mb-4 text-[#1a1a1a]">
                 Pending Property Approvals ({pendingOwners.length})
               </h3>
-              <p className="text-sm text-gray-500 mb-4">
+              <p className="text-sm text-[#7d6c5c] mb-4">
                 Properties awaiting payment verification and admin approval
               </p>
               {pendingOwners.length === 0 ? (
-                <p className="text-gray-500">No pending property approvals</p>
+                <p className="text-[#7d6c5c]">No pending property approvals</p>
               ) : (
                 <div className="space-y-3">
                   {pendingOwners.map((item) => {
-                    const ownerId = item?.ownerId ?? item?.id;
                     const propertyId = item?.propertyId;
                     const keyPrefix = `property-${propertyId}`;
                     return (
-                      <div key={keyPrefix} className="border rounded-lg p-4 bg-gray-50">
+                      <div key={keyPrefix} className="rounded-2xl border border-[#d9c7b2] bg-[#f9f3ed] p-4">
                         <div className="flex justify-between items-start mb-3">
                           <div>
-                            <p className="font-semibold text-gray-800">{item?.title || "Untitled Property"}</p>
-                            <p className="text-xs text-gray-500 mt-1">Property ID: {propertyId || "-"}</p>
+                            <p className="font-semibold text-[#1a1a1a]">{item?.title || "Untitled Property"}</p>
+                            <p className="text-xs text-[#7d6c5c] mt-1">Property ID: {propertyId || "-"}</p>
                           </div>
-                          <span className={`px-2 py-1 text-xs font-medium rounded ${
+                          <span className={`px-2.5 py-1 text-xs font-bold rounded-full ${
                             item?.paymentStatus?.toUpperCase() === 'APPROVED' ? 'bg-green-100 text-green-800' :
                             item?.paymentStatus?.toUpperCase() === 'REJECTED' ? 'bg-red-100 text-red-800' :
                             'bg-yellow-100 text-yellow-800'
@@ -216,7 +251,7 @@ const AdminDashboardMain = () => {
                           </span>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-2 text-sm text-gray-600 mb-3">
+                        <div className="grid grid-cols-1 gap-2 text-sm text-[#5d5145] mb-3 sm:grid-cols-2">
                           <div>
                             <span className="font-medium">Owner:</span> {item?.fullName || "-"}
                           </div>
@@ -241,14 +276,14 @@ const AdminDashboardMain = () => {
                           <button
                             onClick={() => handleDecision({ id: propertyId, type: "property", approve: true, owner: item })}
                             disabled={actionLoading === `${keyPrefix}-approve`}
-                            className="flex-1 px-3 py-2 text-sm bg-green-600 text-white rounded hover:bg-green-700 disabled:bg-gray-400 font-medium"
+                            className="flex-1 px-3 py-2 text-sm bg-[#198754] text-white rounded-xl hover:bg-[#157347] disabled:bg-[#c9af91] font-semibold transition-colors"
                           >
                             {actionLoading === `${keyPrefix}-approve` ? "Approving..." : "Approve"}
                           </button>
                           <button
                             onClick={() => handleDecision({ id: propertyId, type: "property", approve: false, owner: item })}
                             disabled={actionLoading === `${keyPrefix}-reject`}
-                            className="flex-1 px-3 py-2 text-sm bg-red-600 text-white rounded hover:bg-red-700 disabled:bg-gray-400 font-medium"
+                            className="flex-1 px-3 py-2 text-sm bg-[#dc3545] text-white rounded-xl hover:bg-[#bb2d3b] disabled:bg-[#c9af91] font-semibold transition-colors"
                           >
                             {actionLoading === `${keyPrefix}-reject` ? "Rejecting..." : "Reject"}
                           </button>
@@ -268,7 +303,7 @@ const AdminDashboardMain = () => {
       {/* Footer */}
       <footer className="bg-slate-900 text-white py-12 px-4 md:px-6">
         <div className="max-w-7xl mx-auto">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
             <div>
               <div className="flex items-center gap-2 mb-4">
                 <div className="w-10 h-10 bg-gradient-to-br from-[#ff7f50] to-[#ff9f80] rounded-xl flex items-center justify-center">
@@ -282,32 +317,10 @@ const AdminDashboardMain = () => {
               </p>
             </div>
             <div>
-              <h4 className="font-bold mb-4">Quick Links</h4>
-              <ul className="space-y-2 text-slate-400 text-sm">
-                <li>
-                  <a href="/home" className="hover:text-white transition-colors">
-                    Home
-                  </a>
-                </li>
-                <li>
-                  <a href="/browse" className="hover:text-white transition-colors">
-                    Browse Properties
-                  </a>
-                </li>
-                <li>
-                  <a href="/login" className="hover:text-white transition-colors">
-                    About Us
-                  </a>
-                </li>
-              </ul>
-            </div>
-            <div>
               <h4 className="font-bold mb-4">Locations</h4>
               <ul className="space-y-2 text-slate-400 text-sm">
                 <li>Pune</li>
                 <li>PCMC</li>
-                <li>Mumbai</li>
-                <li>Coming Soon</li>
               </ul>
             </div>
             <div>
@@ -319,7 +332,7 @@ const AdminDashboardMain = () => {
             </div>
           </div>
           <div className="border-t border-slate-800 pt-8 text-center text-slate-400 text-sm">
-            <p>© 2024 Caryanam. All rights reserved.</p>
+            <p>&copy; 2024 Caryanam. All rights reserved.</p>
           </div>
         </div>
       </footer>
@@ -328,3 +341,4 @@ const AdminDashboardMain = () => {
 };
 
 export default AdminDashboardMain;
+

@@ -2481,13 +2481,13 @@ const handleManualOwnerIdSubmit = () => {
     <div className="min-h-screen bg-[#f7f0e8] flex flex-col">
       {/* Header */}
 
-      <div className="flex justify-between items-center px-6 py-4 bg-[#fff7ed]/95 backdrop-blur-md border-b border-[#d8c2a8] shadow-[0_10px_30px_rgba(0,0,0,0.18)]">
+      <div className="flex justify-between items-center px-6 py-4 bg-black/90 backdrop-blur-md border-b border-white/10 shadow-[0_10px_30px_rgba(0,0,0,0.3)]">
 
         <div className="flex items-center gap-3">
 
           <svg
 
-            className="w-8 h-8 text-[#ff7a00]"
+            className="w-8 h-8 text-[#ff7438]"
 
             fill="none"
 
@@ -2511,9 +2511,9 @@ const handleManualOwnerIdSubmit = () => {
 
           </svg>
 
-          <h1 className="text-[#ff7a00] font-bold text-xl">
+          <h1 className="text-white font-bold text-xl">
 
-             Caryanam Broker
+             Caryanam <span className="text-[#ff7438]">Broker</span>
 
           </h1>
 
@@ -2523,7 +2523,7 @@ const handleManualOwnerIdSubmit = () => {
 
         <div className="flex items-center gap-4 text-sm">
 
-          <span className="text-[#1a1a1a] font-bold">
+          <span className="text-white font-bold">
 
             {ownerDisplayName}
 
@@ -2533,7 +2533,7 @@ const handleManualOwnerIdSubmit = () => {
 
             onClick={() => setChatOpen(true)}
 
-            className="relative text-[#3d3127] hover:text-[#ff7a00]"
+            className="relative text-white hover:text-[#ff7438]"
 
             title="Messages"
 
@@ -2557,7 +2557,7 @@ const handleManualOwnerIdSubmit = () => {
 
           onClick={handleLogout}
 
-          className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-semibold rounded-[24px] shadow-lg hover:shadow-red-200 transition-all duration-300 active:scale-95">
+          className="flex items-center gap-2 px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-[24px] shadow-[0_12px_24px_rgba(220,38,38,0.28)] transition-all duration-300 active:scale-95">
 
             <LogOut size={18} />
 
@@ -2779,7 +2779,7 @@ const handleManualOwnerIdSubmit = () => {
 
                 <label className="block text-sm font-medium text-[#3d3127] mb-2">
 
-                  PG Type
+                  PG Type <span className="text-red-500">*</span>
 
                 </label>
 
@@ -3187,7 +3187,7 @@ const handleManualOwnerIdSubmit = () => {
 
                       htmlFor={`image-${index}`}
 
-                      className={`border-2 border-dashed rounded-xl p-6 flex flex-col items-center justify-center transition-colors cursor-pointer min-h-[120px] ${
+                      className={`image-upload-tile group border-2 border-dashed rounded-xl p-6 flex flex-col items-center justify-center transition-colors cursor-pointer min-h-[120px] ${
 
                         imagePreviews[index]
 
@@ -3245,7 +3245,7 @@ const handleManualOwnerIdSubmit = () => {
 
                           </svg>
 
-                          <span className="text-xs text-[#7d6c5c] text-center font-medium">
+                          <span className="text-xs text-[#7d6c5c] text-center font-medium transition-colors group-hover:text-black">
 
                             {label}
 
@@ -4633,7 +4633,7 @@ const handleManualOwnerIdSubmit = () => {
       {/* Footer */}
       <footer className="bg-slate-900 text-white py-12 px-4 md:px-6">
         <div className="max-w-7xl mx-auto">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
             <div>
               <div className="flex items-center gap-2 mb-4">
                 <div className="w-10 h-10 bg-gradient-to-br from-[#ff7f50] to-[#ff9f80] rounded-[24px] flex items-center justify-center">
@@ -4647,32 +4647,10 @@ const handleManualOwnerIdSubmit = () => {
               </p>
             </div>
             <div>
-              <h4 className="font-bold mb-4">Quick Links</h4>
-              <ul className="space-y-2 text-slate-400 text-sm">
-                <li>
-                  <a href="/home" className="hover:text-white transition-colors">
-                    Home
-                  </a>
-                </li>
-                <li>
-                  <a href="/browse" className="hover:text-white transition-colors">
-                    Browse Properties
-                  </a>
-                </li>
-                <li>
-                  <a href="/login" className="hover:text-white transition-colors">
-                    About Us
-                  </a>
-                </li>
-              </ul>
-            </div>
-            <div>
               <h4 className="font-bold mb-4">Locations</h4>
               <ul className="space-y-2 text-slate-400 text-sm">
                 <li>Pune</li>
                 <li>PCMC</li>
-                <li>Mumbai</li>
-                <li>Coming Soon</li>
               </ul>
             </div>
             <div>
@@ -4684,7 +4662,7 @@ const handleManualOwnerIdSubmit = () => {
             </div>
           </div>
           <div className="border-t border-slate-800 pt-8 text-center text-slate-400 text-sm">
-            <p>© 2024 Caryanam. All rights reserved.</p>
+            <p>&copy; 2024 Caryanam. All rights reserved.</p>
           </div>
         </div>
       </footer>
