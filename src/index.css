@@ -18,3 +18,13 @@ button {
 input, select {
   transition: all 0.2s ease;
 }
+
+.upload-property-panel h2,
+.upload-property-panel label {
+  color: #fff7ed;
+}
+
+.upload-property-panel p,
+.upload-property-panel span:not(.text-red-500) {
+  color: #e5d7c5;
+}
