@@ -159,26 +159,16 @@
 //       try {
 //         const payload = JSON.parse(atob(token.split(".")[1]));
 //         userId = payload.id; 
-//       } catch {
-//         console.log("Invalid token");
-//       }
-//     }
-
-//     console.log("Final UserId:", userId);
-
+//       } catch {//       }
+//     }
 //     return api.get(`/user/properties/${userId}`); // ✅ fixed
 //   },
 
 
 
 //  filter: (filterData, userId) => {
-//   if (!userId) {
-//     console.error("❌ User ID missing");
-//     return Promise.reject("UserId missing");
-//   }
-
-//   console.log("👉 API CALL:", userId, filterData);
-
+//   if (!userId) {//     return Promise.reject("UserId missing");
+//   }
 //   return api.post(`/user/filter-properties/${userId}`, filterData);
 // },
 
@@ -395,27 +385,15 @@ export const propertyApi = {
       try {
         const payload = JSON.parse(atob(token.split(".")[1]));
         userId = payload.id; 
-      } catch {
-        console.log("Invalid token");
-      }
-    }
-
-    console.log("Final UserId:", userId);
-
-    return api.get(`/user/properties/${userId}`); // ✅ fixed
+      } catch {}
+    }return api.get(`/user/properties/${userId}`); // ✅ fixed
   },
 
 
 
  filter: (filterData, userId) => {
-  if (!userId) {
-    console.error("❌ User ID missing");
-    return Promise.reject("UserId missing");
-  }
-
-  console.log("👉 API CALL:", userId, filterData);
-
-  return api.post(`/user/filter-properties/${userId}`, filterData);
+  if (!userId) {return Promise.reject("UserId missing");
+  }return api.post(`/user/filter-properties/${userId}`, filterData);
 },
 
   getById: (id) => {

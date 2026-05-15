@@ -29,6 +29,7 @@ import {
   Ruler,
   Upload,
   Users,
+  HomeIcon
 } from "lucide-react";
 
 import ChatDrawer from "../components/ChatDrawer";
@@ -681,11 +682,7 @@ const handleManualOwnerIdSubmit = () => {
 
       }
 
-    } catch {
-
-      console.log("Error decoding token for email mapping");
-
-    }
+    } catch {}
 
   }
 
@@ -1089,11 +1086,7 @@ const handleManualOwnerIdSubmit = () => {
 
       setPropertyFetchMessage("");
 
-    } catch (err) {
-
-      console.error("Error fetching properties:", err?.message || err);
-
-      if (!preserveCurrent) {
+    } catch (err) {if (!preserveCurrent) {
 
         setProperties([]);
 
@@ -1163,11 +1156,7 @@ const handleManualOwnerIdSubmit = () => {
 
     } catch (err) {
 
-      if (!silent) {
-
-        console.error("Error fetching owner premium status:", err?.message || err);
-
-      }
+      if (!silent) {}
 
     }
 
@@ -1221,11 +1210,7 @@ const handleManualOwnerIdSubmit = () => {
 
       setSelectedFacilities(new Set(activeFacilities));
 
-    } catch (err) {
-
-      console.error("Error fetching facilities:", err?.message || err);
-
-      setFacilities(mergeFacilitiesWithBackendOptions());
+    } catch (err) {setFacilities(mergeFacilitiesWithBackendOptions());
 
       setSelectedFacilities(new Set());
 
@@ -2024,11 +2009,7 @@ const handleManualOwnerIdSubmit = () => {
 
             );
 
-          } catch (error) {
-
-            console.warn("Some non-cover images were not uploaded:", error);
-
-          }
+          } catch (error) {}
 
         };
 
@@ -2040,11 +2021,7 @@ const handleManualOwnerIdSubmit = () => {
 
           await saveFacilitiesForProperty(propertyId);
 
-        } catch (facilityErr) {
-
-          console.error("Error saving facilities:", facilityErr);
-
-          toast.error(facilityErr?.response?.data?.message || "Property added, but facilities were not saved");
+        } catch (facilityErr) {toast.error(facilityErr?.response?.data?.message || "Property added, but facilities were not saved");
 
         } finally {
 
@@ -2064,11 +2041,7 @@ const handleManualOwnerIdSubmit = () => {
 
           toast.success(responseMessage);
 
-        } catch (uploadErr) {
-
-          console.error("Error uploading images (first attempt):", uploadErr);
-
-          try {
+        } catch (uploadErr) {try {
 
             const retryFiles = await Promise.all(
 
@@ -2084,11 +2057,7 @@ const handleManualOwnerIdSubmit = () => {
 
             toast.success("Images uploaded after retry with optimized size.");
 
-          } catch (retryErr) {
-
-            console.error("Error uploading images (retry attempt):", retryErr);
-
-            toast.error(
+          } catch (retryErr) {toast.error(
 
               retryErr?.response?.data?.message ||
 
@@ -2158,11 +2127,7 @@ const handleManualOwnerIdSubmit = () => {
 
       }
 
-    } catch (err) {
-
-      console.error("Error adding property:", err);
-
-      if (createdPropertyId) {
+    } catch (err) {if (createdPropertyId) {
 
         toast.error("Property added, but something failed after creation");
 
@@ -2204,11 +2169,7 @@ const handleManualOwnerIdSubmit = () => {
 
       await fetchProperties({ preserveCurrent: true });
 
-    } catch (err) {
-
-      console.error("Error deleting property:", err);
-
-      toast.error(err.response?.data?.message || err.message || "Failed to delete property");
+    } catch (err) {toast.error(err.response?.data?.message || err.message || "Failed to delete property");
 
     }
 
@@ -2432,11 +2393,7 @@ const handleManualOwnerIdSubmit = () => {
 
       await fetchProperties({ preserveCurrent: true });
 
-    } catch (err) {
-
-      console.error("Error updating property:", err);
-
-      toast.error(getApiErrorMessage(err, "Failed to update property"));
+    } catch (err) {toast.error(getApiErrorMessage(err, "Failed to update property"));
 
     } finally {
 
@@ -2568,37 +2525,12 @@ const handleManualOwnerIdSubmit = () => {
 
         <div className="flex items-center gap-3">
 
-          <svg
-
-            className="w-8 h-8 text-[#ff7438]"
-
-            fill="none"
-
-            stroke="currentColor"
-
-            viewBox="0 0 24 24"
-
-          >
-
-            <path
-
-              strokeLinecap="round"
-
-              strokeLinejoin="round"
-
-              strokeWidth={2}
-
-              d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
-
-            />
-
-          </svg>
-
-          <h1 className="text-white font-bold text-xl">
-
-             Caryanam <span className="text-[#ff7438]">Broker</span>
-
-          </h1>
+    <div className="flex h-11 w-11 items-center justify-center rounded-[18px] bg-[#ff7438] text-white shadow-[0_14px_30px_rgba(255,116,56,0.24)]">
+                      <HomeIcon size={21} />
+                    </div>
+                     <span className="text-lg sm:text-xl md:text-2xl font-black text-white font-serif whitespace-nowrap">
+                        Caryanam <span className="text-[#ff7438]">Broker</span>
+                      </span>
 
         </div>
 

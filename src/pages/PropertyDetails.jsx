@@ -121,11 +121,7 @@
 // //               "APPROVED"
 // //           );
 // //         } catch (e) {
-// //           console.log(
-// //             "PREMIUM CHECK ERROR",
-// //             e
-// //           );
-// //         }
+// //           // //         }
 
 // //         const response =
 // //           await fetch(
@@ -177,12 +173,7 @@
 // //           );
 // //         }
 // //       } catch (err) {
-// //         console.error(
-// //           "PROPERTY DETAILS ERROR:",
-// //           err
-// //         );
-
-// //         if (!cancelled) {
+// //         // //         if (!cancelled) {
 // //           setError(
 // //             err.message ||
 // //               "Something went wrong"
@@ -830,7 +821,6 @@
 //             );
 
 //           if (!response.ok) {
-//             console.error(
 //               "FACILITY API STATUS:",
 //               response.status
 //             );
@@ -848,8 +838,6 @@
 
 //           const result =
 //             JSON.parse(text);
-
-//           console.log(
 //             "FACILITIES RESPONSE:",
 //             result
 //           );
@@ -858,7 +846,6 @@
 //             result?.data || []
 //           );
 //         } catch (err) {
-//           console.error(
 //             "FACILITY FETCH ERROR:",
 //             err
 //           );
@@ -945,8 +932,6 @@
 //             "Property not found"
 //           );
 //         }
-
-//         console.log(
 //           "SELECTED PROPERTY:",
 //           selectedProperty
 //         );
@@ -979,23 +964,15 @@
 //     selectedProperty.phone ||
 //     "N/A",
 // };
-
-// console.log(
 //   "SELECTED PROPERTY:",
 //   selectedProperty
 // );
-
-// console.log(
 //   "NORMALIZED PROPERTY:",
 //   normalizedProperty
 // );
-
-//         console.log(
 //           "PROPERTY ID:",
 //           propertyId
 //         );
-
-//         console.log(
 //           "OWNER ID:",
 //           ownerId
 //         );
@@ -1011,7 +988,6 @@
 //           );
 //         }
 //       } catch (err) {
-//         console.error(
 //           "PROPERTY DETAILS ERROR:",
 //           err
 //         );
@@ -1736,11 +1712,7 @@ const PropertyDetails = () => {
             );
 
           if (!response.ok) {
-            console.error(
-              "FACILITY API STATUS:",
-              response.status
-            );
-            setFacilities([]);
+setFacilities([]);
             return;
           }
 
@@ -1754,21 +1726,11 @@ const PropertyDetails = () => {
 
           const result =
             JSON.parse(text);
-
-          console.log(
-            "FACILITIES RESPONSE:",
-            result
-          );
-
-          setFacilities(
+setFacilities(
             result?.data || []
           );
         } catch (err) {
-          console.error(
-            "FACILITY FETCH ERROR:",
-            err
-          );
-          setFacilities([]);
+setFacilities([]);
         }
       },
       []
@@ -1786,7 +1748,6 @@ const PropertyDetails = () => {
 
 //     setNearbyProperties(result?.data || []);
 //   } catch (err) {
-//     console.error(err);
 //     setNearbyProperties([]);
 //   }
 // }, []);
@@ -1799,7 +1760,6 @@ const PropertyDetails = () => {
 
 //     setNearbyProperties(response.data || []);
 //   } catch (err) {
-//     console.error(err);
 //     setNearbyProperties([]);
 //   }
 // }, []);
@@ -1814,13 +1774,9 @@ const loadNearbyProperties = useCallback(async (pincode) => {
     );
 
     const result = await response.json();
-
-    console.log("nearby response", result);
-
-    setNearbyProperties(result || []);
+setNearbyProperties(result || []);
   } catch (err) {
-    console.error(err);
-    setNearbyProperties([]);
+setNearbyProperties([]);
   }
 }, []);
 
@@ -1910,13 +1866,7 @@ setUserName(loggedInUserName);
             "Property not found"
           );
         }
-
-        console.log(
-          "SELECTED PROPERTY:",
-          selectedProperty
-        );
-
-        const propertyId =
+const propertyId =
           selectedProperty.id ||
           selectedProperty.propertyId;
 
@@ -1928,13 +1878,7 @@ setUserName(loggedInUserName);
   selectedProperty.pincode ||
   selectedProperty.pinCode ||
   selectedProperty.areaPincode;
-
-console.log(
-  "AREA PINCODE:",
-  areaPincode
-);
-
-     const normalizedProperty = {
+const normalizedProperty = {
   ...selectedProperty,
   ownerName:
     selectedProperty.ownerName ||
@@ -1954,28 +1898,7 @@ console.log(
     selectedProperty.phone ||
     "N/A",
 };
-
-console.log(
-  "SELECTED PROPERTY:",
-  selectedProperty
-);
-
-console.log(
-  "NORMALIZED PROPERTY:",
-  normalizedProperty
-);
-
-        console.log(
-          "PROPERTY ID:",
-          propertyId
-        );
-
-        console.log(
-          "OWNER ID:",
-          ownerId
-        );
-
-        if (!cancelled) {
+if (!cancelled) {
           setProperty(
             normalizedProperty
           );
@@ -1988,12 +1911,7 @@ console.log(
 loadNearbyProperties(areaPincode);
         }
       } catch (err) {
-        console.error(
-          "PROPERTY DETAILS ERROR:",
-          err
-        );
-
-        if (!cancelled) {
+if (!cancelled) {
           setError(
             err.message ||
               "Something went wrong"
@@ -2106,7 +2024,7 @@ loadNearbyProperties(areaPincode);
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#f4f7fb] font-poppins">
+      <div className="min-h-screen bg-[#f7f0e8] font-poppins">
         <Navbar />
 
         <div className="h-[80vh] flex items-center justify-center">
@@ -2118,7 +2036,7 @@ loadNearbyProperties(areaPincode);
 
   if (error) {
     return (
-      <div className="min-h-screen bg-[#f4f7fb] font-poppins">
+      <div className="min-h-screen bg-[#f7f0e8] font-poppins">
         <Navbar />
 
         <div className="max-w-2xl mx-auto py-20 px-5">
@@ -2145,7 +2063,7 @@ loadNearbyProperties(areaPincode);
   }
 
   return (
-    <div className="min-h-screen bg-[#f4f7fb] font-inter">
+    <div className="min-h-screen bg-[#f7f0e8] font-inter">
       <Navbar
         onOpenChat={() =>
           setChatOpen(true)
@@ -2258,27 +2176,27 @@ loadNearbyProperties(areaPincode);
               </div>
             </div>
 
-            <div className="bg-white rounded-[32px] p-8 shadow-xl border border-slate-200">
+            <div className="bg-black/90 text-white rounded-[24px] p-8 shadow-[0_25px_80px_rgba(0,0,0,0.28)] border border-white/10">
               <div className="flex items-start justify-between flex-wrap gap-5 mb-10">
                 <div>
-                  <h2 className="text-[28px] font-black text-[#0f172a] leading-tight">
+                  <h2 className="text-[28px] font-black text-white leading-tight">
                     Property
                     Overview
                   </h2>
 
-                  <p className="text-slate-500 mt-2 text-[15px]">
-                    Premium
+                  <p className="text-[#ffbf8a] mt-2 text-[15px] font-semibold">
+                    Verified
                     property
                     information
                   </p>
                 </div>
 
-                <div className="bg-[#0b132b] text-white px-7 py-5 rounded-[24px] shadow-lg min-w-[170px]">
-                  <p className="text-xs uppercase tracking-[3px] text-slate-300 mb-1">
+                <div className="bg-white/10 border border-white/10 text-white px-7 py-5 rounded-[24px] shadow-[0_10px_30px_rgba(0,0,0,0.24)] min-w-[170px]">
+                  <p className="text-xs uppercase tracking-[3px] text-[#ffbf8a] mb-1">
                     Price
                   </p>
 
-                  <h2 className="text-4xl font-black">
+                  <h2 className="text-4xl font-black text-[#ff7a00]">
                     ₹
                     {property?.price ||
                       "25,000"}
@@ -2337,7 +2255,7 @@ loadNearbyProperties(areaPincode);
               </div>
 
               <div className="mt-12">
-                <h2 className="text-[30px] font-black text-[#0f172a] mb-6">
+                <h2 className="text-[30px] font-black text-white mb-6">
                   Facilities
                 </h2>
 
@@ -2398,7 +2316,7 @@ loadNearbyProperties(areaPincode);
                       )
                     )
                   ) : (
-                    <div className="text-slate-500 text-sm">
+                    <div className="text-white/70 text-sm">
                       No
                       facilities
                       available
@@ -2408,12 +2326,12 @@ loadNearbyProperties(areaPincode);
               </div>
 
               <div className="mt-12">
-                <h2 className="text-[34px] font-black text-[#0f172a] mb-5">
+                <h2 className="text-[34px] font-black text-white mb-5">
                   About
                   Property
                 </h2>
 
-                <p className="text-slate-600 leading-8 text-[16px]">
+                <p className="text-white/75 leading-8 text-[16px]">
                   {property?.description ||
                     "No description available"}
                 </p>
@@ -2424,9 +2342,9 @@ loadNearbyProperties(areaPincode);
 
           <div className="xl:col-span-4">
             <div className="sticky top-5 space-y-6">
-              <div className="bg-gradient-to-br from-[#081028] to-[#0b1d4d] text-white rounded-[32px] p-8 shadow-2xl">
+              <div className="bg-black/90 text-white rounded-[24px] p-8 shadow-[0_25px_80px_rgba(0,0,0,0.28)] border border-white/10">
                 <div className="flex items-center gap-4 mb-8">
-                  <div className="w-16 h-16 rounded-full bg-white text-black flex items-center justify-center text-2xl font-black">
+                  <div className="w-16 h-16 rounded-full bg-[#ff7438] text-white flex items-center justify-center text-2xl font-black shadow-[0_14px_30px_rgba(255,116,56,0.24)]">
                     {property?.ownerName
                       ?.charAt(
                         0
@@ -2436,12 +2354,12 @@ loadNearbyProperties(areaPincode);
                   </div>
 
                   <div>
-                    <h3 className="text-xl font-bold">
+                    <h3 className="text-xl font-bold text-white">
                       {property?.ownerName ||
                         "Owner"}
                     </h3>
 
-                    <p className="flex items-center gap-1 text-sm text-emerald-300">
+                    <p className="flex items-center gap-1 text-sm text-[#ff7a00] font-semibold">
                       <ShieldCheck
                         size={16}
                       />
@@ -2451,8 +2369,8 @@ loadNearbyProperties(areaPincode);
                   </div>
                 </div>
 
-                <div className="bg-white/10 border border-white/10 rounded-3xl p-5 mb-6 backdrop-blur-xl">
-                  <p className="text-xs uppercase tracking-[3px] text-slate-300 mb-2">
+                <div className="bg-white/10 border border-white/10 rounded-3xl p-5 mb-6">
+                  <p className="text-xs uppercase tracking-[3px] text-[#ffbf8a] mb-2">
                     Direct
                     Contact
                   </p>
@@ -2460,9 +2378,10 @@ loadNearbyProperties(areaPincode);
                   <div className="flex items-center gap-3">
                     <Phone
                       size={20}
+                      className="text-[#ff7a00]"
                     />
 
-                    <span className="text-3xl font-black">
+                    <span className="text-3xl font-black text-white">
                       {property?.mobileNumber ||
                         "N/A"}
                     </span>
@@ -2489,7 +2408,7 @@ loadNearbyProperties(areaPincode);
                       true
                     );
                   }}
-                  className="w-full bg-white text-[#0f172a] py-4 rounded-2xl font-black text-lg hover:scale-[1.02] transition-all duration-300 flex items-center justify-center gap-3"
+                  className="w-full bg-[#f97316] text-white py-4 rounded-2xl font-black text-lg hover:bg-[#ea6a0a] hover:scale-[1.02] transition-all duration-300 flex items-center justify-center gap-3 shadow-[0_10px_30px_rgba(249,115,22,0.30)]"
                 >
                   <MessageCircle
                     size={22}
@@ -2499,12 +2418,12 @@ loadNearbyProperties(areaPincode);
                 </button>
               </div>
               {/* Safety Tips Card */}
-<div className="bg-white rounded-[32px] p-6 shadow-xl border border-slate-200">
-  <h3 className="text-xl font-black text-[#0f172a] mb-4">
+<div className="bg-black/90 text-white rounded-[24px] p-6 shadow-[0_25px_80px_rgba(0,0,0,0.28)] border border-white/10">
+  <h3 className="text-xl font-black text-white mb-4">
     Safety Tips
   </h3>
 
-  <ul className="space-y-3 text-sm text-slate-600 leading-6">
+  <ul className="space-y-3 text-sm text-white/75 leading-6 [&>li]:first-letter:text-[#ff7a00] [&>li]:first-letter:font-black">
     <li>✔ Always verify property ownership before payment</li>
     <li>✔ Never share OTP or sensitive banking details</li>
     <li>✔ Prefer visiting property in person before finalizing</li>
@@ -2514,8 +2433,8 @@ loadNearbyProperties(areaPincode);
 
 
 {/* Nearby Properties Card */}
-<div className="bg-white rounded-[32px] p-6 shadow-xl border border-slate-200">
-  <h3 className="text-xl font-black text-[#0f172a] mb-4">
+<div className="bg-black/90 text-white rounded-[24px] p-6 shadow-[0_25px_80px_rgba(0,0,0,0.28)] border border-white/10">
+  <h3 className="text-xl font-black text-white mb-4">
     Nearby Properties
   </h3>
 
@@ -2524,20 +2443,20 @@ loadNearbyProperties(areaPincode);
     {nearbyProperties.map((item, index) => (
       <div
         key={index}
-        className="p-4 rounded-2xl bg-[#f8fafc] border border-slate-200"
+        className="p-4 rounded-2xl bg-white/10 border border-white/10"
       >
-        <h4 className="font-bold text-[#0f172a]">
+        <h4 className="font-bold text-white">
           {item}
         </h4>
 
-        <p className="text-sm text-slate-500 mt-1">
+        <p className="text-sm text-white/65 mt-1">
           Nearby location
         </p>
       </div>
     ))}
   </div>
 ) : (
-  <p className="text-sm text-slate-500">
+  <p className="text-sm text-white/65">
     No nearby properties found
   </p>
 )}
@@ -2545,29 +2464,29 @@ loadNearbyProperties(areaPincode);
 
 
 {/* Quick Info Card */}
-<div className="bg-white rounded-[32px] p-6 shadow-xl border border-slate-200">
-  <h3 className="text-xl font-black text-[#0f172a] mb-4">
+<div className="bg-black/90 text-white rounded-[24px] p-6 shadow-[0_25px_80px_rgba(0,0,0,0.28)] border border-white/10">
+  <h3 className="text-xl font-black text-white mb-4">
     Quick Info
   </h3>
 
-  <div className="space-y-3 text-sm text-slate-600">
+  <div className="space-y-3 text-sm text-white/75">
     <div className="flex justify-between">
       <span>Property ID</span>
-      <span className="font-semibold text-black">
+      <span className="font-semibold text-white">
         {property?.id || property?.propertyId || "N/A"}
       </span>
     </div>
 
     <div className="flex justify-between">
       <span>Type</span>
-      <span className="font-semibold text-black">
+      <span className="font-semibold text-white">
         {property?.propertyType || "N/A"}
       </span>
     </div>
 
     <div className="flex justify-between">
       <span>Status</span>
-      <span className="font-semibold text-green-600">
+      <span className="font-semibold text-[#ff7a00]">
         Available
       </span>
     </div>
@@ -2596,33 +2515,13 @@ loadNearbyProperties(areaPincode);
                 directly with tenants.
               </p>
             </div>
-            <div>
-              <h4 className="font-bold mb-4">Quick Links</h4>
-              <ul className="space-y-2 text-slate-400 text-sm">
-                <li>
-                  <a href="/home" className="hover:text-white transition-colors">
-                    Home
-                  </a>
-                </li>
-                <li>
-                  <a href="/browse" className="hover:text-white transition-colors">
-                    Browse Properties
-                  </a>
-                </li>
-                <li>
-                  <a href="/login" className="hover:text-white transition-colors">
-                    About Us
-                  </a>
-                </li>
-              </ul>
-            </div>
+            
             <div>
               <h4 className="font-bold mb-4">Locations</h4>
               <ul className="space-y-2 text-slate-400 text-sm">
                 <li>Pune</li>
                 <li>PCMC</li>
-                <li>Mumbai</li>
-                <li>Coming Soon</li>
+                
               </ul>
             </div>
             <div>
@@ -2667,16 +2566,16 @@ const OverviewCard = ({
   title,
   value,
 }) => (
-  <div className="bg-[#f8fafc] border border-slate-200 rounded-[20px] p-6 hover:shadow-xl transition-all duration-300">
-    <div className="w-14 h-14 rounded-2xl bg-[#0b132b] text-white flex items-center justify-center mb-6">
+  <div className="bg-white/10 border border-white/10 rounded-[20px] p-6 hover:bg-white/15 transition-all duration-300">
+    <div className="w-14 h-14 rounded-2xl bg-black/40 text-[#ff7a00] border border-[#ff7a00]/30 flex items-center justify-center mb-6 shadow-[0_10px_25px_rgba(249,115,22,0.16)]">
       {icon}
     </div>
 
-    <p className="text-slate-500 text-[15px] mb-2">
+    <p className="text-white/70 text-[15px] mb-2">
       {title}
     </p>
 
-    <h3 className="text-[22px] font-black text-[#0f172a] break-words leading-tight uppercase">
+    <h3 className="text-[22px] font-black text-white break-words leading-tight uppercase">
       {value || "N/A"}
     </h3>
   </div>
@@ -2715,13 +2614,13 @@ const FacilityCard = ({
   status,
   icon: Icon,
 }) => (
-  <div className="bg-[#f8fafc] border border-slate-200 rounded-[20px] p-5 flex items-center justify-between hover:shadow-md transition-all">
+  <div className="bg-white/10 border border-white/10 rounded-[20px] p-5 flex items-center justify-between hover:bg-white/15 transition-all">
     <div className="flex items-center gap-3">
-      <div className="w-11 h-11 rounded-2xl bg-[#0b132b] text-white flex items-center justify-center">
+      <div className="w-11 h-11 rounded-2xl bg-black/40 text-[#ff7a00] border border-[#ff7a00]/30 flex items-center justify-center shadow-[0_10px_25px_rgba(249,115,22,0.16)]">
         {Icon ? <Icon size={18} /> : <Home size={18} />}
       </div>
 
-      <span className="text-slate-700 font-semibold">
+      <span className="text-white font-semibold">
         {title}
       </span>
     </div>
@@ -2729,8 +2628,8 @@ const FacilityCard = ({
     <span
       className={`px-4 py-1 rounded-full text-sm font-bold ${
         status === "ACTIVE"
-          ? "bg-green-100 text-green-700"
-          : "bg-red-100 text-red-600"
+          ? "bg-red-50  text-[#ff7a00] border border-red-200"
+          : "bg-black/40 text-red-600 border border-[#ff7a00]/30"
       }`}
     >
       {status === "ACTIVE" ? "Yes" : "No"}

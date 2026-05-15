@@ -238,10 +238,7 @@
 //   properties = [],
 //   onChatClick,
 //   premiumStatus,
-// }) => {
-
-//   console.log(
-//     "PROPERTY LIST PREMIUM STATUS:",
+// }) => {//     "PROPERTY LIST PREMIUM STATUS:",
 //     premiumStatus
 //   );
 
@@ -384,10 +381,7 @@
 //   properties = [],
 //   onChatClick,
 //   premiumStatus,
-// }) => {
-
-//   console.log(
-//     "PROPERTY LIST PREMIUM STATUS:",
+// }) => {//     "PROPERTY LIST PREMIUM STATUS:",
 //     premiumStatus
 //   );
 
@@ -558,14 +552,7 @@ const PropertyList = ({
   properties = [],
   onChatClick,
   premiumStatus,
-}) => {
-
-  console.log(
-    "PROPERTY LIST PREMIUM STATUS:",
-    premiumStatus
-  );
-
-  return (
+}) => {return (
     <div className="w-full">
 
       {/* HEADER */}

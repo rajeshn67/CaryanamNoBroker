@@ -40,10 +40,7 @@
 //               Authorization: `Bearer ${token}`,
 //             },
 //           }
-//         );
-
-//       console.log(
-//         "BUY PREMIUM RESPONSE:",
+//         );//         "BUY PREMIUM RESPONSE:",
 //         response.data
 //       );
 
@@ -54,10 +51,7 @@
 //       // ✅ REDIRECT TO BROWSE PROPERTIES
 //       navigate("/user");
 
-//     } catch (error) {
-
-//       console.log(
-//         "BUY PREMIUM ERROR:",
+//     } catch (error) {//         "BUY PREMIUM ERROR:",
 //         error.response?.data
 //       );
 
@@ -152,19 +146,14 @@
 //             Authorization: `Bearer ${token}`,
 //           },
 //         }
-//       );
-
-//       console.log(
-//         "BUY PREMIUM RESPONSE:",
+//       );//         "BUY PREMIUM RESPONSE:",
 //         response.data
 //       );
 
 //       alert("Premium request sent successfully");
 
 //       navigate("/user");
-//     } catch (error) {
-//       console.log(
-//         "BUY PREMIUM ERROR:",
+//     } catch (error) {//         "BUY PREMIUM ERROR:",
 //         error.response?.data
 //       );
 
@@ -322,10 +311,7 @@
 //                 Authorization: `Bearer ${token}`,
 //               },
 //             }
-//           );
-
-//         console.log(
-//           "BUY PREMIUM RESPONSE:",
+//           );//           "BUY PREMIUM RESPONSE:",
 //           response.data
 //         );
 
@@ -334,9 +320,7 @@
 //         );
 
 //         navigate("/user");
-//       } catch (error) {
-//         console.log(
-//           "BUY PREMIUM ERROR:",
+//       } catch (error) {//           "BUY PREMIUM ERROR:",
 //           error.response?.data
 //         );
 
@@ -508,25 +492,12 @@ const BuyPremium = () => {
                 Authorization: `Bearer ${token}`,
               },
             }
-          );
-
-        console.log(
-          "BUY PREMIUM RESPONSE:",
-          response.data
-        );
-
-        alert(
+          );alert(
           "Premium request sent successfully"
         );
 
         navigate("/user");
-      } catch (error) {
-        console.log(
-          "BUY PREMIUM ERROR:",
-          error.response?.data
-        );
-
-        if (
+      } catch (error) {if (
           error.response?.data
             ?.message ===
           "Payment already in process"

@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { adminModerationApi } from "../services/api";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { Building2, Clock, LogOut, ShieldCheck, Users } from "lucide-react";
+import { Building2, Clock,HomeIcon, LogOut, ShieldCheck, Users } from "lucide-react";
 
 const OWNER_APPROVAL_STATUS_KEY = "ownerApprovalStatuses";
 
@@ -126,12 +126,11 @@ const AdminDashboardMain = () => {
       <div className="flex justify-between items-center px-6 py-4 bg-black/90 backdrop-blur-md border-b border-white/10 shadow-[0_10px_30px_rgba(0,0,0,0.3)]">
         <div className="flex items-center gap-3">
           <div className="flex h-11 w-11 items-center justify-center rounded-[18px] bg-[#ff7438] text-white shadow-[0_14px_30px_rgba(255,116,56,0.24)]">
-            <ShieldCheck size={22} />
+            <HomeIcon size={21} />
           </div>
-          <div>
-            <h1 className="text-xl font-black text-white">Caryanam <span className="text-[#ff7438]">Broker</span></h1>
-            
-          </div>
+           <span className="text-lg sm:text-xl md:text-2xl font-black text-white font-serif whitespace-nowrap">
+              Caryanam <span className="text-[#ff7438]">Broker</span>
+            </span>
         </div>
         <div className="flex items-center gap-3">
           <button
