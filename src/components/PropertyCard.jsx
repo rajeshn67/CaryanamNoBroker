@@ -112,12 +112,14 @@
 //       // token decode
 //       const payload = JSON.parse(
 //         atob(token.split(".")[1])
-//       );
+//       );
+
 //       // user id
 //       const userId =
 //         payload.id ||
 //         payload.userId ||
-//         payload.sub;
+//         payload.sub;
+
 //       // backend api
 //       const response = await fetch(
 //         `http://localhost:8080/api/user/${userId}`,
@@ -130,15 +132,18 @@
 //         }
 //       );
 
-//       const result = await response.json();
+//       const result = await response.json();
+
 //       // premium status
 //       const premiumStatus =
-//         result?.data?.premiumStatus;//         "PREMIUM STATUS:",
+//         result?.data?.premiumStatus;
+//         "PREMIUM STATUS:",
 //         premiumStatus
 //       );
 
 //       // APPROVED
-//       if (premiumStatus === "APPROVED") {//           "✅ USER IS PREMIUM"
+//       if (premiumStatus === "APPROVED") {
+//           "✅ USER IS PREMIUM"
 //         );
 
 //         navigate(`/property/${property.id}`);
@@ -146,7 +151,8 @@
 //       }
 
 //       // PENDING
-//       if (premiumStatus === "PENDING") {//           "⌛ PAYMENT PENDING"
+//       if (premiumStatus === "PENDING") {
+//           "⌛ PAYMENT PENDING"
 //         );
 
 //         alert(
@@ -156,12 +162,14 @@
 //         return;
 //       }
 
-//       // NONE / REJECTED//         "❌ USER NOT PREMIUM"
+//       // NONE / REJECTED
+//         "❌ USER NOT PREMIUM"
 //       );
 
 //       navigate("/buy-premium");
 
-//     } catch (error) {//         "DETAILS BUTTON ERROR:",
+//     } catch (error) {
+//         "DETAILS BUTTON ERROR:",
 //         error
 //       );
 
@@ -251,7 +259,8 @@
 //         setPremiumStatus(
 //           data?.data?.premiumStatus
 //         );
-//       } catch (err) {//           "STATUS FETCH ERROR:",
+//       } catch (err) {
+//           "STATUS FETCH ERROR:",
 //           err
 //         );
 //       }
@@ -452,7 +461,8 @@
 //                   navigate(
 //                     "/buy-premium"
 //                   );
-//                 } catch (error) {//                     error
+//                 } catch (error) {
+//                     error
 //                   );
 //                   navigate(
 //                     "/buy-premium"
@@ -709,7 +719,8 @@
 //       : "/no-image.png";
 
 //   // ✅ DETAILS BUTTON
-//   const handleDetailsClick = () => {//       "PREMIUM STATUS:",
+//   const handleDetailsClick = () => {
+//       "PREMIUM STATUS:",
 //       premiumStatus
 //     );
 
@@ -1184,6 +1195,7 @@
 
 
 
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import {
@@ -1192,6 +1204,8 @@ import {
   Info,
   MessageCircle,
   Eye,
+  Crown,
+  X,
 } from "lucide-react";
 
 const PropertyCard = ({
@@ -1201,6 +1215,8 @@ const PropertyCard = ({
   onChatClick,
 }) => {
   const navigate = useNavigate();
+  const [showPremiumChatPopup, setShowPremiumChatPopup] =
+    useState(false);
 
   const effectivePremiumStatus =
     premiumStatus ??
@@ -1250,7 +1266,22 @@ const PropertyCard = ({
     navigate("/buy-premium");
   };
 
+  const handleChatClick = () => {
+    if (effectivePremiumStatus === "APPROVED") {
+      onChatClick?.(property);
+      return;
+    }
+
+    if (effectivePremiumStatus === "PENDING") {
+      setShowPremiumChatPopup(true);
+      return;
+    }
+
+    navigate("/buy-premium");
+  };
+
   return (
+    <>
     <motion.div
       initial={{
         opacity: 0,
@@ -1411,9 +1442,7 @@ const PropertyCard = ({
 
             {/* CHAT BUTTON */}
             <button
-              onClick={() =>
-                onChatClick?.(property)
-              }
+              onClick={handleChatClick}
               className="flex-1 bg-gradient-to-r from-[#F97316] to-[#EA580C] hover:opacity-95 text-white py-3 rounded-xl font-semibold transition-all duration-200 shadow-[0_10px_25px_rgba(249,115,22,0.35)]"
             >
               <MessageCircle
@@ -1425,7 +1454,72 @@ const PropertyCard = ({
           </div>
         </div>
       </div>
-    </motion.div>
+      </motion.div>
+
+      {showPremiumChatPopup && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="fixed inset-0 z-[90] flex items-center justify-center bg-black/50 px-4"
+          onClick={() => setShowPremiumChatPopup(false)}
+        >
+          <motion.div
+            initial={{ scale: 0.95, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            onClick={(e) => e.stopPropagation()}
+            className="relative w-full max-w-md rounded-3xl bg-white p-8 shadow-[0_25px_80px_rgba(0,0,0,0.25)] border border-[#E5E7EB]"
+          >
+            <button
+              type="button"
+              onClick={() => setShowPremiumChatPopup(false)}
+              className="absolute top-4 right-4 p-2 rounded-full text-[#6B7280] hover:bg-[#F3F4F6] transition-colors"
+              aria-label="Close"
+            >
+              <X size={20} />
+            </button>
+
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ delay: 0.1, type: "spring" }}
+              className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-r from-[#F97316] to-[#EA580C] shadow-[0_10px_25px_rgba(249,115,22,0.35)]"
+            >
+              <Crown size={32} className="text-white" />
+            </motion.div>
+
+            <h3 className="text-xl font-black text-[#111827] text-center">
+              Premium required to chat
+            </h3>
+
+            <p className="mt-3 text-center text-sm text-[#6B7280] leading-relaxed">
+              Please get premium first, then you can chat with property owners.
+              Your premium request is currently pending approval.
+            </p>
+
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              type="button"
+              onClick={() => {
+                setShowPremiumChatPopup(false);
+                navigate("/buy-premium");
+              }}
+              className="mt-6 w-full rounded-xl bg-gradient-to-r from-[#F97316] to-[#EA580C] py-3.5 font-bold text-white shadow-[0_10px_25px_rgba(249,115,22,0.35)]"
+            >
+              Get Premium
+            </motion.button>
+
+            <button
+              type="button"
+              onClick={() => setShowPremiumChatPopup(false)}
+              className="mt-3 w-full rounded-xl border border-[#E2E8F0] py-3 font-semibold text-[#374151] hover:bg-[#F8FAFC] transition-colors"
+            >
+              Close
+            </button>
+          </motion.div>
+        </motion.div>
+      )}
+    </>
   );
 };
 
