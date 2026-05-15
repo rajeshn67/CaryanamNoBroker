@@ -682,7 +682,8 @@ const handleManualOwnerIdSubmit = () => {
 
       }
 
-    } catch {}
+    } catch {
+}
 
   }
 
@@ -1086,7 +1087,8 @@ const handleManualOwnerIdSubmit = () => {
 
       setPropertyFetchMessage("");
 
-    } catch (err) {if (!preserveCurrent) {
+    } catch (err) {
+if (!preserveCurrent) {
 
         setProperties([]);
 
@@ -1156,7 +1158,8 @@ const handleManualOwnerIdSubmit = () => {
 
     } catch (err) {
 
-      if (!silent) {}
+      if (!silent) {
+}
 
     }
 
@@ -1210,7 +1213,8 @@ const handleManualOwnerIdSubmit = () => {
 
       setSelectedFacilities(new Set(activeFacilities));
 
-    } catch (err) {setFacilities(mergeFacilitiesWithBackendOptions());
+    } catch (err) {
+setFacilities(mergeFacilitiesWithBackendOptions());
 
       setSelectedFacilities(new Set());
 
@@ -2009,7 +2013,8 @@ const handleManualOwnerIdSubmit = () => {
 
             );
 
-          } catch (error) {}
+          } catch (error) {
+}
 
         };
 
@@ -2021,7 +2026,8 @@ const handleManualOwnerIdSubmit = () => {
 
           await saveFacilitiesForProperty(propertyId);
 
-        } catch (facilityErr) {toast.error(facilityErr?.response?.data?.message || "Property added, but facilities were not saved");
+        } catch (facilityErr) {
+toast.error(facilityErr?.response?.data?.message || "Property added, but facilities were not saved");
 
         } finally {
 
@@ -2041,7 +2047,8 @@ const handleManualOwnerIdSubmit = () => {
 
           toast.success(responseMessage);
 
-        } catch (uploadErr) {try {
+        } catch (uploadErr) {
+try {
 
             const retryFiles = await Promise.all(
 
@@ -2057,7 +2064,8 @@ const handleManualOwnerIdSubmit = () => {
 
             toast.success("Images uploaded after retry with optimized size.");
 
-          } catch (retryErr) {toast.error(
+          } catch (retryErr) {
+toast.error(
 
               retryErr?.response?.data?.message ||
 
@@ -2127,7 +2135,8 @@ const handleManualOwnerIdSubmit = () => {
 
       }
 
-    } catch (err) {if (createdPropertyId) {
+    } catch (err) {
+if (createdPropertyId) {
 
         toast.error("Property added, but something failed after creation");
 
@@ -2169,7 +2178,8 @@ const handleManualOwnerIdSubmit = () => {
 
       await fetchProperties({ preserveCurrent: true });
 
-    } catch (err) {toast.error(err.response?.data?.message || err.message || "Failed to delete property");
+    } catch (err) {
+toast.error(err.response?.data?.message || err.message || "Failed to delete property");
 
     }
 
@@ -2393,7 +2403,8 @@ const handleManualOwnerIdSubmit = () => {
 
       await fetchProperties({ preserveCurrent: true });
 
-    } catch (err) {toast.error(getApiErrorMessage(err, "Failed to update property"));
+    } catch (err) {
+toast.error(getApiErrorMessage(err, "Failed to update property"));
 
     } finally {
 
@@ -2521,14 +2532,14 @@ const handleManualOwnerIdSubmit = () => {
     <div className="min-h-screen bg-[#f7f0e8] flex flex-col">
       {/* Header */}
 
-      <div className="flex justify-between items-center px-6 py-4 bg-black/90 backdrop-blur-md border-b border-white/10 shadow-[0_10px_30px_rgba(0,0,0,0.3)]">
+      <div className="flex justify-between items-center gap-2 px-3 sm:px-5 md:px-6 py-3 sm:py-4 bg-black/90 backdrop-blur-md border-b border-white/10 shadow-[0_10px_30px_rgba(0,0,0,0.3)] overflow-hidden">
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
 
-    <div className="flex h-11 w-11 items-center justify-center rounded-[18px] bg-[#ff7438] text-white shadow-[0_14px_30px_rgba(255,116,56,0.24)]">
-                      <HomeIcon size={21} />
+    <div className="flex h-9 w-9 sm:h-11 sm:w-11 items-center justify-center rounded-[14px] sm:rounded-[18px] bg-[#ff7438] text-white shadow-[0_14px_30px_rgba(255,116,56,0.24)] flex-shrink-0">
+                      <HomeIcon size={18} />
                     </div>
-                     <span className="text-lg sm:text-xl md:text-2xl font-black text-white font-serif whitespace-nowrap">
+                     <span className="min-w-0 truncate text-[15px] min-[360px]:text-[16px] sm:text-xl md:text-2xl font-black text-white font-serif whitespace-nowrap">
                         Caryanam <span className="text-[#ff7438]">Broker</span>
                       </span>
 
@@ -2536,9 +2547,9 @@ const handleManualOwnerIdSubmit = () => {
 
 
 
-        <div className="flex items-center gap-4 text-sm">
+        <div className="flex items-center gap-2 sm:gap-4 text-sm flex-shrink-0">
 
-          <span className="text-white font-bold">
+          <span className="hidden sm:block text-white font-bold max-w-[120px] md:max-w-none truncate">
 
             {ownerDisplayName}
 
@@ -2572,11 +2583,11 @@ const handleManualOwnerIdSubmit = () => {
 
           onClick={handleLogout}
 
-          className="flex items-center gap-2 px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-[24px] shadow-[0_12px_24px_rgba(220,38,38,0.28)] transition-all duration-300 active:scale-95">
+          className="flex items-center gap-2 px-3 sm:px-5 py-2 sm:py-2.5 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-[16px] sm:rounded-[24px] shadow-[0_12px_24px_rgba(220,38,38,0.28)] transition-all duration-300 active:scale-95">
 
             <LogOut size={18} />
 
-            Logout
+            <span className="hidden sm:inline">Logout</span>
 
           </button>
 
@@ -2586,7 +2597,7 @@ const handleManualOwnerIdSubmit = () => {
 
 
 
-      <div className="max-w-7xl mx-auto px-6 py-8 flex-grow">
+      <div className="w-full max-w-7xl mx-auto px-3 sm:px-5 md:px-6 py-5 sm:py-8 flex-grow">
 
         <div>
 
@@ -2690,13 +2701,13 @@ const handleManualOwnerIdSubmit = () => {
 
 
 
-        <div className="upload-property-panel mt-8 bg-[#050505] rounded-[24px] border-2 border-[#1f1f1f] shadow-[0_25px_80px_rgba(0,0,0,0.28)] p-8">
+        <div className="upload-property-panel mt-6 sm:mt-8 bg-[#050505] rounded-[20px] sm:rounded-[24px] border-2 border-[#1f1f1f] shadow-[0_25px_80px_rgba(0,0,0,0.28)] p-4 sm:p-6 lg:p-8 overflow-hidden">
 
           <div className="flex items-center gap-3 mb-6">
 
             <Upload className="w-6 h-6 text-[#ff7a00]" aria-hidden="true" />
 
-            <h2 className="text-2xl font-bold text-[#1a1a1a]">
+            <h2 className="text-xl sm:text-2xl font-bold text-[#1a1a1a]">
 
               Upload Property
 
@@ -2710,7 +2721,7 @@ const handleManualOwnerIdSubmit = () => {
 
             {/* First Row: Property Title, Price, Property Type, PG Type */}
 
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-6">
 
               <div>
 
@@ -2822,7 +2833,7 @@ const handleManualOwnerIdSubmit = () => {
 
             {/* Second Row: City, Location, Apartment Name */}
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
 
               <div>
 
@@ -2916,7 +2927,7 @@ const handleManualOwnerIdSubmit = () => {
 
             {/* Third Row: Address, State */}
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
 
               <div>
 
@@ -2970,7 +2981,7 @@ const handleManualOwnerIdSubmit = () => {
 
             {/* Fourth Row: Pincode, Mobile Number */}
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
 
               <div>
 
@@ -3051,7 +3062,7 @@ const handleManualOwnerIdSubmit = () => {
 
             {/* Sixth Row: BHK Type, Furnishing and Carpet Area */}
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
 
               <div>
 
@@ -3178,7 +3189,7 @@ const handleManualOwnerIdSubmit = () => {
 
               </div>
 
-              <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+              <div className="grid grid-cols-1 min-[420px]:grid-cols-2 md:grid-cols-5 gap-3 sm:gap-4">
 
                 {imageLabels.map((label, index) => (
 
@@ -3376,7 +3387,7 @@ const handleManualOwnerIdSubmit = () => {
 
                 ) : (
 
-                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                  <div className="grid grid-cols-1 min-[420px]:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
 
                     {facilities.map((facility) => (
 
@@ -3458,9 +3469,9 @@ const handleManualOwnerIdSubmit = () => {
 
         {/* Properties Section */}
 
-        <div className="mt-8 bg-[#f7f0e8] rounded-[24px] border-2 border-[#d8c2a8] shadow-[0_25px_80px_rgba(0,0,0,0.28)] p-8">
+        <div className="mt-8 bg-[#f7f0e8] rounded-[20px] sm:rounded-[24px] border-2 border-[#d8c2a8] shadow-[0_25px_80px_rgba(0,0,0,0.28)] p-4 sm:p-6 lg:p-8 overflow-hidden">
 
-          <div className="flex items-center justify-between mb-6">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-6">
 
             <div className="flex items-center gap-3">
 
@@ -3490,7 +3501,7 @@ const handleManualOwnerIdSubmit = () => {
 
               </svg>
 
-              <h2 className="text-2xl font-bold text-[#1a1a1a]">
+              <h2 className="text-xl sm:text-2xl font-bold text-[#1a1a1a]">
 
                 Properties
 
@@ -3530,7 +3541,7 @@ const handleManualOwnerIdSubmit = () => {
 
           ) : (
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
 
               {properties.map((property) => {
 
@@ -3851,11 +3862,11 @@ const handleManualOwnerIdSubmit = () => {
 
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
 
-          <div className="bg-[#f7f0e8] rounded-[24px] shadow-xl max-w-3xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+          <div className="bg-[#f7f0e8] rounded-[20px] sm:rounded-[24px] shadow-xl max-w-3xl w-full mx-3 sm:mx-4 max-h-[90vh] overflow-y-auto">
 
-            <div className="flex justify-between items-center p-6 border-b">
+            <div className="flex justify-between items-center gap-3 p-4 sm:p-6 border-b">
 
-              <h2 className="text-2xl font-bold text-[#1a1a1a]">Preview Property</h2>
+              <h2 className="text-xl sm:text-2xl font-bold text-[#1a1a1a]">Preview Property</h2>
 
               <button
 
@@ -3901,9 +3912,9 @@ const handleManualOwnerIdSubmit = () => {
 
 
 
-            <div className="p-6">
+            <div className="p-4 sm:p-6">
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
 
                 <div><span className="font-semibold text-[#3d3127]">Title:</span> {formData.propertyTitle}</div>
 
@@ -3975,7 +3986,7 @@ const handleManualOwnerIdSubmit = () => {
 
                 <h3 className="font-semibold text-[#1a1a1a] mb-3">Selected Images</h3>
 
-                <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                <div className="grid grid-cols-1 min-[420px]:grid-cols-2 md:grid-cols-5 gap-3">
 
                   {imagePreviews
 
@@ -4059,11 +4070,11 @@ const handleManualOwnerIdSubmit = () => {
 
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
 
-          <div className="bg-[#f7f0e8] rounded-[24px] shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+          <div className="bg-[#f7f0e8] rounded-[20px] sm:rounded-[24px] shadow-xl max-w-2xl w-full mx-3 sm:mx-4 max-h-[90vh] overflow-y-auto">
 
-            <div className="flex justify-between items-center p-6 border-b">
+            <div className="flex justify-between items-center gap-3 p-4 sm:p-6 border-b">
 
-              <h2 className="text-2xl font-bold text-[#1a1a1a]">Edit Property</h2>
+              <h2 className="text-xl sm:text-2xl font-bold text-[#1a1a1a]">Edit Property</h2>
 
               <button
 
@@ -4105,9 +4116,9 @@ const handleManualOwnerIdSubmit = () => {
 
 
 
-            <form onSubmit={handleUpdateProperty} className="p-6 space-y-4">
+            <form onSubmit={handleUpdateProperty} className="p-4 sm:p-6 space-y-4">
 
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
 
                 <div>
 
@@ -4679,9 +4690,9 @@ const handleManualOwnerIdSubmit = () => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
             <div>
               <div className="flex items-center gap-2 mb-4">
-                <div className="w-10 h-10 bg-gradient-to-br from-[#ff7f50] to-[#ff9f80] rounded-[24px] flex items-center justify-center">
-                  <span className="text-white font-bold text-lg">C</span>
-                </div>
+                 <div className="flex h-11 w-11 items-center justify-center rounded-[18px] bg-[#ff7438] text-white shadow-[0_14px_30px_rgba(255,116,56,0.24)]">
+            <HomeIcon size={21} />
+          </div>
                 <span className="text-2xl font-black">Caryanam</span>
               </div>
               <p className="text-slate-400 text-sm">

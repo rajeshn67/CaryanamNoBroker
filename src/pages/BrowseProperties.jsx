@@ -1791,6 +1791,8 @@ import {
 
 import { jwtDecode } from "jwt-decode";
 import { motion } from "framer-motion";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 import Navbar from "../components/Navbar";
 import Filter from "../components/Filter";
@@ -2302,6 +2304,7 @@ setError(
 
   return (
     <div className="min-h-screen bg-[#F7F4EF]">
+      <ToastContainer position="top-right" autoClose={3000} />
       <Navbar
         userName={userName}
         onOpenChat={() =>
@@ -2319,7 +2322,7 @@ setError(
           opacity: 1,
           y: 0,
         }}
-        className="max-w-7xl mx-auto px-6 py-8"
+        className="max-w-7xl mx-auto px-3 sm:px-5 md:px-6 py-5 sm:py-8"
       >
         {/* HEADING */}
         <div className="mb-6">
@@ -2383,7 +2386,7 @@ setError(
         {/* PROPERTY LIST */}
         <div className="mt-10">
           <div className="mb-5">
-            <h2 className="text-3xl font-black text-[#1F2937]">
+            <h2 className="text-2xl sm:text-3xl font-black text-[#1F2937]">
               Available Listings
             </h2>
 

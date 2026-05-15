@@ -2074,7 +2074,7 @@ if (!cancelled) {
         userName={userName}
       />
 
-      <main className="max-w-7xl mx-auto px-4 md:px-6 py-8">
+      <main className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 py-5 sm:py-8">
         <button
           onClick={() =>
             navigate(-1)
@@ -2086,10 +2086,10 @@ if (!cancelled) {
           Properties
         </button>
 
-        <div className="grid grid-cols-1 xl:grid-cols-12 gap-8">
-          <div className="xl:col-span-8 space-y-8">
-            <div className="bg-white rounded-[32px] overflow-hidden shadow-xl">
-              <div className="relative h-[300px] md:h-[550px] overflow-hidden">
+        <div className="grid grid-cols-1 xl:grid-cols-12 gap-5 sm:gap-8">
+          <div className="xl:col-span-8 space-y-5 sm:space-y-8">
+            <div className="bg-white rounded-[20px] sm:rounded-[32px] overflow-hidden shadow-xl">
+              <div className="relative h-[260px] sm:h-[360px] md:h-[550px] overflow-hidden">
                 <AnimatePresence mode="wait">
                   <motion.img
                     key={
@@ -2155,8 +2155,8 @@ if (!cancelled) {
                   </div>
                 )}
 
-                <div className="absolute bottom-8 left-8 text-white z-20">
-                  <h1 className="text-4xl md:text-6xl font-black drop-shadow-2xl">
+                <div className="absolute bottom-6 left-5 sm:bottom-8 sm:left-8 text-white z-20 max-w-[calc(100%-40px)]">
+                  <h1 className="text-3xl sm:text-4xl md:text-6xl font-black drop-shadow-2xl break-words">
                     {
                       property?.title
                     }
@@ -2176,10 +2176,10 @@ if (!cancelled) {
               </div>
             </div>
 
-            <div className="bg-black/90 text-white rounded-[24px] p-8 shadow-[0_25px_80px_rgba(0,0,0,0.28)] border border-white/10">
+            <div className="bg-black/90 text-white rounded-[20px] sm:rounded-[24px] p-4 sm:p-6 lg:p-8 shadow-[0_25px_80px_rgba(0,0,0,0.28)] border border-white/10">
               <div className="flex items-start justify-between flex-wrap gap-5 mb-10">
                 <div>
-                  <h2 className="text-[28px] font-black text-white leading-tight">
+                  <h2 className="text-2xl sm:text-[28px] font-black text-white leading-tight">
                     Property
                     Overview
                   </h2>
@@ -2191,12 +2191,12 @@ if (!cancelled) {
                   </p>
                 </div>
 
-                <div className="bg-white/10 border border-white/10 text-white px-7 py-5 rounded-[24px] shadow-[0_10px_30px_rgba(0,0,0,0.24)] min-w-[170px]">
+                <div className="bg-white/10 border border-white/10 text-white px-5 sm:px-7 py-4 sm:py-5 rounded-[20px] sm:rounded-[24px] shadow-[0_10px_30px_rgba(0,0,0,0.24)] min-w-0 sm:min-w-[170px]">
                   <p className="text-xs uppercase tracking-[3px] text-[#f36c12] mb-1">
                     Price
                   </p>
 
-                  <h2 className="text-4xl font-black text-[#f3ede7]">
+                  <h2 className="text-3xl sm:text-4xl font-black text-[#f3ede7] break-words">
                     ₹
                     {property?.price ||
                       "25,000"}
@@ -2342,9 +2342,9 @@ if (!cancelled) {
 
           <div className="xl:col-span-4">
             <div className="sticky top-5 space-y-6">
-              <div className="bg-black/90 text-white rounded-[24px] p-8 shadow-[0_25px_80px_rgba(0,0,0,0.28)] border border-white/10">
+              <div className="bg-black/90 text-white rounded-[20px] sm:rounded-[24px] p-4 sm:p-6 lg:p-8 shadow-[0_25px_80px_rgba(0,0,0,0.28)] border border-white/10">
                 <div className="flex items-center gap-4 mb-8">
-                  <div className="w-16 h-16 rounded-full bg-[#ff7438] text-white flex items-center justify-center text-2xl font-black shadow-[0_14px_30px_rgba(255,116,56,0.24)]">
+                  <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-[#ff7438] text-white flex items-center justify-center text-xl sm:text-2xl font-black shadow-[0_14px_30px_rgba(255,116,56,0.24)] flex-shrink-0">
                     {property?.ownerName
                       ?.charAt(
                         0
@@ -2381,7 +2381,7 @@ if (!cancelled) {
                       className="text-[#ff7a00]"
                     />
 
-                    <span className="text-3xl font-black text-white">
+                    <span className="text-2xl sm:text-3xl font-black text-white break-all">
                       {property?.mobileNumber ||
                         "N/A"}
                     </span>
@@ -2418,7 +2418,7 @@ if (!cancelled) {
                 </button>
               </div>
               {/* Safety Tips Card */}
-<div className="bg-black/90 text-white rounded-[24px] p-6 shadow-[0_25px_80px_rgba(0,0,0,0.28)] border border-white/10">
+<div className="bg-black/90 text-white rounded-[20px] sm:rounded-[24px] p-4 sm:p-6 shadow-[0_25px_80px_rgba(0,0,0,0.28)] border border-white/10">
   <h3 className="text-xl font-black text-white mb-4">
     Safety Tips
   </h3>
@@ -2433,7 +2433,7 @@ if (!cancelled) {
 
 
 {/* Nearby Properties Card */}
-<div className="bg-black/90 text-white rounded-[24px] p-6 shadow-[0_25px_80px_rgba(0,0,0,0.28)] border border-white/10">
+<div className="bg-black/90 text-white rounded-[20px] sm:rounded-[24px] p-4 sm:p-6 shadow-[0_25px_80px_rgba(0,0,0,0.28)] border border-white/10">
   <h3 className="text-xl font-black text-white mb-4">
     Nearby Properties
   </h3>
@@ -2464,7 +2464,7 @@ if (!cancelled) {
 
 
 {/* Quick Info Card */}
-<div className="bg-black/90 text-white rounded-[24px] p-6 shadow-[0_25px_80px_rgba(0,0,0,0.28)] border border-white/10">
+<div className="bg-black/90 text-white rounded-[20px] sm:rounded-[24px] p-4 sm:p-6 shadow-[0_25px_80px_rgba(0,0,0,0.28)] border border-white/10">
   <h3 className="text-xl font-black text-white mb-4">
     Quick Info
   </h3>

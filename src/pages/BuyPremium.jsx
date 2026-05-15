@@ -421,6 +421,8 @@ import axios from "axios";
 import { jwtDecode } from "jwt-decode";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import {
   Crown,
   ShieldCheck,
@@ -439,7 +441,7 @@ const BuyPremium = () => {
           );
 
         if (!token) {
-          alert(
+          toast.error(
             "Please login first"
           );
           return;
@@ -474,7 +476,7 @@ const BuyPremium = () => {
           userData?.premiumActive ===
             true
         ) {
-          alert(
+          toast.info(
             "Premium already activated"
           );
 
@@ -492,7 +494,7 @@ const BuyPremium = () => {
                 Authorization: `Bearer ${token}`,
               },
             }
-          );alert(
+          );toast.success(
           "Premium request sent successfully"
         );
 
@@ -502,7 +504,7 @@ const BuyPremium = () => {
             ?.message ===
           "Payment already in process"
         ) {
-          alert(
+toast.info(
             "Your premium request is already pending"
           );
 
@@ -510,7 +512,7 @@ const BuyPremium = () => {
           return;
         }
 
-        alert(
+        toast.error(
           error.response?.data
             ?.message ||
             "Failed to send request"
@@ -520,6 +522,7 @@ const BuyPremium = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-100 flex items-center justify-center px-4">
+      <ToastContainer position="top-right" autoClose={3000} />
       <motion.div
         initial={{
           opacity: 0,
@@ -532,7 +535,7 @@ const BuyPremium = () => {
         transition={{
           duration: 0.45,
         }}
-        className="w-full max-w-md bg-white rounded-3xl shadow-2xl p-8 text-center border border-amber-100"
+        className="w-full max-w-md bg-white rounded-3xl shadow-2xl p-5 sm:p-8 text-center border border-amber-100"
       >
         <div className="flex justify-center mb-4">
           <div className="bg-amber-500 text-white p-4 rounded-full shadow-lg">

@@ -1,4 +1,31 @@
 @import "tailwindcss";
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+img,
+video,
+canvas,
+svg {
+  max-width: 100%;
+}
+
+input,
+select,
+textarea,
+button {
+  min-width: 0;
+}
+
 body {
   font-family: 'Inter', sans-serif;
 }
@@ -15,7 +42,7 @@ button {
   transition: all 0.2s ease-in-out;
 }
 
-input, select {
+input, select, textarea {
   transition: all 0.2s ease;
 }
 

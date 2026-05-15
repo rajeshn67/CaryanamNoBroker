@@ -123,34 +123,34 @@ const AdminDashboardMain = () => {
 
   return (
     <div className="min-h-screen bg-[#f7f0e8] flex flex-col">
-      <div className="flex justify-between items-center px-6 py-4 bg-black/90 backdrop-blur-md border-b border-white/10 shadow-[0_10px_30px_rgba(0,0,0,0.3)]">
-        <div className="flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-[18px] bg-[#ff7438] text-white shadow-[0_14px_30px_rgba(255,116,56,0.24)]">
-            <HomeIcon size={21} />
+      <div className="flex justify-between items-center gap-2 px-3 sm:px-5 md:px-6 py-3 sm:py-4 bg-black/90 backdrop-blur-md border-b border-white/10 shadow-[0_10px_30px_rgba(0,0,0,0.3)] overflow-hidden">
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+          <div className="flex h-9 w-9 sm:h-11 sm:w-11 items-center justify-center rounded-[14px] sm:rounded-[18px] bg-[#ff7438] text-white shadow-[0_14px_30px_rgba(255,116,56,0.24)] flex-shrink-0">
+            <HomeIcon size={18} />
           </div>
-           <span className="text-lg sm:text-xl md:text-2xl font-black text-white font-serif whitespace-nowrap">
+           <span className="min-w-0 truncate text-[15px] min-[360px]:text-[16px] sm:text-xl md:text-2xl font-black text-white font-serif whitespace-nowrap">
               Caryanam <span className="text-[#ff7438]">Broker</span>
             </span>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-shrink-0">
           <button
             onClick={logout}
-            className="flex items-center gap-2 px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-xl shadow-[0_12px_24px_rgba(220,38,38,0.28)] transition-all duration-300 active:scale-95"
+            className="flex items-center gap-2 px-3 sm:px-5 py-2 sm:py-2.5 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-xl shadow-[0_12px_24px_rgba(220,38,38,0.28)] transition-all duration-300 active:scale-95"
           >
             <LogOut size={18} />
-            Logout
+            <span className="hidden sm:inline">Logout</span>
           </button>
         </div>
       </div>
 
-      <div className="w-full max-w-7xl mx-auto p-6 flex-grow">
+      <div className="w-full max-w-7xl mx-auto p-3 sm:p-5 md:p-6 flex-grow">
         <div className="mb-5">
        
-          <h2 className="mt-2 text-3xl font-black text-[#1a1a1a]">Admin Dashboard</h2>
+          <h2 className="mt-2 text-2xl sm:text-3xl font-black text-[#1a1a1a]">Admin Dashboard</h2>
           <p className="text-[#f97316] mt-1">Approve or reject premium users and property requests.</p>
         </div>
 
-        <div className="mb-8 rounded-[24px] border border-white/10 bg-black/90 p-6 shadow-[0_25px_80px_rgba(0,0,0,0.28)]">
+        <div className="mb-8 rounded-[20px] sm:rounded-[24px] border border-white/10 bg-black/90 p-4 sm:p-6 shadow-[0_25px_80px_rgba(0,0,0,0.28)]">
           <div className="flex justify-end">
             <div className="grid w-full grid-cols-2 gap-3 sm:grid-cols-3 md:w-auto">
               <div className="rounded-2xl border border-white/10 bg-white/10 px-4 py-3">
@@ -182,7 +182,7 @@ const AdminDashboardMain = () => {
           <div className="rounded-[24px] border-2 border-[#d8c2a8] bg-[#fff7ed] p-6 text-[#7d6c5c] shadow-[0_25px_80px_rgba(0,0,0,0.12)]">Loading pending requests...</div>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="rounded-[24px] border-2 border-[#d8c2a8] bg-[#fff7ed] p-6 shadow-[0_25px_80px_rgba(0,0,0,0.16)]">
+            <div className="rounded-[20px] sm:rounded-[24px] border-2 border-[#d8c2a8] bg-[#fff7ed] p-4 sm:p-6 shadow-[0_25px_80px_rgba(0,0,0,0.16)]">
               <h3 className="text-xl font-bold mb-4 text-[#1a1a1a]">
                 Pending Users ({pendingUsers.length})
               </h3>
@@ -221,7 +221,7 @@ const AdminDashboardMain = () => {
               )}
             </div>
 
-            <div className="rounded-[24px] border-2 border-[#d8c2a8] bg-[#fff7ed] p-6 shadow-[0_25px_80px_rgba(0,0,0,0.16)]">
+            <div className="rounded-[20px] sm:rounded-[24px] border-2 border-[#d8c2a8] bg-[#fff7ed] p-4 sm:p-6 shadow-[0_25px_80px_rgba(0,0,0,0.16)]">
               <h3 className="text-xl font-bold mb-4 text-[#1a1a1a]">
                 Pending Property Approvals ({pendingOwners.length})
               </h3>
@@ -306,9 +306,9 @@ const AdminDashboardMain = () => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
             <div>
               <div className="flex items-center gap-2 mb-4">
-                <div className="w-10 h-10 bg-gradient-to-br from-[#ff7f50] to-[#ff9f80] rounded-xl flex items-center justify-center">
-                  <span className="text-white font-bold text-lg">C</span>
-                </div>
+                 <div className="flex h-11 w-11 items-center justify-center rounded-[18px] bg-[#ff7438] text-white shadow-[0_14px_30px_rgba(255,116,56,0.24)]">
+            <HomeIcon size={21} />
+          </div>
                 <span className="text-2xl font-black">Caryanam</span>
               </div>
               <p className="text-slate-400 text-sm">

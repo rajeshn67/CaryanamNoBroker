@@ -186,21 +186,21 @@ const Navbar = ({ onOpenChat, chatCount = 0, userName = "" }) => {
   );
 
   return (
-  <div className="flex justify-between items-center px-3 sm:px-5 md:px-6 py-3 sm:py-4 bg-gradient-to-r from-[#020617] via-[#041833] to-[#020617] border-b border-[#1E293B] shadow-xl w-full overflow-hidden">
+  <div className="flex justify-between items-center gap-2 px-2.5 sm:px-5 md:px-6 py-3 sm:py-4 bg-gradient-to-r from-[#0f0f10] via-[#041833] to-[#020617] border-b border-[#1E293B] shadow-xl w-full overflow-hidden">
     
     {/* Logo Section */}
-    <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-      <div className="flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-[16px] sm:rounded-[18px] bg-[#ff7438] text-white shadow-[0_14px_30px_rgba(255,116,56,0.24)] flex-shrink-0">
-        <HomeIcon size={20} />
+    <div className="flex items-center gap-1.5 sm:gap-3 min-w-0 flex-1">
+      <div className="flex h-9 w-9 sm:h-11 sm:w-11 items-center justify-center rounded-[14px] sm:rounded-[18px] bg-[#ff7438] text-white shadow-[0_14px_30px_rgba(255,116,56,0.24)] flex-shrink-0">
+        <HomeIcon size={18} />
       </div>
 
-      <span className="text-[18px] sm:text-xl md:text-2xl font-black text-white font-serif whitespace-nowrap truncate">
+      <span className="min-w-0 text-[15px] min-[360px]:text-[16px] sm:text-xl md:text-2xl font-black text-white font-serif whitespace-nowrap truncate">
         Caryanam <span className="text-[#ff7438]">Broker</span>
       </span>
     </div>
 
     {/* Right Section */}
-    <div className="flex items-center gap-2 sm:gap-4 text-sm ml-2">
+    <div className="flex items-center gap-1.5 sm:gap-4 text-sm ml-1 flex-shrink-0">
       
       {/* Username */}
       {userName && (
@@ -229,7 +229,7 @@ const Navbar = ({ onOpenChat, chatCount = 0, userName = "" }) => {
       {/* Logout Button */}
       <button
   onClick={handleLogout}
-  className="flex items-center justify-center px-3 sm:px-5 py-2 sm:py-2.5 bg-gradient-to-r from-[#F97316] to-[#EA580C] hover:opacity-95 text-white font-semibold rounded-lg sm:rounded-xl shadow-[0_10px_25px_rgba(249,115,22,0.35)] transition-all duration-300 active:scale-95"
+  className="flex items-center justify-center px-2.5 sm:px-5 py-2 sm:py-2.5 bg-gradient-to-r bg-red-600 hover:bg-red-700 hover:opacity-95 text-white font-semibold rounded-lg sm:rounded-xl shadow-[0_10px_25px_rgba(249,115,22,0.35)] transition-all duration-300 active:scale-95"
 >
   <LogOut size={17} />
 

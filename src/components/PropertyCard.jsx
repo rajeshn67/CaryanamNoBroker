@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
 import {
   MapPin,
   Phone,
@@ -61,7 +62,7 @@ const PropertyCard = ({
       premiumStatus ===
       "PENDING"
     ) {
-      alert(
+      toast.info(
         "Your premium request is pending approval"
       );
       return;
@@ -229,7 +230,7 @@ const PropertyCard = ({
           </div>
 
           {/* BUTTONS */}
-          <div className="flex gap-3 mt-6">
+          <div className="flex flex-col min-[420px]:flex-row gap-3 mt-6">
             {/* DETAILS BUTTON */}
             <button
               onClick={
@@ -247,7 +248,7 @@ const PropertyCard = ({
             {/* CHAT BUTTON */}
             <button
               onClick={handleChatClick}
-              className="flex-1 bg-gradient-to-r from-[#F97316] to-[#EA580C] hover:opacity-95 text-white py-3 rounded-xl font-semibold transition-all duration-200 shadow-[0_10px_25px_rgba(249,115,22,0.35)]"
+            className="flex-1 bg-gradient-to-r from-[#F97316] to-[#EA580C] hover:opacity-95 text-white py-3 rounded-xl font-semibold transition-all duration-200 shadow-[0_10px_25px_rgba(249,115,22,0.35)]"
             >
               <MessageCircle
                 size={18}
@@ -271,7 +272,7 @@ const PropertyCard = ({
             initial={{ scale: 0.95, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             onClick={(e) => e.stopPropagation()}
-            className="relative w-full max-w-md rounded-3xl bg-white p-8 shadow-[0_25px_80px_rgba(0,0,0,0.25)] border border-[#E5E7EB]"
+            className="relative w-full max-w-md rounded-3xl bg-white p-5 sm:p-8 shadow-[0_25px_80px_rgba(0,0,0,0.25)] border border-[#E5E7EB]"
           >
             <button
               type="button"
