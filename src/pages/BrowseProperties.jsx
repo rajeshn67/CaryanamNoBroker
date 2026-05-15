@@ -152,8 +152,6 @@
 
 //       const res =
 //         await propertyApi.getAll();
-
-//       console.log(
 //         "ALL PROPERTIES API:",
 //         res.data
 //       );
@@ -161,8 +159,6 @@
 //       const list = Array.isArray(res?.data)
 //         ? res.data
 //         : res?.data?.data || [];
-
-//       console.log(
 //         "FINAL LIST:",
 //         list
 //       );
@@ -172,8 +168,6 @@
 //       );
 
 //     } catch (e) {
-
-//       console.error(e);
 
 //       setError(
 //         "Failed to load properties"
@@ -212,8 +206,6 @@
 //           payload,
 //           userId
 //         );
-
-//       console.log(
 //         "CITY ADDRESS API:",
 //         res.data
 //       );
@@ -225,8 +217,6 @@
 //       setAddressOptions(list);
 
 //     } catch (err) {
-
-//       console.error(err);
 
 //       setAddressOptions([]);
 //     }
@@ -315,8 +305,6 @@
 //       ) {
 //         delete payload.maxPrice;
 //       }
-
-//       console.log(
 //         "FILTER PAYLOAD:",
 //         payload
 //       );
@@ -333,8 +321,6 @@
 //           payload,
 //           userId
 //         );
-
-//       console.log(
 //         "FILTER API:",
 //         res.data
 //       );
@@ -348,8 +334,6 @@
 //       );
 
 //     } catch (e) {
-
-//       console.error(e);
 
 //       setError(
 //         e?.message ||
@@ -564,8 +548,6 @@
 
 //         const result =
 //           await response.json();
-
-//         console.log(
 //           "USER PREMIUM API:",
 //           result
 //         );
@@ -576,7 +558,6 @@
 //             ?.premiumStatus || ""
 //         );
 //       } catch (err) {
-//         console.log(
 //           "PREMIUM STATUS ERROR:",
 //           err
 //         );
@@ -711,8 +692,6 @@
 //     try {
 //       const res =
 //         await propertyApi.getAll();
-
-//       console.log(
 //         "ALL PROPERTIES API:",
 //         res.data
 //       );
@@ -730,7 +709,6 @@
 //         )
 //       );
 //     } catch (e) {
-//       console.error(e);
 
 //       setError(
 //         "Failed to load properties"
@@ -784,7 +762,6 @@
 //           list
 //         );
 //       } catch (err) {
-//         console.error(err);
 
 //         setAddressOptions(
 //           []
@@ -887,8 +864,6 @@
 //         if (!payload.pgType) {
 //           delete payload.pgType;
 //         }
-
-//         console.log(
 //           "FILTER PAYLOAD:",
 //           payload
 //         );
@@ -920,7 +895,6 @@
 //           )
 //         );
 //       } catch (e) {
-//         console.error(e);
 
 //         setError(
 //           e?.message ||
@@ -1232,8 +1206,6 @@
 
 //         const result =
 //           await response.json();
-
-//         console.log(
 //           "USER PREMIUM API:",
 //           result
 //         );
@@ -1243,7 +1215,6 @@
 //             ?.premiumStatus || ""
 //         );
 //       } catch (err) {
-//         console.log(
 //           "PREMIUM STATUS ERROR:",
 //           err
 //         );
@@ -1393,8 +1364,6 @@
 //     try {
 //       const res =
 //         await propertyApi.getAll();
-
-//       console.log(
 //         "ALL PROPERTIES API:",
 //         res.data
 //       );
@@ -1412,7 +1381,6 @@
 //         )
 //       );
 //     } catch (e) {
-//       console.error(e);
 
 //       setError(
 //         "Failed to load properties"
@@ -1466,7 +1434,6 @@
 //           list
 //         );
 //       } catch (err) {
-//         console.error(err);
 
 //         setAddressOptions(
 //           []
@@ -1563,8 +1530,6 @@
 //         if (!payload.pgType) {
 //           delete payload.pgType;
 //         }
-
-//         console.log(
 //           "FILTER PAYLOAD:",
 //           payload
 //         );
@@ -1596,7 +1561,6 @@
 //           )
 //         );
 //       } catch (e) {
-//         console.error(e);
 
 //         setError(
 //           e?.message ||
@@ -1618,7 +1582,6 @@
 //       const decoded = jwtDecode(token);
 //       setUserName(rememberUserName(decoded) || getUserNameFromStorage());
 //     } catch {
-//       console.log("Error decoding token for user name");
 //     }
 //   }, []);
 
@@ -1955,22 +1918,12 @@ const BrowseProperties = () => {
 
         const result =
           await response.json();
-
-        console.log(
-          "USER PREMIUM API:",
-          result
-        );
-
-        setPremiumStatus(
+setPremiumStatus(
           result?.data
             ?.premiumStatus || ""
         );
       } catch (err) {
-        console.log(
-          "PREMIUM STATUS ERROR:",
-          err
-        );
-      }
+}
     };
 
   // =========================================
@@ -2116,13 +2069,7 @@ const BrowseProperties = () => {
     try {
       const res =
         await propertyApi.getAll();
-
-      console.log(
-        "ALL PROPERTIES API:",
-        res.data
-      );
-
-      const list =
+const list =
         Array.isArray(
           res?.data
         )
@@ -2135,9 +2082,7 @@ const BrowseProperties = () => {
         )
       );
     } catch (e) {
-      console.error(e);
-
-      setError(
+setError(
         "Failed to load properties"
       );
 
@@ -2190,9 +2135,7 @@ const BrowseProperties = () => {
           list
         );
       } catch (err) {
-        console.error(err);
-
-        setAddressOptions(
+setAddressOptions(
           []
         );
       }
@@ -2288,13 +2231,7 @@ const BrowseProperties = () => {
         if (!payload.pgType) {
           delete payload.pgType;
         }
-
-        console.log(
-          "FILTER PAYLOAD:",
-          payload
-        );
-
-        if (
+if (
           Object.keys(payload)
             .length === 0
         ) {
@@ -2321,9 +2258,7 @@ const BrowseProperties = () => {
           )
         );
       } catch (e) {
-        console.error(e);
-
-        setError(
+setError(
           e?.message ||
             "Failed to filter properties"
         );
@@ -2354,10 +2289,7 @@ const BrowseProperties = () => {
           getUserNameFromStorage()
       );
     } catch {
-      console.log(
-        "Error decoding token for user name"
-      );
-    }
+}
   }, []);
 
   // =========================================
@@ -2406,7 +2338,7 @@ const BrowseProperties = () => {
         </div>
 
         {/* FILTER SECTION */}
-        <div className="bg-gradient-to-br from-[#020617] via-[#041833] to-[#020617] rounded-[28px] border border-[#1E293B] shadow-2xl p-6">
+        <div>
           <Filter
             tempFilters={
               tempFilters
@@ -2542,12 +2474,7 @@ const BrowseProperties = () => {
                 </li>
 
                 <li>
-                  <a
-                    href="/login"
-                    className="hover:text-[#F97316] transition-colors"
-                  >
-                    About Us
-                  </a>
+                 
                 </li>
               </ul>
             </div>
@@ -2560,8 +2487,7 @@ const BrowseProperties = () => {
               <ul className="space-y-2 text-slate-400 text-sm">
                 <li>Pune</li>
                 <li>PCMC</li>
-                <li>Mumbai</li>
-                <li>Coming Soon</li>
+               
               </ul>
             </div>
 

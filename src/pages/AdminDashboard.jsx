@@ -29,6 +29,7 @@ import {
   Ruler,
   Upload,
   Users,
+  HomeIcon
 } from "lucide-react";
 
 import ChatDrawer from "../components/ChatDrawer";
@@ -46,6 +47,8 @@ const OWNER_PREMIUM_QR_IMAGE =
 const OWNER_ID_BY_EMAIL_KEY = "ownerIdByEmail";
 
 const OWNER_APPROVAL_STATUS_KEY = "ownerApprovalStatuses";
+
+const PROPERTY_PAYMENT_STATUS_KEY = "propertyPaymentStatuses";
 
 const OWNER_NAME_KEY = "ownerName";
 
@@ -114,6 +117,48 @@ const writeStoredOwnerApprovalStatus = (ownerId, status) => {
   if (ownerEmail) approvalStatuses[`email:${ownerEmail}`] = status;
 
   localStorage.setItem(OWNER_APPROVAL_STATUS_KEY, JSON.stringify(approvalStatuses));
+
+};
+
+
+
+const readPropertyPaymentStatuses = () => {
+
+  try {
+
+    const parsed = JSON.parse(localStorage.getItem(PROPERTY_PAYMENT_STATUS_KEY) || "{}");
+
+    return parsed && typeof parsed === "object" ? parsed : {};
+
+  } catch {
+
+    return {};
+
+  }
+
+};
+
+
+
+const getStoredPropertyPaymentStatus = (propertyId) => {
+
+  if (!propertyId) return "";
+
+  return String(readPropertyPaymentStatuses()[String(propertyId)] || "").toUpperCase();
+
+};
+
+
+
+const writeStoredPropertyPaymentStatus = (propertyId, status) => {
+
+  if (!propertyId) return;
+
+  const paymentStatuses = readPropertyPaymentStatuses();
+
+  paymentStatuses[String(propertyId)] = status;
+
+  localStorage.setItem(PROPERTY_PAYMENT_STATUS_KEY, JSON.stringify(paymentStatuses));
 
 };
 
@@ -637,11 +682,7 @@ const handleManualOwnerIdSubmit = () => {
 
       }
 
-    } catch {
-
-      console.log("Error decoding token for email mapping");
-
-    }
+    } catch {}
 
   }
 
@@ -958,6 +999,19 @@ const handleManualOwnerIdSubmit = () => {
 
     const detailImages = getDetailImages(property || {});
 
+    const propertyId = property?.id || property?.propertyId;
+
+    const backendPaymentStatus = String(property?.paymentStatus || "").toUpperCase();
+
+    if (
+      propertyId &&
+      (backendPaymentStatus === "APPROVED" ||
+        backendPaymentStatus === "REJECTED" ||
+        backendPaymentStatus === "PENDING")
+    ) {
+      writeStoredPropertyPaymentStatus(propertyId, backendPaymentStatus);
+    }
+
     return {
 
       ...property,
@@ -1032,11 +1086,7 @@ const handleManualOwnerIdSubmit = () => {
 
       setPropertyFetchMessage("");
 
-    } catch (err) {
-
-      console.error("Error fetching properties:", err?.message || err);
-
-      if (!preserveCurrent) {
+    } catch (err) {if (!preserveCurrent) {
 
         setProperties([]);
 
@@ -1106,11 +1156,7 @@ const handleManualOwnerIdSubmit = () => {
 
     } catch (err) {
 
-      if (!silent) {
-
-        console.error("Error fetching owner premium status:", err?.message || err);
-
-      }
+      if (!silent) {}
 
     }
 
@@ -1164,11 +1210,7 @@ const handleManualOwnerIdSubmit = () => {
 
       setSelectedFacilities(new Set(activeFacilities));
 
-    } catch (err) {
-
-      console.error("Error fetching facilities:", err?.message || err);
-
-      setFacilities(mergeFacilitiesWithBackendOptions());
+    } catch (err) {setFacilities(mergeFacilitiesWithBackendOptions());
 
       setSelectedFacilities(new Set());
 
@@ -1216,46 +1258,40 @@ const handleManualOwnerIdSubmit = () => {
 
   const resolvePropertyApprovalStatus = (property) => {
 
-    // First, check property-specific paymentStatus from database (this is the individual property status)
+    const propertyId = property?.id || property?.propertyId;
+
+    // Backend property payment status takes precedence over local cache.
     const propertyPaymentStatus = String(property?.paymentStatus || "").toUpperCase();
 
-    if (propertyPaymentStatus) {
+    if (
+      propertyPaymentStatus === "APPROVED" ||
+      propertyPaymentStatus === "REJECTED" ||
+      propertyPaymentStatus === "PENDING"
+    ) {
       return propertyPaymentStatus;
     }
 
-    // Fallback to property premiumStatus (owner's status copied to property)
-    const propertyPremiumStatus = String(property?.premiumStatus || "").toUpperCase();
+    const storedPropertyStatus = getStoredPropertyPaymentStatus(propertyId);
 
-    // Parse comma-separated status string and prioritize: PENDING > APPROVED > REJECTED
-    if (propertyPremiumStatus) {
-      const statuses = propertyPremiumStatus.split(',').map(s => s.trim());
-      if (statuses.includes('PENDING')) return "PENDING";
-      if (statuses.includes('APPROVED')) return "APPROVED";
-      if (statuses.includes('REJECTED')) return "REJECTED";
-      // If none of the expected statuses, return the last one
-      return statuses[statuses.length - 1] || "PENDING";
+    if (storedPropertyStatus) {
+
+      return storedPropertyStatus;
+
     }
 
-    // Fallback to owner-level status if property status is not set
-    const workflowStatus = String(ownerApprovalStatus || ownerPremiumStatus || "").toUpperCase();
-
-    if (workflowStatus === "APPROVED") return "APPROVED";
-
-    if (workflowStatus === "REJECTED") return "REJECTED";
-
-    if (workflowStatus === "PENDING") return "PENDING";
-
-
+    // Do not use property.premiumStatus here. Backend may copy owner-level
+    // premium state into this field, which can incorrectly mark new properties
+    // as APPROVED/PENDING before this property's payment flow starts.
 
     const backendStatus = String(property?.status || "").toUpperCase();
 
-    if (backendStatus === "PENDING") return "PENDING";
+    if (backendStatus === "PENDING") return "PAYMENT_DUE";
 
     if (backendStatus === "INACTIVE") return "REJECTED";
 
-    if (backendStatus === "ACTIVE") return "PENDING";
+    if (backendStatus === "ACTIVE") return "PAYMENT_DUE";
 
-    return "PENDING";
+    return "PAYMENT_DUE";
 
   };
 
@@ -1272,6 +1308,12 @@ const handleManualOwnerIdSubmit = () => {
     if (status === "REJECTED") {
 
       return "bg-red-100 text-red-700 border border-red-200";
+
+    }
+
+    if (status === "PAYMENT_DUE") {
+
+      return "bg-orange-100 text-orange-700 border border-orange-200";
 
     }
 
@@ -1967,11 +2009,7 @@ const handleManualOwnerIdSubmit = () => {
 
             );
 
-          } catch (error) {
-
-            console.warn("Some non-cover images were not uploaded:", error);
-
-          }
+          } catch (error) {}
 
         };
 
@@ -1983,11 +2021,7 @@ const handleManualOwnerIdSubmit = () => {
 
           await saveFacilitiesForProperty(propertyId);
 
-        } catch (facilityErr) {
-
-          console.error("Error saving facilities:", facilityErr);
-
-          toast.error(facilityErr?.response?.data?.message || "Property added, but facilities were not saved");
+        } catch (facilityErr) {toast.error(facilityErr?.response?.data?.message || "Property added, but facilities were not saved");
 
         } finally {
 
@@ -2007,11 +2041,7 @@ const handleManualOwnerIdSubmit = () => {
 
           toast.success(responseMessage);
 
-        } catch (uploadErr) {
-
-          console.error("Error uploading images (first attempt):", uploadErr);
-
-          try {
+        } catch (uploadErr) {try {
 
             const retryFiles = await Promise.all(
 
@@ -2027,11 +2057,7 @@ const handleManualOwnerIdSubmit = () => {
 
             toast.success("Images uploaded after retry with optimized size.");
 
-          } catch (retryErr) {
-
-            console.error("Error uploading images (retry attempt):", retryErr);
-
-            toast.error(
+          } catch (retryErr) {toast.error(
 
               retryErr?.response?.data?.message ||
 
@@ -2049,13 +2075,7 @@ const handleManualOwnerIdSubmit = () => {
 
         setPropertyFetchMessage("");
 
-        setOwnerPremiumStatus("PENDING");
-
-        setOwnerApprovalStatus("PENDING");
-
-        setPendingPropertyId(createdPropertyId);
-
-        setShowPremiumModal(true);
+        toast.info("Property uploaded. You can complete payment anytime from this property card.");
 
 
 
@@ -2107,11 +2127,7 @@ const handleManualOwnerIdSubmit = () => {
 
       }
 
-    } catch (err) {
-
-      console.error("Error adding property:", err);
-
-      if (createdPropertyId) {
+    } catch (err) {if (createdPropertyId) {
 
         toast.error("Property added, but something failed after creation");
 
@@ -2153,13 +2169,39 @@ const handleManualOwnerIdSubmit = () => {
 
       await fetchProperties({ preserveCurrent: true });
 
-    } catch (err) {
-
-      console.error("Error deleting property:", err);
-
-      toast.error(err.response?.data?.message || err.message || "Failed to delete property");
+    } catch (err) {toast.error(err.response?.data?.message || err.message || "Failed to delete property");
 
     }
+
+  };
+
+
+
+  const handleOpenPropertyPayment = (property) => {
+
+    const propertyId = property?.id || property?.propertyId;
+
+    if (!propertyId) {
+
+      toast.error("Property ID is missing for this listing.");
+
+      return;
+
+    }
+
+    setPendingPropertyId(propertyId);
+
+    setShowPremiumModal(true);
+
+  };
+
+
+
+  const handleClosePremiumModal = () => {
+
+    setShowPremiumModal(false);
+
+    setPendingPropertyId(null);
 
   };
 
@@ -2351,11 +2393,7 @@ const handleManualOwnerIdSubmit = () => {
 
       await fetchProperties({ preserveCurrent: true });
 
-    } catch (err) {
-
-      console.error("Error updating property:", err);
-
-      toast.error(getApiErrorMessage(err, "Failed to update property"));
+    } catch (err) {toast.error(getApiErrorMessage(err, "Failed to update property"));
 
     } finally {
 
@@ -2447,6 +2485,8 @@ const handleManualOwnerIdSubmit = () => {
 
       writeStoredOwnerApprovalStatus(ownerId, nextStatus);
 
+      writeStoredPropertyPaymentStatus(pendingPropertyId, nextStatus);
+
       setOwnerPremiumStatus(nextStatus);
 
       setOwnerApprovalStatus(nextStatus);
@@ -2481,41 +2521,16 @@ const handleManualOwnerIdSubmit = () => {
     <div className="min-h-screen bg-[#f7f0e8] flex flex-col">
       {/* Header */}
 
-      <div className="flex justify-between items-center px-6 py-4 bg-[#fff7ed]/95 backdrop-blur-md border-b border-[#d8c2a8] shadow-[0_10px_30px_rgba(0,0,0,0.18)]">
+      <div className="flex justify-between items-center px-6 py-4 bg-black/90 backdrop-blur-md border-b border-white/10 shadow-[0_10px_30px_rgba(0,0,0,0.3)]">
 
         <div className="flex items-center gap-3">
 
-          <svg
-
-            className="w-8 h-8 text-[#ff7a00]"
-
-            fill="none"
-
-            stroke="currentColor"
-
-            viewBox="0 0 24 24"
-
-          >
-
-            <path
-
-              strokeLinecap="round"
-
-              strokeLinejoin="round"
-
-              strokeWidth={2}
-
-              d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
-
-            />
-
-          </svg>
-
-          <h1 className="text-[#ff7a00] font-bold text-xl">
-
-             Caryanam Broker
-
-          </h1>
+    <div className="flex h-11 w-11 items-center justify-center rounded-[18px] bg-[#ff7438] text-white shadow-[0_14px_30px_rgba(255,116,56,0.24)]">
+                      <HomeIcon size={21} />
+                    </div>
+                     <span className="text-lg sm:text-xl md:text-2xl font-black text-white font-serif whitespace-nowrap">
+                        Caryanam <span className="text-[#ff7438]">Broker</span>
+                      </span>
 
         </div>
 
@@ -2523,7 +2538,7 @@ const handleManualOwnerIdSubmit = () => {
 
         <div className="flex items-center gap-4 text-sm">
 
-          <span className="text-[#1a1a1a] font-bold">
+          <span className="text-white font-bold">
 
             {ownerDisplayName}
 
@@ -2533,7 +2548,7 @@ const handleManualOwnerIdSubmit = () => {
 
             onClick={() => setChatOpen(true)}
 
-            className="relative text-[#3d3127] hover:text-[#ff7a00]"
+            className="relative text-white hover:text-[#ff7438]"
 
             title="Messages"
 
@@ -2557,7 +2572,7 @@ const handleManualOwnerIdSubmit = () => {
 
           onClick={handleLogout}
 
-          className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-semibold rounded-[24px] shadow-lg hover:shadow-red-200 transition-all duration-300 active:scale-95">
+          className="flex items-center gap-2 px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-[24px] shadow-[0_12px_24px_rgba(220,38,38,0.28)] transition-all duration-300 active:scale-95">
 
             <LogOut size={18} />
 
@@ -2779,7 +2794,7 @@ const handleManualOwnerIdSubmit = () => {
 
                 <label className="block text-sm font-medium text-[#3d3127] mb-2">
 
-                  PG Type
+                  PG Type <span className="text-red-500">*</span>
 
                 </label>
 
@@ -3187,7 +3202,7 @@ const handleManualOwnerIdSubmit = () => {
 
                       htmlFor={`image-${index}`}
 
-                      className={`border-2 border-dashed rounded-xl p-6 flex flex-col items-center justify-center transition-colors cursor-pointer min-h-[120px] ${
+                      className={`image-upload-tile group border-2 border-dashed rounded-xl p-6 flex flex-col items-center justify-center transition-colors cursor-pointer min-h-[120px] ${
 
                         imagePreviews[index]
 
@@ -3245,7 +3260,7 @@ const handleManualOwnerIdSubmit = () => {
 
                           </svg>
 
-                          <span className="text-xs text-[#7d6c5c] text-center font-medium">
+                          <span className="text-xs text-[#7d6c5c] text-center font-medium transition-colors group-hover:text-black">
 
                             {label}
 
@@ -3517,11 +3532,18 @@ const handleManualOwnerIdSubmit = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
 
-              {properties.map((property) => (
+              {properties.map((property) => {
+
+                const approvalStatus = resolvePropertyApprovalStatus(property);
+
+                const shouldShowPaymentButton =
+                  approvalStatus !== "APPROVED" && approvalStatus !== "PENDING";
+
+                return (
 
                 <div
 
-                  key={property.id}
+                  key={property.id || property.propertyId}
 
                   className="border border-[#d9c7b2] bg-[#f9f3ed] rounded-xl overflow-hidden hover:shadow-[0_14px_34px_rgba(249,115,22,0.16)] transition-shadow"
 
@@ -3553,13 +3575,13 @@ const handleManualOwnerIdSubmit = () => {
 
                         className={`px-2 py-1 rounded-full text-xs font-semibold whitespace-nowrap ${getApprovalBadgeClasses(
 
-                          resolvePropertyApprovalStatus(property)
+                          approvalStatus
 
                         )}`}
 
                       >
 
-                        {resolvePropertyApprovalStatus(property)}
+                        {approvalStatus === "PAYMENT_DUE" ? "PAYMENT DUE" : approvalStatus}
 
                       </span>
 
@@ -3585,7 +3607,25 @@ const handleManualOwnerIdSubmit = () => {
 
                 </p>
 
-                    <div className="flex gap-3">
+                    <div className="flex flex-wrap gap-3">
+
+                      {shouldShowPaymentButton && (
+
+                        <button
+
+                          type="button"
+
+                          onClick={() => handleOpenPropertyPayment(property)}
+
+                          className="inline-flex items-center justify-center rounded-xl bg-[#f97316] px-4 py-2 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(249,115,22,0.25)] hover:bg-[#ea6a0a] transition-colors"
+
+                        >
+
+                          {approvalStatus === "REJECTED" ? "Pay Again" : "Pay Now"}
+
+                        </button>
+
+                      )}
 
 
                       <button
@@ -3666,7 +3706,10 @@ const handleManualOwnerIdSubmit = () => {
 
                 </div>
 
-              ))}
+                );
+
+              })}
+
 
             </div>
 
@@ -3694,7 +3737,7 @@ const handleManualOwnerIdSubmit = () => {
 
             <p className="text-sm text-[#5d5145] text-center mt-2">
 
-              Scan this QR code, complete payment, then click Done to submit your property for admin approval.
+              Scan this QR code, complete payment, then click Done to submit this property for admin approval.
 
             </p>
 
@@ -3740,7 +3783,7 @@ const handleManualOwnerIdSubmit = () => {
 
                 type="button"
 
-                onClick={() => setShowPremiumModal(false)}
+                onClick={handleClosePremiumModal}
 
                 className="flex-1 px-4 py-3 border border-[#d9c7b2] rounded-xl font-semibold hover:bg-[#efe4d7]"
 
@@ -4633,7 +4676,7 @@ const handleManualOwnerIdSubmit = () => {
       {/* Footer */}
       <footer className="bg-slate-900 text-white py-12 px-4 md:px-6">
         <div className="max-w-7xl mx-auto">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
             <div>
               <div className="flex items-center gap-2 mb-4">
                 <div className="w-10 h-10 bg-gradient-to-br from-[#ff7f50] to-[#ff9f80] rounded-[24px] flex items-center justify-center">
@@ -4647,32 +4690,10 @@ const handleManualOwnerIdSubmit = () => {
               </p>
             </div>
             <div>
-              <h4 className="font-bold mb-4">Quick Links</h4>
-              <ul className="space-y-2 text-slate-400 text-sm">
-                <li>
-                  <a href="/home" className="hover:text-white transition-colors">
-                    Home
-                  </a>
-                </li>
-                <li>
-                  <a href="/browse" className="hover:text-white transition-colors">
-                    Browse Properties
-                  </a>
-                </li>
-                <li>
-                  <a href="/login" className="hover:text-white transition-colors">
-                    About Us
-                  </a>
-                </li>
-              </ul>
-            </div>
-            <div>
               <h4 className="font-bold mb-4">Locations</h4>
               <ul className="space-y-2 text-slate-400 text-sm">
                 <li>Pune</li>
                 <li>PCMC</li>
-                <li>Mumbai</li>
-                <li>Coming Soon</li>
               </ul>
             </div>
             <div>
@@ -4684,7 +4705,7 @@ const handleManualOwnerIdSubmit = () => {
             </div>
           </div>
           <div className="border-t border-slate-800 pt-8 text-center text-slate-400 text-sm">
-            <p>© 2024 Caryanam. All rights reserved.</p>
+            <p>&copy; 2024 Caryanam. All rights reserved.</p>
           </div>
         </div>
       </footer>

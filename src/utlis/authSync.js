@@ -99,19 +99,13 @@
 //   export const getUserIdFromToken = () => {
 //   const token = localStorage.getItem("token");
 
-//   if (!token) {
-//     console.log("Token not found");
-//     return null;
+//   if (!token) {//     return null;
 //   }
 
 //   try {
-//     const payload = JSON.parse(atob(token.split(".")[1]));
-//     console.log("Decoded Payload:", payload);
-
+//     const payload = JSON.parse(atob(token.split(".")[1]));
 //     return payload.userId;
-//   } catch (error) {
-//     console.log("Invalid token");
-//     return null;
+//   } catch (error) {//     return null;
 //   }
 // };
 // };
@@ -145,9 +139,7 @@ export const getUserIdFromToken = () => {
   try {
     const payload = JSON.parse(atob(token.split(".")[1]));
     return payload.id;
-  } catch (err) {
-    console.error("Invalid token");
-    return null;
+  } catch (err) {return null;
   }
 };
 

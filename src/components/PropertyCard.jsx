@@ -112,18 +112,12 @@
 //       // token decode
 //       const payload = JSON.parse(
 //         atob(token.split(".")[1])
-//       );
-
-//       console.log("FULL PAYLOAD:", payload);
-
+//       );
 //       // user id
 //       const userId =
 //         payload.id ||
 //         payload.userId ||
-//         payload.sub;
-
-//       console.log("USER ID:", userId);
-
+//         payload.sub;
 //       // backend api
 //       const response = await fetch(
 //         `http://localhost:8080/api/user/${userId}`,
@@ -136,24 +130,15 @@
 //         }
 //       );
 
-//       const result = await response.json();
-
-//       console.log("USER API:", result);
-
+//       const result = await response.json();
 //       // premium status
 //       const premiumStatus =
-//         result?.data?.premiumStatus;
-
-//       console.log(
-//         "PREMIUM STATUS:",
+//         result?.data?.premiumStatus;//         "PREMIUM STATUS:",
 //         premiumStatus
 //       );
 
 //       // APPROVED
-//       if (premiumStatus === "APPROVED") {
-
-//         console.log(
-//           "✅ USER IS PREMIUM"
+//       if (premiumStatus === "APPROVED") {//           "✅ USER IS PREMIUM"
 //         );
 
 //         navigate(`/property/${property.id}`);
@@ -161,10 +146,7 @@
 //       }
 
 //       // PENDING
-//       if (premiumStatus === "PENDING") {
-
-//         console.log(
-//           "⌛ PAYMENT PENDING"
+//       if (premiumStatus === "PENDING") {//           "⌛ PAYMENT PENDING"
 //         );
 
 //         alert(
@@ -174,17 +156,12 @@
 //         return;
 //       }
 
-//       // NONE / REJECTED
-//       console.log(
-//         "❌ USER NOT PREMIUM"
+//       // NONE / REJECTED//         "❌ USER NOT PREMIUM"
 //       );
 
 //       navigate("/buy-premium");
 
-//     } catch (error) {
-
-//       console.error(
-//         "DETAILS BUTTON ERROR:",
+//     } catch (error) {//         "DETAILS BUTTON ERROR:",
 //         error
 //       );
 
@@ -274,9 +251,7 @@
 //         setPremiumStatus(
 //           data?.data?.premiumStatus
 //         );
-//       } catch (err) {
-//         console.error(
-//           "STATUS FETCH ERROR:",
+//       } catch (err) {//           "STATUS FETCH ERROR:",
 //           err
 //         );
 //       }
@@ -477,9 +452,7 @@
 //                   navigate(
 //                     "/buy-premium"
 //                   );
-//                 } catch (error) {
-//                   console.error(
-//                     error
+//                 } catch (error) {//                     error
 //                   );
 //                   navigate(
 //                     "/buy-premium"
@@ -736,9 +709,7 @@
 //       : "/no-image.png";
 
 //   // ✅ DETAILS BUTTON
-//   const handleDetailsClick = () => {
-//     console.log(
-//       "PREMIUM STATUS:",
+//   const handleDetailsClick = () => {//       "PREMIUM STATUS:",
 //       premiumStatus
 //     );
 
@@ -1362,7 +1333,7 @@ const PropertyCard = ({
           </div>
 
           {/* PRICE */}
-          <div className="absolute bottom-4 left-4 bg-[#020617]/85 text-white px-4 py-2 rounded-xl font-bold shadow-xl border border-[#1E293B]">
+          <div className="absolute bottom-4 left-4 bg-[#f97316] text-white px-4 py-2 rounded-xl font-bold shadow-xl border border-[#ea6a0a]">
             ₹
             {Number(
               property.price || 0

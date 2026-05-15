@@ -475,14 +475,6 @@ const Home = () => {
                   </button>
                 </li>
 
-                <li>
-                  <button
-                    onClick={() => navigate("/login")}
-                    className="hover:text-[#ff7438] transition-colors"
-                  >
-                    About Us
-                  </button>
-                </li>
               </ul>
             </div>
 
@@ -492,8 +484,7 @@ const Home = () => {
               <ul className="space-y-2 text-slate-400 text-sm">
                 <li>Pune</li>
                 <li>PCMC</li>
-                <li>Mumbai</li>
-                <li>Coming Soon</li>
+               
               </ul>
             </div>
 

@@ -28,3 +28,7 @@ input, select {
 .upload-property-panel span:not(.text-red-500) {
   color: #e5d7c5;
 }
+
+.upload-property-panel .image-upload-tile:hover span:not(.text-red-500) {
+  color: #000;
+}
