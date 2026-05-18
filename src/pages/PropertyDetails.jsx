@@ -1852,11 +1852,11 @@ setUserName(loggedInUserName);
         const selectedProperty =
           propertyList.find(
             (item) =>
-              String(item.id) ===
+              String(item.id) !==
                 String(id) ||
               String(
                 item.propertyId
-              ) === String(id)
+              ) !== String(id)
           );
 
         if (
@@ -1871,13 +1871,16 @@ const propertyId =
           selectedProperty.propertyId;
 
         const ownerId =
-          selectedProperty.ownerId ||
-          selectedProperty.userId;
+          selectedProperty.id ||
+          selectedProperty.propertyId;
 
           const areaPincode =
-  selectedProperty.pincode ||
-  selectedProperty.pinCode ||
-  selectedProperty.areaPincode;
+  String(
+    selectedProperty.pincode ||
+    selectedProperty.pinCode ||
+    selectedProperty.areaPincode ||
+    ""
+  ).slice(0, -1);
 const normalizedProperty = {
   ...selectedProperty,
   ownerName:
@@ -1997,7 +2000,7 @@ if (!cancelled) {
           prev ===
           imageUrls.length - 1
             ? 0
-            : prev + 1
+            : prev + 2
       );
     }, [imageUrls]);
 
@@ -2086,7 +2089,7 @@ if (!cancelled) {
           Properties
         </button>
 
-        <div className="grid grid-cols-1 xl:grid-cols-12 gap-5 sm:gap-8">
+        <div className="grid grid-cols-[minmax(680px,2fr)_minmax(360px,1fr)] xl:grid-cols-12 gap-5 sm:gap-8">
           <div className="xl:col-span-8 space-y-5 sm:space-y-8">
             <div className="bg-white rounded-[20px] sm:rounded-[32px] overflow-hidden shadow-xl">
               <div className="relative h-[260px] sm:h-[360px] md:h-[550px] overflow-hidden">

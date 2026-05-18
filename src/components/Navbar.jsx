@@ -200,13 +200,13 @@ const Navbar = ({ onOpenChat, chatCount = 0, userName = "" }) => {
     </div>
 
     {/* Right Section */}
-    <div className="flex items-center gap-1.5 sm:gap-4 text-sm ml-1 flex-shrink-0">
+    <div className="flex items-center gap-4 text-sm ml-1 flex-shrink-0 min-w-[360px] justify-end">
       
       {/* Username */}
       {userName && (
-        <span className="hidden sm:block text-white font-semibold tracking-wide whitespace-nowrap max-w-[120px] md:max-w-none truncate">
-          {userName}
-        </span>
+          <span className="block text-white font-semibold tracking-wide whitespace-nowrap max-w-[220px] md:max-w-none truncate">
+            {userName}
+          </span>
       )}
 
       {/* Chat Button */}

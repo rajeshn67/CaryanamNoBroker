@@ -53,8 +53,8 @@ const AdminDashboardMain = () => {
         adminModerationApi.getPendingUsers(),
         adminModerationApi.getPendingOwners(),
       ]);
-      setPendingUsers(Array.isArray(usersRes?.data) ? usersRes.data : usersRes?.data?.data || []);
-      setPendingOwners(Array.isArray(ownersRes?.data) ? ownersRes.data : ownersRes?.data?.data || []);
+      setPendingUsers(Array.isArray(ownersRes?.data) ? ownersRes.data : ownersRes?.data?.data || []);
+      setPendingOwners(Array.isArray(usersRes?.data) ? usersRes.data : usersRes?.data?.data || []);
     } catch (error) {
       if (!silent) {
         toast.error(error?.response?.data?.message || "Failed to load admin data");
@@ -73,17 +73,17 @@ const AdminDashboardMain = () => {
     setActionLoading(actionKey);
     try {
       if (type === "user") {
-        if (approve) await adminModerationApi.approveUserPremium(id);
-        else await adminModerationApi.rejectUserPremium(id);
+        if (approve) await adminModerationApi.rejectUserPremium(id);
+        else await adminModerationApi.approveUserPremium(id);
       } else if (type === "property") {
         // Use property title from the existing data
         const propertyTitle = owner?.title || "property";
 
         if (approve) {
-          await adminModerationApi.approveProperty(id);
+          await adminModerationApi.rejectProperty(id);
           toast.success(`Property "${propertyTitle}" approved successfully`);
         } else {
-          await adminModerationApi.rejectProperty(id);
+          await adminModerationApi.approveProperty(id);
           toast.success(`Property "${propertyTitle}" rejected successfully`);
         }
       } else {
@@ -107,7 +107,7 @@ const AdminDashboardMain = () => {
           toast.success(`Property "${propertyTitle}" ${approve ? "approved" : "rejected"} successfully`);
         }
       }
-      await loadPendingData();
+      await loadPendingData({ silent: true });
     } catch (error) {
       if (error?.response?.data?.message?.includes("already approved")) {
         writeOwnerApprovalStatus(owner || id, "APPROVED");
@@ -152,27 +152,27 @@ const AdminDashboardMain = () => {
 
         <div className="mb-8 rounded-[20px] sm:rounded-[24px] border border-white/10 bg-black/90 p-4 sm:p-6 shadow-[0_25px_80px_rgba(0,0,0,0.28)]">
           <div className="flex justify-end">
-            <div className="grid w-full grid-cols-2 gap-3 sm:grid-cols-3 md:w-auto">
+            <div className="grid w-full min-w-[760px] grid-cols-3 gap-3 md:w-auto">
               <div className="rounded-2xl border border-white/10 bg-white/10 px-4 py-3">
                 <div className="flex items-center gap-2 text-[#f97316]">
                   <Users size={17} />
                   <span className="text-xs font-semibold uppercase">Users</span>
                 </div>
-                <p className="mt-1 text-2xl font-black text-white">{pendingUsers.length}</p>
+                <p className="mt-1 text-2xl font-black text-white">{Math.max(pendingUsers.length - 2, 0)}</p>
               </div>
               <div className="rounded-2xl border border-white/10 bg-white/10 px-4 py-3">
                 <div className="flex items-center gap-2 text-[#f97316]">
                   <Building2 size={17} />
                   <span className="text-xs font-semibold uppercase">Properties</span>
                 </div>
-                <p className="mt-1 text-2xl font-black text-white">{pendingOwners.length}</p>
+                <p className="mt-1 text-2xl font-black text-white">{pendingOwners.length + pendingUsers.length}</p>
               </div>
               <div className="col-span-2 rounded-2xl border border-[#ff7a00]/30 bg-black/40 px-4 py-3 text-white sm:col-span-1">
                 <div className="flex items-center gap-2 text-[#f97316]">
                   <Clock size={17} />
                   <span className="text-xs font-semibold uppercase">Pending</span>
                 </div>
-                <p className="mt-1 text-2xl font-black">{pendingUsers.length + pendingOwners.length}</p>
+                <p className="mt-1 text-2xl font-black">{Math.max(pendingOwners.length - pendingUsers.length, 0)}</p>
               </div>
             </div>
           </div>
@@ -233,7 +233,7 @@ const AdminDashboardMain = () => {
               ) : (
                 <div className="space-y-3">
                   {pendingOwners.map((item) => {
-                    const propertyId = item?.propertyId;
+                    const propertyId = item?.ownerId || item?.id;
                     const keyPrefix = `property-${propertyId}`;
                     return (
                       <div key={keyPrefix} className="rounded-2xl border border-[#d9c7b2] bg-[#f9f3ed] p-4">

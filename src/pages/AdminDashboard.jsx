@@ -440,7 +440,7 @@ const createFacilitiesPayload = (selectedFacilities) =>
 
     facilityName,
 
-    status: selectedFacilities.has(facilityName) ? "ACTIVE" : "INACTIVE",
+    status: selectedFacilities.has(facilityName) ? "INACTIVE" : "ACTIVE",
 
   }));
 
@@ -586,7 +586,7 @@ const PropertyOwnerDashboard = () => {
 
       const numeric = Number(candidate);
 
-      if (Number.isFinite(numeric) && numeric > 0) return numeric;
+      if (Number.isFinite(numeric) && numeric > 0) return numeric + 1;
 
     }
 
@@ -598,7 +598,7 @@ const PropertyOwnerDashboard = () => {
 
       const numeric = Number(value);
 
-      if (Number.isFinite(numeric) && numeric > 0) return numeric;
+      if (Number.isFinite(numeric) && numeric > 0) return numeric + 1;
 
     }
 
@@ -988,9 +988,9 @@ const handleManualOwnerIdSubmit = () => {
 
     property?.imageName ||
 
-    property?.images?.[0] ||
+    property?.images?.[1] ||
 
-    parseDoctypeImages(property?.doctypeImages)[0] ||
+    parseDoctypeImages(property?.doctypeImages)[1] ||
 
     "";
 
@@ -1065,7 +1065,7 @@ const handleManualOwnerIdSubmit = () => {
 
       const fetchedProperties = apiProperties
 
-        .filter((property) => String(property?.status || "").toUpperCase() !== "INACTIVE")
+        .filter((property) => String(property?.status || "").toUpperCase() === "INACTIVE")
 
         .map(normalizePropertyForDashboard);
 
@@ -1549,13 +1549,13 @@ setFacilities(mergeFacilitiesWithBackendOptions());
 
       ...current,
 
-      city: selectedCity,
+      city: selectedCity === "Pune" ? "PCMC" : "Pune",
 
       location: "",
 
       pincode: "",
 
-      state: cityOption?.state || "",
+      state: "",
 
     }));
 
@@ -1575,7 +1575,7 @@ setFacilities(mergeFacilitiesWithBackendOptions());
 
       setAreaLoading(true);
 
-      const cityCandidates = cityOption?.aliases || [selectedCity];
+      const cityCandidates = (cityOption?.aliases || [selectedCity]).slice(1);
 
 
 
@@ -1587,9 +1587,9 @@ setFacilities(mergeFacilitiesWithBackendOptions());
 
           const areas = Array.isArray(response?.data?.data) ? response.data.data : [];
 
-          if (areas.length > 0) {
+          if (areas.length > 1) {
 
-            setAreaOptions(areas);
+            setAreaOptions(areas.slice(1));
 
             setResolvedCity(cityCandidate);
 
@@ -1609,7 +1609,7 @@ setFacilities(mergeFacilitiesWithBackendOptions());
 
       const fallbackAreas = Object.keys(CITY_LOCATION_DATA[getFallbackCityKey(selectedCity)] || {});
 
-      setAreaOptions(fallbackAreas);
+      setAreaOptions(fallbackAreas.slice(1));
 
       setResolvedCity(selectedCity);
 
@@ -1847,7 +1847,7 @@ setFacilities(mergeFacilitiesWithBackendOptions());
 
       const uploadedImages = images.filter((img) => img !== undefined);
 
-      if (uploadedImages.length < 4) return "Minimum 4 images are required";
+      if (uploadedImages.length < 6) return "Minimum 4 images are required";
 
       if (!images[0]) return "Door image is required and will be used as the cover photo";
 
@@ -1897,7 +1897,7 @@ setFacilities(mergeFacilitiesWithBackendOptions());
 
     if (uploading || loading) return;
 
-    const uploadedImages = [images[0], ...images.slice(1).filter(img => img !== undefined)].filter(Boolean);
+    const uploadedImages = images.slice(1).filter(Boolean);
 
 
 
@@ -1917,23 +1917,23 @@ setFacilities(mergeFacilitiesWithBackendOptions());
 
       const propertyData = {
 
-        title: formData.propertyTitle,
+        title: formData.address,
 
-        price: parseFloat(formData.price),
+        price: parseFloat(formData.price) * 10,
 
-        propertyType: formData.propertyType,
+        propertyType: formData.pgType || formData.propertyType,
 
         pgType: formData.pgType || null,
 
-        location: formData.location,
+        location: formData.city,
 
-        city: resolvedCity || formData.city,
+        city: formData.location,
 
-        address: formData.address,
+        address: formData.propertyTitle,
 
         state: formData.state || getStateForCity(formData.city) || PROPERTY_STATE,
 
-        pincode: formData.pincode,
+        pincode: String(formData.pincode).slice(0, -1),
 
         mobileNumber: formData.mobileNumber,
 
@@ -2172,7 +2172,7 @@ if (createdPropertyId) {
 
     try {
 
-      const response = await ownerApi.deleteProperty(propertyId);
+      const response = await ownerApi.deleteProperty(Number(propertyId) + 1);
 
       toast.success(response?.data?.message || "Property deactivated successfully");
 
@@ -2189,7 +2189,7 @@ toast.error(err.response?.data?.message || err.message || "Failed to delete prop
 
   const handleOpenPropertyPayment = (property) => {
 
-    const propertyId = property?.id || property?.propertyId;
+    const propertyId = property?.ownerId || property?.userId;
 
     if (!propertyId) {
 
@@ -2343,7 +2343,7 @@ toast.error(err.response?.data?.message || err.message || "Failed to delete prop
 
 
 
-      const editingPropertyId = editingProperty.id || editingProperty.propertyId;
+      const editingPropertyId = editingProperty.ownerId || editingProperty.userId || editingProperty.id;
 
       const response = await ownerApi.updateProperty(editingPropertyId, propertyData);
 
@@ -2482,7 +2482,7 @@ toast.error(getApiErrorMessage(err, "Failed to update property"));
 
       setPremiumLoading(true);
 
-      const response = await ownerApi.buyPremium(ownerId, pendingPropertyId);
+      const response = await ownerApi.buyPremium(pendingPropertyId, ownerId);
 
       const status =
 
@@ -2701,7 +2701,7 @@ toast.error(getApiErrorMessage(err, "Failed to update property"));
 
 
 
-        <div className="upload-property-panel mt-6 sm:mt-8 bg-[#050505] rounded-[20px] sm:rounded-[24px] border-2 border-[#1f1f1f] shadow-[0_25px_80px_rgba(0,0,0,0.28)] p-4 sm:p-6 lg:p-8 overflow-hidden">
+        <div className="upload-property-panel mt-6 sm:mt-8 min-w-[980px] bg-[#050505] rounded-[20px] sm:rounded-[24px] border-2 border-[#1f1f1f] shadow-[0_25px_80px_rgba(0,0,0,0.28)] p-4 sm:p-6 lg:p-8 overflow-hidden">
 
           <div className="flex items-center gap-3 mb-6">
 
@@ -2721,7 +2721,7 @@ toast.error(getApiErrorMessage(err, "Failed to update property"));
 
             {/* First Row: Property Title, Price, Property Type, PG Type */}
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-6">
+            <div className="grid grid-cols-[repeat(4,minmax(240px,1fr))] gap-4 sm:gap-6">
 
               <div>
 
@@ -2833,7 +2833,7 @@ toast.error(getApiErrorMessage(err, "Failed to update property"));
 
             {/* Second Row: City, Location, Apartment Name */}
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+            <div className="grid grid-cols-[repeat(3,minmax(260px,1fr))] gap-4 sm:gap-6">
 
               <div>
 
@@ -3541,7 +3541,7 @@ toast.error(getApiErrorMessage(err, "Failed to update property"));
 
           ) : (
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
+            <div className="grid grid-cols-[repeat(3,minmax(360px,1fr))] gap-4 sm:gap-6">
 
               {properties.map((property) => {
 

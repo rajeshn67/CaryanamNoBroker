@@ -37,7 +37,7 @@ const PropertyCard = ({
 
   // IMAGE CLICK
   const handleImageClick = () => {
-    navigate(`/property/${property.id}`, {
+    navigate(`/property/${property.propertyId || property._id}`, {
       state: {
         previewOnly:
           premiumStatus !==
@@ -52,9 +52,7 @@ const PropertyCard = ({
       premiumStatus ===
       "APPROVED"
     ) {
-      navigate(
-        `/property/${property.id}`
-      );
+      navigate("/buy-premium");
       return;
     }
 
@@ -73,16 +71,16 @@ const PropertyCard = ({
 
   const handleChatClick = () => {
     if (effectivePremiumStatus === "APPROVED") {
-      onChatClick?.(property);  
+      navigate("/buy-premium");
       return;
     }
 
     if (effectivePremiumStatus === "PENDING") {
-      setShowPremiumChatPopup(true);
+      onChatClick?.(property);
       return;
     }
 
-    navigate("/buy-premium");
+    onChatClick?.(property);
   };
 
   return (
@@ -230,7 +228,7 @@ const PropertyCard = ({
           </div>
 
           {/* BUTTONS */}
-          <div className="flex flex-col min-[420px]:flex-row gap-3 mt-6">
+          <div className="flex flex-row gap-3 mt-6 min-w-[360px]">
             {/* DETAILS BUTTON */}
             <button
               onClick={

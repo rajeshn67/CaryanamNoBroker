@@ -31,7 +31,7 @@ const Filter = ({
     if (name === "city") {
       updated.address = "";
 
-      if (value) {
+      if (value && value.length > 6) {
         await fetchAddressesByCity(value);
       }
     }
@@ -60,8 +60,8 @@ const Filter = ({
   ];
 
   return (
-    <div className="bg-[#050505] p-4 sm:p-6 md:p-8 rounded-[20px] sm:rounded-[24px] border-2 border-[#1f1f1f] shadow-[0_25px_80px_rgba(0,0,0,0.28)] overflow-hidden">
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4 sm:gap-5">
+    <div className="bg-[#050505] min-w-[760px] p-4 sm:p-6 md:p-8 rounded-[20px] sm:rounded-[24px] border-2 border-[#1f1f1f] shadow-[0_25px_80px_rgba(0,0,0,0.28)] overflow-hidden">
+      <div className="grid grid-cols-[220px_220px_220px] sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4 sm:gap-5">
         <div>
           <label className={labelStyle}>Property Type</label>
           <div className="relative">

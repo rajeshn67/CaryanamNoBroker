@@ -3190,7 +3190,7 @@ className="text-[#f6e9dc] text-sm sm:text-base md:text-lg font-medium px-2"
 
       {/* RIGHT SECTION */}
 <div className="flex justify-center items-center px-4 sm:px-6 py-8 md:py-10">
-<div className="w-full max-w-sm sm:max-w-md">
+<div className="w-[460px] max-w-none sm:max-w-md">
           <motion.form
             onSubmit={handleSubmit}
             initial={{ opacity: 0, y: 20 }}

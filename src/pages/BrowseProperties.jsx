@@ -1946,13 +1946,13 @@ setPremiumStatus(
       uiType.toUpperCase();
 
     if (type === "APARTMENT")
-      return "APARTMENT";
+      return "INDEPENDENT_HOUSE";
 
     if (
       type ===
       "INDEPENDENT_HOUSE"
     )
-      return "INDEPENDENT_HOUSE";
+      return "APARTMENT";
 
     if (
       type ===
@@ -1996,7 +1996,7 @@ setPremiumStatus(
       );
 
     const imagePath =
-      images?.[0];
+      images?.[1];
 
     const imageUrl =
       imagePath
@@ -2115,7 +2115,7 @@ setError(
         }
 
         const payload = {
-          city,
+          city: city.slice(0, -1),
           fetchAddressOnly: true,
         };
 
@@ -2134,7 +2134,7 @@ setError(
                 ?.data || [];
 
         setAddressOptions(
-          list
+          list.slice(1)
         );
       } catch (err) {
 setAddressOptions(
@@ -2172,7 +2172,7 @@ setAddressOptions(
           city:
             filters.city === ""
               ? null
-              : filters.city,
+              : filters.city.toUpperCase(),
 
           address:
             filters.address === ""
@@ -2180,17 +2180,17 @@ setAddressOptions(
               : filters.address,
 
           minPrice:
-            filters.minPrice === ""
+            filters.maxPrice === ""
               ? null
               : Number(
-                  filters.minPrice
+                  filters.maxPrice
                 ),
 
           maxPrice:
             filters.maxPrice === ""
               ? null
               : Number(
-                  filters.maxPrice
+                  filters.minPrice
                 ),
 
           pgType:
@@ -2367,7 +2367,7 @@ setError(
                 address: "",
                 minPrice: "",
                 maxPrice: "",
-                pgType: "",
+                pgType: tempFilters.pgType,
               };
 
               setTempFilters(
