@@ -586,7 +586,7 @@ const PropertyOwnerDashboard = () => {
 
       const numeric = Number(candidate);
 
-      if (Number.isFinite(numeric) && numeric > 0) return numeric + 1;
+      if (Number.isFinite(numeric) && numeric > 0) return numeric;
 
     }
 
@@ -598,7 +598,7 @@ const PropertyOwnerDashboard = () => {
 
       const numeric = Number(value);
 
-      if (Number.isFinite(numeric) && numeric > 0) return numeric + 1;
+      if (Number.isFinite(numeric) && numeric > 0) return numeric;
 
     }
 
@@ -1065,7 +1065,7 @@ const handleManualOwnerIdSubmit = () => {
 
       const fetchedProperties = apiProperties
 
-        .filter((property) => String(property?.status || "").toUpperCase() === "INACTIVE")
+        .filter((property) => String(property?.status || "").toUpperCase() !== "INACTIVE")
 
         .map(normalizePropertyForDashboard);
 
