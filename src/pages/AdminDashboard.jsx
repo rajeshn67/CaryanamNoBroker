@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 
 import { jwtDecode } from "jwt-decode";
 
-import { ownerApi, STATIC_BASE_URL } from "../services/api";
+import { ownerApi } from "../services/api";
 
 import { toast, ToastContainer } from "react-toastify";
 
@@ -33,6 +33,10 @@ import {
 } from "lucide-react";
 
 import ChatDrawer from "../components/ChatDrawer";
+import {
+  getImageCandidates,
+  parseImageList,
+} from "../utlis/propertyImages";
 
 
 
@@ -238,17 +242,15 @@ const rememberOwnerDisplayName = (decoded) => {
 
 
 
-const PropertyThumbnail = ({ imageName, title }) => {
+const PropertyThumbnail = ({ imageNames, title }) => {
 
-  const rawValue = String(imageName || "").trim();
+  const candidates = (Array.isArray(imageNames) ? imageNames : [imageNames])
 
-  const cleanedName = rawValue.replace(/^\/+/, "").replace(/^uploads\//i, "");
+    .flatMap(getImageCandidates);
 
-  const imageUrl = /^(blob:|data:|https?:)/i.test(rawValue)
+  const [candidateIndex, setCandidateIndex] = useState(0);
 
-    ? rawValue
-
-    : `${STATIC_BASE_URL}/${cleanedName}`;
+  const imageUrl = candidates[candidateIndex] || IMAGE_FALLBACK;
 
 
 
@@ -263,6 +265,14 @@ const PropertyThumbnail = ({ imageName, title }) => {
       className="w-full h-full object-cover"
 
       onError={(event) => {
+
+        if (candidateIndex < candidates.length - 1) {
+
+          setCandidateIndex((current) => current + 1);
+
+          return;
+
+        }
 
         event.currentTarget.src = IMAGE_FALLBACK;
 
@@ -840,37 +850,7 @@ const handleManualOwnerIdSubmit = () => {
 
   const parseDoctypeImages = (value) => {
 
-    if (!value) return [];
-
-    if (Array.isArray(value)) return value;
-
-    if (typeof value !== "string") return [];
-
-    const trimmed = value.trim();
-
-    if (!trimmed) return [];
-
-    if (trimmed.startsWith("[") && trimmed.endsWith("]")) {
-
-      return trimmed
-
-        .slice(1, -1)
-
-        .split(",")
-
-        .map((item) => item.trim())
-
-        .filter(Boolean);
-
-    }
-
-    return trimmed
-
-      .split(",")
-
-      .map((item) => item.trim())
-
-      .filter(Boolean);
+    return parseImageList(value);
 
   };
 
@@ -878,31 +858,31 @@ const handleManualOwnerIdSubmit = () => {
 
   const getDetailImages = (detailData) => [
 
+    ...parseDoctypeImages(detailData?.doctypeImages),
+
     detailData?.coverImage,
 
     detailData?.imagePath,
 
     detailData?.imageName,
 
-    ...parseDoctypeImages(detailData?.doctypeImages),
-
   ].filter(Boolean);
 
 
 
-  const getPropertyImageName = (property) =>
+  const getPropertyImageNames = (property) => [
 
-    property?.coverImage ||
+    ...parseDoctypeImages(property?.doctypeImages),
 
-    property?.imagePath ||
+    property?.coverImage,
 
-    property?.imageName ||
+    property?.imagePath,
 
-    property?.images?.[0] ||
+    property?.imageName,
 
-    parseDoctypeImages(property?.doctypeImages)[0] ||
+    ...(Array.isArray(property?.images) ? property.images : []),
 
-    "";
+  ].filter(Boolean);
 
 
 
@@ -1187,7 +1167,7 @@ setFacilities(mergeFacilitiesWithBackendOptions());
 
     const storedPropertyStatus = getStoredPropertyPaymentStatus(propertyId);
 
-    if (storedPropertyStatus) {
+    if (storedPropertyStatus === "PENDING" || storedPropertyStatus === "REJECTED") {
 
       return storedPropertyStatus;
 
@@ -3411,7 +3391,7 @@ toast.error(getApiErrorMessage(err, "Failed to update property"));
 
                     <PropertyThumbnail
 
-                      imageName={getPropertyImageName(property)}
+                      imageNames={getPropertyImageNames(property)}
 
                       title={property.title}
 

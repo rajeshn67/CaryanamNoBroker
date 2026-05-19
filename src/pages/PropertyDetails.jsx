@@ -15,7 +15,7 @@ import {
   motion,
   AnimatePresence,
 } from "framer-motion";
-import { API_BASE_URL, STATIC_BASE_URL,  propertyApi, } from "../services/api";
+import { API_BASE_URL } from "../services/api";
 
 import {
   MapPin,
@@ -40,8 +40,13 @@ Baby,
 } from "lucide-react";
 
 import { getUserIdFromToken } from "../utlis/authSync";
+import {
+  FALLBACK_PROPERTY_IMAGE,
+  getImageCandidates,
+  getPropertyImageNames,
+} from "../utlis/propertyImages";
 
-const FALLBACK_IMAGE = "/no-image.png";
+const FALLBACK_IMAGE = FALLBACK_PROPERTY_IMAGE;
 
 const facilityIcons = {
   LANDSCAPE_GARDEN: Trees,
@@ -74,6 +79,8 @@ const PropertyDetails = () => {
     useState("");
 
   const [currentIndex, setCurrentIndex] =
+    useState(0);
+  const [currentImageCandidateIndex, setCurrentImageCandidateIndex] =
     useState(0);
 
   const [chatOpen, setChatOpen] =
@@ -316,54 +323,57 @@ if (!cancelled) {
      loadNearbyProperties,
   ]);
 
-  const imageUrls = useMemo(
+  const imageCandidatesList = useMemo(
     () => {
       if (!property) {
         return [
-          FALLBACK_IMAGE,
+          [FALLBACK_IMAGE],
         ];
       }
 
-      if (
-        Array.isArray(
-          property.images
-        ) &&
-        property.images.length >
-          0
-      ) {
-        return property.images.map(
-          (img) =>
-            `${STATIC_BASE_URL}/${img}`
+      const imageNames =
+        getPropertyImageNames(
+          property
         );
-      }
 
-      if (
-        property.doctypeImages
-      ) {
-        return property.doctypeImages
-          .replace(
-            /^\[|\]$/g,
-            ""
-          )
-          .split(",")
+      const candidates =
+        imageNames
           .map(
-            (img) =>
-              `${STATIC_BASE_URL}/${img.trim()}`
+            getImageCandidates
+          )
+          .filter(
+            (items) =>
+              items.length > 0
           );
-      }
 
-      if (property.image) {
-        return [
-          property.image,
-        ];
-      }
+      if (candidates.length > 0) return candidates;
 
       return [
-        FALLBACK_IMAGE,
+        [FALLBACK_IMAGE],
       ];
     },
     [property]
   );
+
+  const imageUrls = useMemo(
+    () =>
+      imageCandidatesList.map(
+        (candidates) =>
+          candidates[0] ||
+          FALLBACK_IMAGE
+      ),
+    [imageCandidatesList]
+  );
+
+  const currentImageCandidates =
+    imageCandidatesList[
+      currentIndex
+    ] || [FALLBACK_IMAGE];
+
+  const currentImageSrc =
+    currentImageCandidates[
+      currentImageCandidateIndex
+    ] || FALLBACK_IMAGE;
 
   const nextSlide =
     useCallback(() => {
@@ -380,6 +390,13 @@ if (!cancelled) {
             : prev + 1
       );
     }, [imageUrls]);
+
+  useEffect(() => {
+    setCurrentImageCandidateIndex(0);
+  }, [
+    currentIndex,
+    imageCandidatesList,
+  ]);
 
   useEffect(() => {
     if (
@@ -476,13 +493,23 @@ if (!cancelled) {
                       currentIndex
                     }
                     src={
-                      imageUrls[
-                        currentIndex
-                      ]
+                      currentImageSrc
                     }
                     onError={(
                       e
                     ) => {
+                      if (
+                        currentImageCandidateIndex <
+                        currentImageCandidates.length -
+                          1
+                      ) {
+                        setCurrentImageCandidateIndex(
+                          (current) =>
+                            current + 1
+                        );
+                        return;
+                      }
+
                       e.currentTarget.src =
                         FALLBACK_IMAGE;
                     }}

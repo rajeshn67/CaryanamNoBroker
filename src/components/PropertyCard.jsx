@@ -1,5 +1,9 @@
 
-import { useState } from "react";
+import {
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
@@ -13,6 +17,11 @@ import {
   X,
 } from "lucide-react";
 
+import {
+  FALLBACK_PROPERTY_IMAGE,
+  getPropertyImageCandidates,
+} from "../utlis/propertyImages";
+
 const PropertyCard = ({
   property,
   premiumStatus,
@@ -22,18 +31,42 @@ const PropertyCard = ({
   const navigate = useNavigate();
   const [showPremiumChatPopup, setShowPremiumChatPopup] =
     useState(false);
+  const [imageCandidateIndex, setImageCandidateIndex] =
+    useState(0);
 
   const effectivePremiumStatus =
     premiumStatus ??
     approvalStatus ??
     null;
 
-  // IMAGE FALLBACK
+  const imageCandidates = useMemo(() => {
+    const candidates =
+      property.imageCandidates?.length > 0
+        ? property.imageCandidates
+        : getPropertyImageCandidates(
+            property._raw || property
+          );
+
+    if (
+      property.image &&
+      !candidates.includes(property.image)
+    ) {
+      return [
+        property.image,
+        ...candidates,
+      ];
+    }
+
+    return candidates;
+  }, [property]);
+
+  useEffect(() => {
+    setImageCandidateIndex(0);
+  }, [imageCandidates]);
+
   const imageSrc =
-    property.image &&
-    property.image.trim() !== ""
-      ? property.image
-      : "/no-image.png";
+    imageCandidates[imageCandidateIndex] ||
+    FALLBACK_PROPERTY_IMAGE;
 
   // IMAGE CLICK
   const handleImageClick = () => {
@@ -123,14 +156,13 @@ const PropertyCard = ({
             alt={property.title}
             loading="lazy"
             onError={(e) => {
-              if (
-                !e.currentTarget.src.includes(
-                  "no-image.png"
-                )
-              ) {
-                e.currentTarget.src =
-                  "/no-image.png";
+              if (imageCandidateIndex < imageCandidates.length - 1) {
+                setImageCandidateIndex((current) => current + 1);
+                return;
               }
+
+              e.currentTarget.src =
+                FALLBACK_PROPERTY_IMAGE;
             }}
           />
 

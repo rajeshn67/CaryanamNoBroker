@@ -17,10 +17,13 @@ import {
   API_BASE_URL,
   ownerApi,
   propertyApi,
-  STATIC_BASE_URL,
 } from "../services/api";
 
 import { getUserIdFromToken } from "../utlis/authSync";
+import {
+  FALLBACK_PROPERTY_IMAGE,
+  getPropertyImageCandidates,
+} from "../utlis/propertyImages";
 
 const USER_NAME_KEY = "userName";
 const USER_NAME_BY_EMAIL_KEY = "userNameByEmail";
@@ -180,46 +183,15 @@ setPremiumStatus(
   };
 
   // =========================================
-  // IMAGE PARSER
-  // =========================================
-  const parseImages = (
-    imgString
-  ) => {
-    if (!imgString) return [];
-
-    try {
-      return imgString
-        .replace(/^\[|\]$/g, "")
-        .split(",")
-        .map((img) =>
-          img.trim()
-        )
-        .filter(Boolean);
-    } catch {
-      return [];
-    }
-  };
-
-  // =========================================
   // BACKEND → UI
   // =========================================
   const mapBackendToUi = (
     dto
   ) => {
-    const images =
-      parseImages(
-        dto?.doctypeImages
+    const imageCandidates =
+      getPropertyImageCandidates(
+        dto
       );
-
-    const imagePath =
-      images?.[0];
-
-    const imageUrl =
-      imagePath
-        ? `${STATIC_BASE_URL}/${String(
-            imagePath
-          ).replace(/^\/+/, "")}`
-        : "/no-image.png";
 
     return {
       id:
@@ -271,7 +243,11 @@ setPremiumStatus(
         dto?.description ||
         "No details available",
 
-      image: imageUrl,
+      image:
+        imageCandidates[0] ||
+        FALLBACK_PROPERTY_IMAGE,
+
+      imageCandidates,
 
       _raw: dto,
     };
