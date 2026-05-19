@@ -2805,7 +2805,7 @@ toast.error(getApiErrorMessage(err, "Failed to update property"));
 
                 <label className="block text-sm font-medium text-[#3d3127] mb-2">
 
-                  PG Type <span className="text-red-500">*</span>
+                  PG Type 
 
                 </label>
 
