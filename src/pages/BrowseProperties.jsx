@@ -2442,7 +2442,7 @@ setError(
                 </div>
 
                 <span className="text-2xl font-black">
-                  Caryanam
+                  Rental Chaavi
                 </span>
               </div>
 

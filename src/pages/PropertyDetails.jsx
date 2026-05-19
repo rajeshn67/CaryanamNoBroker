@@ -2508,7 +2508,7 @@ if (!cancelled) {
                 <div className="w-10 h-10 bg-gradient-to-br from-[#ff7f50] to-[#ff9f80] rounded-xl flex items-center justify-center">
                   <span className="text-white font-bold text-lg">C</span>
                 </div>
-                <span className="text-2xl font-black">Caryanam</span>
+                <span className="text-2xl font-black">Rental Chaavi</span>
               </div>
               <p className="text-slate-400 text-sm">
                 India's first no-brokerage platform connecting property owners

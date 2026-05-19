@@ -143,7 +143,7 @@ const Home = () => {
             </div>
 
             <span className="text-lg sm:text-xl md:text-2xl font-black text-white font-serif whitespace-nowrap">
-              Caryanam <span className="text-[#ff7438]">Broker</span>
+              Rental <span className="text-[#ff7438]">Chaavi</span>
             </span>
           </div>
 
@@ -366,7 +366,7 @@ const Home = () => {
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-slate-900 mb-4">
-              Why Choose Caryanam?
+              Why Choose Rental Chaavi?
             </h2>
 
             <p className="text-lg md:text-xl text-slate-600 max-w-2xl mx-auto">
@@ -526,7 +526,7 @@ const Home = () => {
                       </p>
 
                       <h3 className="text-2xl font-black">
-                        Caryanam
+                        Rental Chaavi
                       </h3>
 
                       <p className="text-sm opacity-90 mt-2">
@@ -613,7 +613,7 @@ const Home = () => {
                 </div>
 
                 <span className="text-2xl font-black">
-                  Caryanam
+                  Rental Chaavi
                 </span>
               </div>
 

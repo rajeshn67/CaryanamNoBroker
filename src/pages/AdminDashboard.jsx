@@ -2540,7 +2540,7 @@ toast.error(getApiErrorMessage(err, "Failed to update property"));
                       <HomeIcon size={18} />
                     </div>
                      <span className="min-w-0 truncate text-[15px] min-[360px]:text-[16px] sm:text-xl md:text-2xl font-black text-white font-serif whitespace-nowrap">
-                        Caryanam <span className="text-[#ff7438]">Broker</span>
+                        Rental <span className="text-[#ff7438]">Chaavi</span>
                       </span>
 
         </div>
@@ -4693,7 +4693,7 @@ toast.error(getApiErrorMessage(err, "Failed to update property"));
                  <div className="flex h-11 w-11 items-center justify-center rounded-[18px] bg-[#ff7438] text-white shadow-[0_14px_30px_rgba(255,116,56,0.24)]">
             <HomeIcon size={21} />
           </div>
-                <span className="text-2xl font-black">Caryanam</span>
+                <span className="text-2xl font-black">Rental Chaavi</span>
               </div>
               <p className="text-slate-400 text-sm">
                 India's first no-brokerage platform connecting property owners

@@ -195,7 +195,7 @@ const Navbar = ({ onOpenChat, chatCount = 0, userName = "" }) => {
       </div>
 
       <span className="min-w-0 text-[15px] min-[360px]:text-[16px] sm:text-xl md:text-2xl font-black text-white font-serif whitespace-nowrap truncate">
-        Caryanam <span className="text-[#ff7438]">Broker</span>
+        Rental <span className="text-[#ff7438]">Chaavi</span>
       </span>
     </div>
 
