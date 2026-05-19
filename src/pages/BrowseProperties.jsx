@@ -14,6 +14,8 @@ import PropertyList from "../components/PropertyList";
 import ChatDrawer from "../components/ChatDrawer";
 
 import {
+  API_BASE_URL,
+  ownerApi,
   propertyApi,
   STATIC_BASE_URL,
 } from "../services/api";
@@ -124,7 +126,7 @@ const BrowseProperties = () => {
 
         const response =
           await fetch(
-            `http://localhost:8080/api/user/${userId}`,
+            `${API_BASE_URL}/user/${userId}`,
             {
               headers: {
                 Authorization: `Bearer ${token}`,
@@ -314,13 +316,7 @@ setError(
   const fetchAddressesByCity =
     async (city) => {
       try {
-        const userId =
-          getUserIdFromToken();
-
-        if (
-          !userId ||
-          !city
-        ) {
+        if (!city) {
           setAddressOptions(
             []
           );
@@ -328,27 +324,20 @@ setError(
           return;
         }
 
-        const payload = {
-          city,
-          fetchAddressOnly: true,
-        };
-
-        const res =
-          await propertyApi.filter(
-            payload,
-            userId
+        const response =
+          await ownerApi.getAreasByCity(
+            city.trim()
           );
 
-        const list =
+        const areas =
           Array.isArray(
-            res?.data
+            response?.data?.data
           )
-            ? res.data
-            : res?.data
-                ?.data || [];
+            ? response.data.data
+            : [];
 
         setAddressOptions(
-          list
+          areas
         );
       } catch (err) {
 setAddressOptions(
@@ -366,6 +355,33 @@ setAddressOptions(
       setError("");
 
       try {
+        const minPrice =
+          filters.minPrice === ""
+            ? null
+            : Number(
+                filters.minPrice
+              );
+
+        const maxPrice =
+          filters.maxPrice === ""
+            ? null
+            : Number(
+                filters.maxPrice
+              );
+
+        if (
+          minPrice !== null &&
+          maxPrice !== null &&
+          Number.isFinite(minPrice) &&
+          Number.isFinite(maxPrice) &&
+          maxPrice <= minPrice
+        ) {
+          setError(
+            "Max price must be greater than min price"
+          );
+          return;
+        }
+
         const userId =
           getUserIdFromToken();
 
@@ -394,18 +410,10 @@ setAddressOptions(
               : filters.address,
 
           minPrice:
-            filters.minPrice === ""
-              ? null
-              : Number(
-                  filters.minPrice
-                ),
+            minPrice,
 
           maxPrice:
-            filters.maxPrice === ""
-              ? null
-              : Number(
-                  filters.maxPrice
-                ),
+            maxPrice,
 
           pgType:
             filters.pgType === ""

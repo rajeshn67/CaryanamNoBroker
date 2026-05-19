@@ -9,7 +9,7 @@ import {
 
 const SOCKET_URL =
   import.meta.env.VITE_SOCKET_URL?.replace(/\/+$/, "") ||
-  "http://localhost:9092";
+  "http://r2.rentalchaavi.com:9092";
 
 const parseRoomId = (roomId) => {
   if (!roomId || typeof roomId !== "string") return null;

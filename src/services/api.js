@@ -1,14 +1,20 @@
 import axios from 'axios';
 
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL?.replace(/\/+$/, '') ||
-  'http://localhost:8080/api';
+const ensureApiBasePath = (url) => {
+  const trimmedUrl = String(url || '').replace(/\/+$/, '');
+  return trimmedUrl.endsWith('/api') ? trimmedUrl : `${trimmedUrl}/api`;
+};
+
+export const API_BASE_URL =
+  ensureApiBasePath(
+    import.meta.env.VITE_API_BASE_URL || 'https://r1.rentalchaavi.com'
+  );
 
 export const API_ORIGIN = (() => {
   try {
     return new URL(API_BASE_URL).origin;
   } catch {
-    return 'http://localhost:8080';
+    return 'https://r1.rentalchaavi.com';
   }
 })();
 

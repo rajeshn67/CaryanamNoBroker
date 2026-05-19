@@ -55,6 +55,10 @@ const OWNER_NAME_KEY = "ownerName";
 const OWNER_NAME_BY_EMAIL_KEY = "ownerNameByEmail";
 
 const PROPERTY_STATE = "Maharashtra";
+const CITY_OPTIONS = [
+  { label: "Pune", value: "Pune" },
+  { label: "Pimpri-Chinchwad (PCMC)", value: "PCMC" },
+];
 const uploadFieldClass =
   "w-full pl-11 pr-4 py-3 border border-[#d9c7b2] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#ff7a00]/30 focus:border-[#ff7a00] bg-[#f9f3ed] text-black placeholder:text-black";
 const uploadSelectClass =
@@ -271,100 +275,6 @@ const PropertyThumbnail = ({ imageName, title }) => {
 };
 
 
-
-const CITY_LOCATION_DATA = {
-
-  Pune: {
-
-    "Kothrud": "411038",
-
-    "Shivaji Nagar": "411005",
-
-    "Hinjewadi": "411057",
-
-    "Hadapsar": "411028",
-
-    "Baner": "411045",
-
-    "Wakad": "411057",
-
-    "Aundh": "411007",
-
-    "Deccan Gymkhana": "411004",
-
-    "Kalyani Nagar": "411006",
-
-    "Viman Nagar": "411014",
-
-    "Koregaon Park": "411001",
-
-    "Magarpatta": "411028",
-
-  },
-
-  "Pimpri-Chinchwad": {
-
-    "Pimpri": "411018",
-
-    "Chinchwad": "411019",
-
-    "Nigdi": "411044",
-
-    "Akurdi": "411035",
-
-    "Ravet": "412101",
-
-    "Bhosari": "411039",
-
-    "Thergaon": "411033",
-
-    "Moshi": "411042",
-
-    "Chakan": "410501",
-
-  },
-
-};
-
-const CITY_OPTIONS = [
-
-  { label: "Pune", value: "Pune", state: PROPERTY_STATE, aliases: ["Pune"] },
-
-  {
-
-    label: "Pimpri-Chinchwad (PCMC)",
-
-    value: "PCMC",
-
-    state: PROPERTY_STATE,
-
-    aliases: ["PCMC", "Pimpri-Chinchwad", "Pimpri Chinchwad", "Pimpri"],
-
-  },
-
-];
-
-const CITY_FALLBACK_KEY = {
-
-  PCMC: "Pimpri-Chinchwad",
-
-  "Pimpri Chinchwad": "Pimpri-Chinchwad",
-
-  Pimpri: "Pimpri-Chinchwad",
-
-};
-
-const getCityOption = (city) =>
-
-  CITY_OPTIONS.find(
-
-    (option) => option.value === city || option.aliases.includes(city)
-
-  );
-
-const getFallbackCityKey = (city) => CITY_FALLBACK_KEY[city] || city;
-
-const getStateForCity = (city) => getCityOption(city)?.state || "";
 
 const FACILITY_OPTIONS = [
 
@@ -1543,8 +1453,6 @@ setFacilities(mergeFacilitiesWithBackendOptions());
 
   const handleCityChange = async (selectedCity) => {
 
-    const cityOption = getCityOption(selectedCity);
-
     setFormData((current) => ({
 
       ...current,
@@ -1555,7 +1463,7 @@ setFacilities(mergeFacilitiesWithBackendOptions());
 
       pincode: "",
 
-      state: cityOption?.state || "",
+      state: selectedCity ? PROPERTY_STATE : "",
 
     }));
 
@@ -1575,59 +1483,24 @@ setFacilities(mergeFacilitiesWithBackendOptions());
 
       setAreaLoading(true);
 
-      const cityCandidates = cityOption?.aliases || [selectedCity];
+      const response = await ownerApi.getAreasByCity(selectedCity.trim());
 
+      const areas = Array.isArray(response?.data?.data) ? response.data.data : [];
 
+      setAreaOptions(areas);
 
-      for (const cityCandidate of cityCandidates) {
+      setResolvedCity(selectedCity);
 
-        try {
+      if (areas.length === 0) {
 
-          const response = await ownerApi.getAreasByCity(cityCandidate);
-
-          const areas = Array.isArray(response?.data?.data) ? response.data.data : [];
-
-          if (areas.length > 0) {
-
-            setAreaOptions(areas);
-
-            setResolvedCity(cityCandidate);
-
-            return;
-
-          }
-
-        } catch {
-
-          // Try the next known backend city alias.
-
-        }
+        setAreaMessage("No areas found for this city.");
 
       }
 
 
-
-      const fallbackAreas = Object.keys(CITY_LOCATION_DATA[getFallbackCityKey(selectedCity)] || {});
-
-      setAreaOptions(fallbackAreas);
-
-      setResolvedCity(selectedCity);
-
-      setAreaMessage(
-
-        fallbackAreas.length > 0
-
-          ? "Showing saved PCMC/Pune areas because the API returned no areas."
-
-          : "No areas found for this city."
-
-      );
-
     } catch (error) {
 
-      const fallbackAreas = Object.keys(CITY_LOCATION_DATA[getFallbackCityKey(selectedCity)] || {});
-
-      setAreaOptions(fallbackAreas);
+      setAreaOptions([]);
 
       setResolvedCity(selectedCity);
 
@@ -1635,7 +1508,7 @@ setFacilities(mergeFacilitiesWithBackendOptions());
 
         error?.response?.data?.message ||
 
-          "Could not load live areas. Showing saved options if available."
+          "Could not load areas for this city."
 
       );
 
@@ -1671,51 +1544,17 @@ setFacilities(mergeFacilitiesWithBackendOptions());
 
     try {
 
-      const cityOption = getCityOption(formData.city);
+      const city = (resolvedCity || formData.city).trim();
 
-      const cityCandidates = [
+      const response = await ownerApi.getPincode(city, selectedLocation);
 
-        resolvedCity,
-
-        ...(cityOption?.aliases || [formData.city]),
-
-      ].filter((city, index, cities) => city && cities.indexOf(city) === index);
-
-
-
-      let pincode = "";
-
-      let matchedCity = "";
-
-      for (const cityCandidate of cityCandidates) {
-
-        try {
-
-          const response = await ownerApi.getPincode(cityCandidate, selectedLocation);
-
-          pincode = response?.data?.data || "";
-
-          if (pincode) {
-
-            matchedCity = cityCandidate;
-
-            break;
-
-          }
-
-        } catch {
-
-          // Try the next known backend city alias.
-
-        }
-
-      }
+      const pincode = response?.data?.data || "";
 
 
 
       if (!pincode) throw new Error("Pincode not found");
 
-      setResolvedCity(matchedCity || resolvedCity || formData.city);
+      setResolvedCity(city);
 
       setFormData((current) => ({
 
@@ -1729,17 +1568,13 @@ setFacilities(mergeFacilitiesWithBackendOptions());
 
     } catch (error) {
 
-      const fallbackPincode =
-
-        CITY_LOCATION_DATA[getFallbackCityKey(formData.city)]?.[selectedLocation] || "";
-
       setFormData((current) => ({
 
         ...current,
 
         location: selectedLocation,
 
-        pincode: fallbackPincode,
+        pincode: "",
 
       }));
 
@@ -1787,12 +1622,6 @@ setFacilities(mergeFacilitiesWithBackendOptions());
 
     const mobileNumber = formData.mobileNumber.trim();
 
-    const knownPincode =
-
-      CITY_LOCATION_DATA[getFallbackCityKey(formData.city)]?.[formData.location] || "";
-
-
-
     if (!title) return "Title is required";
 
     if (/\d/.test(title)) return "Title should not contain numbers";
@@ -1818,12 +1647,6 @@ setFacilities(mergeFacilitiesWithBackendOptions());
     if (!pincode) return "Pincode is required";
 
     if (!/^\d{6}$/.test(pincode)) return "Pincode must be 6 digits";
-
-    if (knownPincode && knownPincode !== pincode) {
-
-      return "Pincode does not match selected area";
-
-    }
 
     if (!formData.description.trim()) return "Description is required";
 
@@ -1931,7 +1754,7 @@ setFacilities(mergeFacilitiesWithBackendOptions());
 
         address: formData.address,
 
-        state: formData.state || getStateForCity(formData.city) || PROPERTY_STATE,
+        state: formData.state || PROPERTY_STATE,
 
         pincode: formData.pincode,
 
@@ -2219,7 +2042,7 @@ toast.error(err.response?.data?.message || err.message || "Failed to delete prop
 
   // Handle edit property
 
-  const handleEditProperty = (property) => {
+  const handleEditProperty = async (property) => {
 
     const propertyId = property.id || property.propertyId;
 
@@ -2261,13 +2084,37 @@ toast.error(err.response?.data?.message || err.message || "Failed to delete prop
 
     setResolvedCity(property.city || "");
 
-    const fallbackAreas = Object.keys(CITY_LOCATION_DATA[getFallbackCityKey(property.city)] || {});
+    setAreaOptions([]);
 
-    setAreaOptions(property.location && !fallbackAreas.includes(property.location)
+    setAreaMessage("");
 
-      ? [property.location, ...fallbackAreas]
+    if (property.city) {
 
-      : fallbackAreas);
+      try {
+
+        setAreaLoading(true);
+
+        const response = await ownerApi.getAreasByCity(property.city);
+
+        const areas = Array.isArray(response?.data?.data) ? response.data.data : [];
+
+        setAreaOptions(property.location && !areas.includes(property.location)
+
+          ? [property.location, ...areas]
+
+          : areas);
+
+      } catch (error) {
+
+        setAreaMessage(error?.response?.data?.message || "Could not load areas for this city.");
+
+      } finally {
+
+        setAreaLoading(false);
+
+      }
+
+    }
 
     fetchFacilities(propertyId);
 
@@ -2323,7 +2170,7 @@ toast.error(err.response?.data?.message || err.message || "Failed to delete prop
 
         address: formData.address,
 
-        state: formData.state || getStateForCity(formData.city) || PROPERTY_STATE,
+        state: formData.state || PROPERTY_STATE,
 
         pincode: formData.pincode,
 

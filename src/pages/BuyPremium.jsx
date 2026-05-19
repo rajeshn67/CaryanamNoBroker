@@ -9,6 +9,7 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import qrImage from "../assets/QR.jpeg";
+import { API_BASE_URL } from "../services/api";
 
 const BuyPremium = () => {
   const navigate = useNavigate();
@@ -39,7 +40,7 @@ const BuyPremium = () => {
         // ✅ CHECK USER PREMIUM STATUS
         const statusResponse =
           await axios.get(
-            `http://localhost:8080/api/user/${userId}`,
+            `${API_BASE_URL}/user/${userId}`,
             {
               headers: {
                 Authorization: `Bearer ${token}`,
@@ -68,7 +69,7 @@ const BuyPremium = () => {
         // ✅ SEND REQUEST
         const response =
           await axios.post(
-            `http://localhost:8080/api/user/buyPremium/${userId}`,
+            `${API_BASE_URL}/user/buyPremium/${userId}`,
             {},
             {
               headers: {

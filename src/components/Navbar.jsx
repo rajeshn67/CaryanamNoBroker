@@ -63,7 +63,7 @@ const Navbar = ({ onOpenChat, chatCount = 0, userName = "" }) => {
   );
 
   return (
-  <div className="flex justify-between items-center gap-2 px-2.5 sm:px-5 md:px-6 py-3 sm:py-4 bg-gradient-to-r from-[#0f0f10] via-[#041833] to-[#020617] border-b border-[#1E293B] shadow-xl w-full overflow-hidden">
+  <div className="flex justify-between items-center gap-2 px-2.5 sm:px-5 md:px-6 py-3 sm:py-4 bg-black/90 backdrop-blur-md border-b border-white/10 shadow-[0_10px_30px_rgba(0,0,0,0.3)] w-full overflow-hidden">
     
     {/* Logo Section */}
     <div className="flex items-center gap-1.5 sm:gap-3 min-w-0 flex-1">

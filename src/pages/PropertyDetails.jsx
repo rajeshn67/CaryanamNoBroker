@@ -15,7 +15,7 @@ import {
   motion,
   AnimatePresence,
 } from "framer-motion";
-import { STATIC_BASE_URL,  propertyApi, } from "../services/api";
+import { API_BASE_URL, STATIC_BASE_URL,  propertyApi, } from "../services/api";
 
 import {
   MapPin,
@@ -114,7 +114,7 @@ const PropertyDetails = () => {
 
           const response =
             await fetch(
-              `http://localhost:8080/api/owner/get-facilities?ownerId=${ownerId}&propertyId=${propertyId}`
+              `${API_BASE_URL}/owner/get-facilities?ownerId=${ownerId}&propertyId=${propertyId}`
             );
 
           if (!response.ok) {
@@ -142,33 +142,7 @@ setFacilities([]);
       []
     );
 
-//     const loadNearbyProperties = useCallback(async (propertyId) => {
-//   try {
-//     if (!propertyId) return;
 
-//     const response = await fetch(
-//       `http://localhost:8080/api/user/nearby-properties?propertyId=${propertyId}`
-//     );
-
-//     const result = await response.json();
-
-//     setNearbyProperties(result?.data || []);
-//   } catch (err) {
-//     setNearbyProperties([]);
-//   }
-// }, []);
-
-// const loadNearbyProperties = useCallback(async (propertyId) => {
-//   try {
-//     if (!propertyId) return;
-
-//     const response = await propertyApi.getNearbyProperties(propertyId);
-
-//     setNearbyProperties(response.data || []);
-//   } catch (err) {
-//     setNearbyProperties([]);
-//   }
-// }, []);
 
 
 const loadNearbyProperties = useCallback(async (pincode) => {
@@ -176,7 +150,7 @@ const loadNearbyProperties = useCallback(async (pincode) => {
     if (!pincode) return;
 
     const response = await fetch(
-      `http://localhost:8080/api/area/nearby?nearbyPincode=${pincode}`
+      `${API_BASE_URL}/area/nearby?nearbyPincode=${pincode}`
     );
 
     const result = await response.json();
@@ -228,7 +202,7 @@ setUserName(loggedInUserName);
 
         const response =
           await fetch(
-            `http://localhost:8080/api/user/properties/${userId}`,
+            `${API_BASE_URL}/user/properties/${userId}`,
             {
               method: "GET",
               headers: {
