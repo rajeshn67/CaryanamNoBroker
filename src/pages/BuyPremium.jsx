@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import qrImage from "../assets/QR.jpeg";
 import { API_BASE_URL } from "../services/api";
+import { getCurrentPremiumStatus } from "../utlis/premiumStatus";
 
 const BuyPremium = () => {
   const navigate = useNavigate();
@@ -50,11 +51,14 @@ const BuyPremium = () => {
 
         const userData =
           statusResponse.data?.data;
+        const premiumStatus =
+          getCurrentPremiumStatus(
+            userData?.premiumStatus
+          );
 
         // ✅ IF ALREADY APPROVED
         if (
-          userData?.premiumStatus ===
-            "APPROVED" ||
+          premiumStatus === "APPROVED" ||
           userData?.premiumActive ===
             true
         ) {

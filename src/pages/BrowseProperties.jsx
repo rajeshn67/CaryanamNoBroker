@@ -21,9 +21,10 @@ import {
 
 import { getUserIdFromToken } from "../utlis/authSync";
 import {
-  FALLBACK_PROPERTY_IMAGE,
+  FALLBACK_PROPERTY_IMAGE_DATA_URL,
   getPropertyImageCandidates,
 } from "../utlis/propertyImages";
+import { getCurrentPremiumStatus } from "../utlis/premiumStatus";
 
 const USER_NAME_KEY = "userName";
 const USER_NAME_BY_EMAIL_KEY = "userNameByEmail";
@@ -69,7 +70,7 @@ const rememberUserName = (decoded) => {
 const BrowseProperties = () => {
   const [tempFilters, setTempFilters] =
     useState({
-      type: "All",
+      type: "",
       city: "",
       address: "",
       minPrice: "",
@@ -140,8 +141,10 @@ const BrowseProperties = () => {
         const result =
           await response.json();
 setPremiumStatus(
-          result?.data
-            ?.premiumStatus || ""
+          getCurrentPremiumStatus(
+            result?.data
+              ?.premiumStatus
+          )
         );
       } catch (err) {
 }
@@ -245,7 +248,7 @@ setPremiumStatus(
 
       image:
         imageCandidates[0] ||
-        FALLBACK_PROPERTY_IMAGE,
+        FALLBACK_PROPERTY_IMAGE_DATA_URL,
 
       imageCandidates,
 
@@ -560,7 +563,7 @@ setError(
             }}
             clearFilters={() => {
               const reset = {
-                type: "All",
+                type: "",
                 city: "",
                 address: "",
                 minPrice: "",

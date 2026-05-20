@@ -41,12 +41,12 @@ Baby,
 
 import { getUserIdFromToken } from "../utlis/authSync";
 import {
-  FALLBACK_PROPERTY_IMAGE,
+  FALLBACK_PROPERTY_IMAGE_DATA_URL,
   getImageCandidates,
   getPropertyImageNames,
 } from "../utlis/propertyImages";
 
-const FALLBACK_IMAGE = FALLBACK_PROPERTY_IMAGE;
+const FALLBACK_IMAGE = FALLBACK_PROPERTY_IMAGE_DATA_URL;
 
 const facilityIcons = {
   LANDSCAPE_GARDEN: Trees,
