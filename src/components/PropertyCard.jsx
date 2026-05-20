@@ -42,6 +42,9 @@ const PropertyCard = ({
         ""
     );
 
+  const isPremiumUser =
+    effectivePremiumStatus === "APPROVED";
+
   const imageCandidates = useMemo(() => {
     const candidates =
       property.imageCandidates?.length > 0
@@ -108,17 +111,9 @@ const PropertyCard = ({
   };
 
   const handleChatClick = () => {
-    if (effectivePremiumStatus === "APPROVED") {
-      onChatClick?.(property);  
-      return;
-    }
+    if (!isPremiumUser) return;
 
-    if (effectivePremiumStatus === "PENDING") {
-      setShowPremiumChatPopup(true);
-      return;
-    }
-
-    navigate("/buy-premium");
+    onChatClick?.(property);  
   };
 
   return (
@@ -281,16 +276,18 @@ const PropertyCard = ({
             </button>
 
             {/* CHAT BUTTON */}
-            <button
-              onClick={handleChatClick}
-            className="flex-1 bg-gradient-to-r from-[#F97316] to-[#EA580C] hover:opacity-95 text-white py-3 rounded-xl font-semibold transition-all duration-200 shadow-[0_10px_25px_rgba(249,115,22,0.35)]"
-            >
-              <MessageCircle
-                size={18}
-                className="inline mr-2"
-              />
-              Chat
-            </button>
+            {isPremiumUser && (
+              <button
+                onClick={handleChatClick}
+                className="flex-1 bg-gradient-to-r from-[#F97316] to-[#EA580C] hover:opacity-95 text-white py-3 rounded-xl font-semibold transition-all duration-200 shadow-[0_10px_25px_rgba(249,115,22,0.35)]"
+              >
+                <MessageCircle
+                  size={18}
+                  className="inline mr-2"
+                />
+                Chat
+              </button>
+            )}
           </div>
         </div>
       </div>

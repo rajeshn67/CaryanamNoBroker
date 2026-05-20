@@ -110,6 +110,9 @@ const BrowseProperties = () => {
   const currentUserId =
     getUserIdFromToken();
 
+  const isPremiumUser =
+    premiumStatus === "APPROVED";
+
   // =========================================
   // FETCH USER PREMIUM STATUS
   // =========================================
@@ -508,8 +511,11 @@ setError(
       <ToastContainer position="top-right" autoClose={3000} />
       <Navbar
         userName={userName}
-        onOpenChat={() =>
-          setChatOpen(true)
+        onOpenChat={
+          isPremiumUser
+            ? () =>
+                setChatOpen(true)
+            : undefined
         }
         chatCount={chatCount}
       />
@@ -615,17 +621,21 @@ setError(
             premiumStatus={
               premiumStatus
             }
-            onChatClick={(
-              property
-            ) => {
-              setSelectedPropertyForChat(
-                property
-              );
+            onChatClick={
+              isPremiumUser
+                ? (
+                    property
+                  ) => {
+                    setSelectedPropertyForChat(
+                      property
+                    );
 
-              setChatOpen(
-                true
-              );
-            }}
+                    setChatOpen(
+                      true
+                    );
+                  }
+                : undefined
+            }
           />
         </div>
       </motion.div>
@@ -715,26 +725,28 @@ setError(
         </div>
       </footer>
 
-      <ChatDrawer
-        isOpen={chatOpen}
-        onClose={() => {
-          setChatOpen(false);
+      {isPremiumUser && (
+        <ChatDrawer
+          isOpen={chatOpen}
+          onClose={() => {
+            setChatOpen(false);
 
-          setSelectedPropertyForChat(
-            null
-          );
-        }}
-        currentRole="USER"
-        currentUserId={
-          currentUserId
-        }
-        selectedProperty={
-          selectedPropertyForChat
-        }
-        onCountChange={
-          setChatCount
-        }
-      />
+            setSelectedPropertyForChat(
+              null
+            );
+          }}
+          currentRole="USER"
+          currentUserId={
+            currentUserId
+          }
+          selectedProperty={
+            selectedPropertyForChat
+          }
+          onCountChange={
+            setChatCount
+          }
+        />
+      )}
     </div>
   );
 };
