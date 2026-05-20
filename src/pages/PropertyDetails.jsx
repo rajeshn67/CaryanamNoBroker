@@ -45,6 +45,7 @@ import {
   getImageCandidates,
   getPropertyImageNames,
 } from "../utlis/propertyImages";
+import { getCurrentPremiumStatus } from "../utlis/premiumStatus";
 
 const FALLBACK_IMAGE = FALLBACK_PROPERTY_IMAGE_DATA_URL;
 
@@ -78,6 +79,9 @@ const PropertyDetails = () => {
   const [error, setError] =
     useState("");
 
+  const [premiumStatus, setPremiumStatus] =
+    useState("");
+
   const [currentIndex, setCurrentIndex] =
     useState(0);
   const [currentImageCandidateIndex, setCurrentImageCandidateIndex] =
@@ -99,6 +103,9 @@ const PropertyDetails = () => {
 
   const currentUserId =
     getUserIdFromToken();
+
+  const isPremiumUser =
+    premiumStatus === "APPROVED";
 
 
     const [userName, setUserName] =
@@ -206,6 +213,34 @@ setNearbyProperties([]);
   "User";
 
 setUserName(loggedInUserName);
+
+        try {
+          const userResponse =
+            await fetch(
+              `${API_BASE_URL}/user/${userId}`,
+              {
+                headers: {
+                  Authorization: `Bearer ${token}`,
+                },
+              }
+            );
+
+          const userResult =
+            await userResponse.json();
+
+          if (!cancelled) {
+            setPremiumStatus(
+              getCurrentPremiumStatus(
+                userResult?.data
+                  ?.premiumStatus
+              )
+            );
+          }
+        } catch {
+          if (!cancelled) {
+            setPremiumStatus("");
+          }
+        }
 
         const response =
           await fetch(
@@ -462,8 +497,11 @@ if (!cancelled) {
   return (
     <div className="min-h-screen bg-[#f7f0e8] font-inter">
       <Navbar
-        onOpenChat={() =>
-          setChatOpen(true)
+        onOpenChat={
+          isPremiumUser
+            ? () =>
+                setChatOpen(true)
+            : undefined
         }
         chatCount={
           chatCount
@@ -795,34 +833,36 @@ if (!cancelled) {
                   </div>
                 </div>
 
-                <button
-                  onClick={() => {
-                    setSelectedPropertyForChat(
-                      {
-                        id: property?.id,
-                        title:
-                          property?.title,
-                        ownerName:
-                          property?.ownerName,
-                        ownerId:
-                          property?.ownerId ||
-                          property?.userId,
-                        _raw: property,
-                      }
-                    );
+                {isPremiumUser && (
+                  <button
+                    onClick={() => {
+                      setSelectedPropertyForChat(
+                        {
+                          id: property?.id,
+                          title:
+                            property?.title,
+                          ownerName:
+                            property?.ownerName,
+                          ownerId:
+                            property?.ownerId ||
+                            property?.userId,
+                          _raw: property,
+                        }
+                      );
 
-                    setChatOpen(
-                      true
-                    );
-                  }}
-                  className="w-full bg-[#f97316] text-white py-4 rounded-2xl font-black text-lg hover:bg-[#ea6a0a] hover:scale-[1.02] transition-all duration-300 flex items-center justify-center gap-3 shadow-[0_10px_30px_rgba(249,115,22,0.30)]"
-                >
-                  <MessageCircle
-                    size={22}
-                  />
-                  Chat with
-                  Owner
-                </button>
+                      setChatOpen(
+                        true
+                      );
+                    }}
+                    className="w-full bg-[#f97316] text-white py-4 rounded-2xl font-black text-lg hover:bg-[#ea6a0a] hover:scale-[1.02] transition-all duration-300 flex items-center justify-center gap-3 shadow-[0_10px_30px_rgba(249,115,22,0.30)]"
+                  >
+                    <MessageCircle
+                      size={22}
+                    />
+                    Chat with
+                    Owner
+                  </button>
+                )}
               </div>
               {/* Safety Tips Card */}
 <div className="bg-black/90 text-white rounded-[20px] sm:rounded-[24px] p-4 sm:p-6 shadow-[0_25px_80px_rgba(0,0,0,0.28)] border border-white/10">
@@ -945,25 +985,27 @@ if (!cancelled) {
         </div>
       </footer>
 
-      <ChatDrawer
-        isOpen={chatOpen}
-        onClose={() => {
-          setChatOpen(false);
-          setSelectedPropertyForChat(
-            null
-          );
-        }}
-        currentRole="USER"
-        currentUserId={
-          currentUserId
-        }
-        selectedProperty={
-          selectedPropertyForChat
-        }
-        onCountChange={
-          setChatCount
-        }
-      />
+      {isPremiumUser && (
+        <ChatDrawer
+          isOpen={chatOpen}
+          onClose={() => {
+            setChatOpen(false);
+            setSelectedPropertyForChat(
+              null
+            );
+          }}
+          currentRole="USER"
+          currentUserId={
+            currentUserId
+          }
+          selectedProperty={
+            selectedPropertyForChat
+          }
+          onCountChange={
+            setChatCount
+          }
+        />
+      )}
     </div>
   );
 };
