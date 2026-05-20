@@ -18,9 +18,10 @@ import {
 } from "lucide-react";
 
 import {
-  FALLBACK_PROPERTY_IMAGE,
+  FALLBACK_PROPERTY_IMAGE_DATA_URL,
   getPropertyImageCandidates,
 } from "../utlis/propertyImages";
+import { getCurrentPremiumStatus } from "../utlis/premiumStatus";
 
 const PropertyCard = ({
   property,
@@ -35,9 +36,11 @@ const PropertyCard = ({
     useState(0);
 
   const effectivePremiumStatus =
-    premiumStatus ??
-    approvalStatus ??
-    null;
+    getCurrentPremiumStatus(
+      premiumStatus ??
+        approvalStatus ??
+        ""
+    );
 
   const imageCandidates = useMemo(() => {
     const candidates =
@@ -66,14 +69,14 @@ const PropertyCard = ({
 
   const imageSrc =
     imageCandidates[imageCandidateIndex] ||
-    FALLBACK_PROPERTY_IMAGE;
+    FALLBACK_PROPERTY_IMAGE_DATA_URL;
 
   // IMAGE CLICK
   const handleImageClick = () => {
     navigate(`/property/${property.id}`, {
       state: {
         previewOnly:
-          premiumStatus !==
+          effectivePremiumStatus !==
           "APPROVED",
       },
     });
@@ -82,7 +85,7 @@ const PropertyCard = ({
   // DETAILS CLICK
   const handleDetailsClick = () => {
     if (
-      premiumStatus ===
+      effectivePremiumStatus ===
       "APPROVED"
     ) {
       navigate(
@@ -92,7 +95,7 @@ const PropertyCard = ({
     }
 
     if (
-      premiumStatus ===
+      effectivePremiumStatus ===
       "PENDING"
     ) {
       toast.info(
@@ -162,7 +165,7 @@ const PropertyCard = ({
               }
 
               e.currentTarget.src =
-                FALLBACK_PROPERTY_IMAGE;
+                FALLBACK_PROPERTY_IMAGE_DATA_URL;
             }}
           />
 

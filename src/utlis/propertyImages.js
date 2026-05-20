@@ -1,9 +1,6 @@
-import {
-  API_ORIGIN,
-  STATIC_BASE_URL,
-} from "../services/api";
-
 export const FALLBACK_PROPERTY_IMAGE = "/no-image.png";
+export const FALLBACK_PROPERTY_IMAGE_DATA_URL =
+  "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='400' height='300' viewBox='0 0 400 300'><rect width='100%25' height='100%25' fill='%23E5E7EB'/><text x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' fill='%236B7280' font-family='Arial, sans-serif' font-size='22'>No database image</text></svg>";
 
 const stripWrappingQuotes = (value) =>
   String(value || "")
@@ -29,11 +26,6 @@ export const parseImageList = (value) => {
     .filter(Boolean);
 };
 
-const getBrowserOrigin = () => {
-  if (typeof window === "undefined") return "";
-  return window.location?.origin || "";
-};
-
 export const getImageCandidates = (imageName) => {
   const rawValue = stripWrappingQuotes(imageName);
   if (!rawValue) return [];
@@ -42,32 +34,35 @@ export const getImageCandidates = (imageName) => {
     return [rawValue];
   }
 
-  const cleanedName = rawValue
-    .replace(/^\/+/, "")
-    .replace(/^uploads\//i, "");
+  const compactValue = rawValue.replace(/\s/g, "");
+  const looksLikeBase64Image =
+    compactValue.length > 100 &&
+    /^[A-Za-z0-9+/]+={0,2}$/.test(compactValue);
 
-  const browserOrigin = getBrowserOrigin();
-  const candidates = [
-    `/uploads/${cleanedName}`,
-    browserOrigin
-      ? `${browserOrigin}/uploads/${cleanedName}`
-      : "",
-    `${API_ORIGIN}/uploads/${cleanedName}`,
-    `${STATIC_BASE_URL}/uploads/${cleanedName}`,
-    `${STATIC_BASE_URL}/${cleanedName}`,
-  ];
+  if (looksLikeBase64Image) {
+    return [`data:image/jpeg;base64,${compactValue}`];
+  }
 
-  return [...new Set(candidates.filter(Boolean))];
+  return [];
 };
 
 export const getPropertyImageNames = (property) => {
   const doctypeImages = parseImageList(property?.doctypeImages);
 
   return [
-    ...doctypeImages,
+    property?.coverImageData,
+    property?.coverImageBase64,
+    property?.imageData,
+    property?.imageBase64,
+    property?.base64Image,
+    property?.imageContent,
     property?.coverImage,
     property?.imagePath,
     property?.imageName,
+    ...(Array.isArray(property?.doctypeImageBase64List)
+      ? property.doctypeImageBase64List
+      : []),
+    ...doctypeImages,
     ...(Array.isArray(property?.images) ? property.images : []),
     property?.image,
   ].filter(Boolean);

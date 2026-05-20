@@ -34,15 +34,14 @@ import {
 
 import ChatDrawer from "../components/ChatDrawer";
 import {
+  FALLBACK_PROPERTY_IMAGE_DATA_URL,
   getImageCandidates,
   parseImageList,
 } from "../utlis/propertyImages";
 
 
 
-const IMAGE_FALLBACK =
-
-  "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='400' height='300' viewBox='0 0 400 300'><rect width='100%25' height='100%25' fill='%23D1D5DB'/><text x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' fill='%236B7280' font-family='Arial, sans-serif' font-size='24'>No Image</text></svg>";
+const IMAGE_FALLBACK = FALLBACK_PROPERTY_IMAGE_DATA_URL;
 
 const OWNER_PREMIUM_QR_IMAGE =
 
@@ -858,7 +857,17 @@ const handleManualOwnerIdSubmit = () => {
 
   const getDetailImages = (detailData) => [
 
-    ...parseDoctypeImages(detailData?.doctypeImages),
+    detailData?.coverImageData,
+
+    detailData?.coverImageBase64,
+
+    detailData?.imageData,
+
+    detailData?.imageBase64,
+
+    detailData?.base64Image,
+
+    detailData?.imageContent,
 
     detailData?.coverImage,
 
@@ -866,19 +875,41 @@ const handleManualOwnerIdSubmit = () => {
 
     detailData?.imageName,
 
+    ...(Array.isArray(detailData?.doctypeImageBase64List)
+      ? detailData.doctypeImageBase64List
+      : []),
+
+    ...parseDoctypeImages(detailData?.doctypeImages),
+
   ].filter(Boolean);
 
 
 
   const getPropertyImageNames = (property) => [
 
-    ...parseDoctypeImages(property?.doctypeImages),
+    property?.coverImageData,
+
+    property?.coverImageBase64,
+
+    property?.imageData,
+
+    property?.imageBase64,
+
+    property?.base64Image,
+
+    property?.imageContent,
 
     property?.coverImage,
 
     property?.imagePath,
 
     property?.imageName,
+
+    ...(Array.isArray(property?.doctypeImageBase64List)
+      ? property.doctypeImageBase64List
+      : []),
+
+    ...parseDoctypeImages(property?.doctypeImages),
 
     ...(Array.isArray(property?.images) ? property.images : []),
 
