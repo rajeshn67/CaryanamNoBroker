@@ -886,7 +886,7 @@ if (!cancelled) {
   </h3>
 
  {nearbyProperties.length > 0 ? (
-  <div className="space-y-4">
+  <div className="max-h-[970px] space-y-4 overflow-y-auto overscroll-contain pr-2 [scrollbar-width:thin] [scrollbar-color:#f97316_rgba(255,255,255,0.10)] [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:rounded-full [&::-webkit-scrollbar-track]:bg-white/10 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[#f97316]">
     {nearbyProperties.map((item, index) => (
       <div
         key={index}
